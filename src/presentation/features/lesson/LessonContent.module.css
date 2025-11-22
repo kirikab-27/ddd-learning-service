@@ -1,0 +1,9 @@
+.article {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.body {
+  min-height: 400px;
+}
