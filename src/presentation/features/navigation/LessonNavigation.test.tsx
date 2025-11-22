@@ -1,12 +1,13 @@
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { LessonNavigation } from './LessonNavigation';
 
-jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
+vi.mock('next/link', () => ({
+  default: ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
-  );
-});
+  ),
+}));
 
 describe('LessonNavigation', () => {
   it('renders both previous and next links', () => {

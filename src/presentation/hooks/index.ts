@@ -1,2 +1,2 @@
-export { useCourseNavigation } from './useCourseNavigation';
 export { useLesson } from './useLesson';
+export { useCourseNavigation } from './useCourseNavigation';
