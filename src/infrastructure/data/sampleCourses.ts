@@ -220,7 +220,7 @@ const chapter2 = Chapter.create({
 });
 
 const ddsCourse = Course.create({
-  id: CourseId.create('ddd-basics'),
+  id: CourseId.create('ddd-practice'),
   title: 'DDD基礎コース',
   description: 'ドメイン駆動設計の基礎を学ぶコースです。',
   chapters: [chapter1, chapter2],
