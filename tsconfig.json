@@ -19,12 +19,13 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
+      "@/*": ["./src/*"],
       "@/domain/*": ["./src/domain/*"],
       "@/application/*": ["./src/application/*"],
       "@/infrastructure/*": ["./src/infrastructure/*"],
       "@/presentation/*": ["./src/presentation/*"]
-    }
+    },
+    "types": ["jest", "node", "@testing-library/jest-dom"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]

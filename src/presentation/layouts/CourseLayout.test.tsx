@@ -1,25 +1,32 @@
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { CourseLayout } from './CourseLayout';
 
 // Mock CSS modules
-jest.mock('./CourseLayout.module.css', () => ({
-  container: 'container',
-  body: 'body',
-  main: 'main',
-  content: 'content',
+vi.mock('./CourseLayout.module.css', () => ({
+  default: {
+    container: 'container',
+    body: 'body',
+    main: 'main',
+    content: 'content',
+  },
 }));
 
-jest.mock('../components/Header/Header.module.css', () => ({
-  header: 'header',
-  logo: 'logo',
-  logoIcon: 'logoIcon',
-  logoText: 'logoText',
-  nav: 'nav',
+vi.mock('../components/Header/Header.module.css', () => ({
+  default: {
+    header: 'header',
+    logo: 'logo',
+    logoIcon: 'logoIcon',
+    logoText: 'logoText',
+    nav: 'nav',
+  },
 }));
 
-jest.mock('../components/Sidebar/Sidebar.module.css', () => ({
-  sidebar: 'sidebar',
-  nav: 'nav',
+vi.mock('../components/Sidebar/Sidebar.module.css', () => ({
+  default: {
+    sidebar: 'sidebar',
+    nav: 'nav',
+  },
 }));
 
 describe('CourseLayout', () => {

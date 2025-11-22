@@ -1,10 +1,13 @@
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Sidebar } from './Sidebar';
 
 // Mock CSS module
-jest.mock('./Sidebar.module.css', () => ({
-  sidebar: 'sidebar',
-  nav: 'nav',
+vi.mock('./Sidebar.module.css', () => ({
+  default: {
+    sidebar: 'sidebar',
+    nav: 'nav',
+  },
 }));
 
 describe('Sidebar', () => {

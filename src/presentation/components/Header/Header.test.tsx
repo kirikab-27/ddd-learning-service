@@ -1,13 +1,16 @@
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Header } from './Header';
 
 // Mock CSS module
-jest.mock('./Header.module.css', () => ({
-  header: 'header',
-  logo: 'logo',
-  logoIcon: 'logoIcon',
-  logoText: 'logoText',
-  nav: 'nav',
+vi.mock('./Header.module.css', () => ({
+  default: {
+    header: 'header',
+    logo: 'logo',
+    logoIcon: 'logoIcon',
+    logoText: 'logoText',
+    nav: 'nav',
+  },
 }));
 
 describe('Header', () => {
