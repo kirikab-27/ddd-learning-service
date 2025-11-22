@@ -1,0 +1,143 @@
+import { GetCourseNavigationUseCase } from './GetCourseNavigationUseCase';
+import { ICourseRepository } from '@/domain/shared/repositories/ICourseRepository';
+import { IProgressRepository } from '@/domain/shared/repositories/IProgressRepository';
+import { Course } from '@/domain/content/models/Course';
+import { Chapter } from '@/domain/content/models/Chapter';
+import { Lesson } from '@/domain/content/models/Lesson';
+import { Progress } from '@/domain/progress/models/Progress';
+import { CourseId } from '@/domain/shared';
+
+describe('GetCourseNavigationUseCase', () => {
+  const createMockCourse = (): Course => {
+    const chapters: Chapter[] = [
+      Chapter.create({
+        id: 'chapter-1',
+        title: 'Chapter 1',
+        order: 1,
+        lessons: [
+          Lesson.create({
+            id: 'lesson-1-1',
+            title: 'Lesson 1.1',
+            order: 1,
+            chapterId: 'chapter-1',
+          }),
+          Lesson.create({
+            id: 'lesson-1-2',
+            title: 'Lesson 1.2',
+            order: 2,
+            chapterId: 'chapter-1',
+          }),
+        ],
+      }),
+      Chapter.create({
+        id: 'chapter-2',
+        title: 'Chapter 2',
+        order: 2,
+        lessons: [
+          Lesson.create({
+            id: 'lesson-2-1',
+            title: 'Lesson 2.1',
+            order: 1,
+            chapterId: 'chapter-2',
+          }),
+        ],
+      }),
+    ];
+
+    return Course.create({
+      id: 'course-1',
+      title: 'Test Course',
+      chapters,
+    });
+  };
+
+  const createMockCourseRepository = (course: Course | null): ICourseRepository => ({
+    findById: jest.fn().mockResolvedValue(course),
+    findAll: jest.fn().mockResolvedValue(course ? [course] : []),
+  });
+
+  const createMockProgressRepository = (progress: Progress | null): IProgressRepository => ({
+    findByCourseId: jest.fn().mockResolvedValue(progress),
+    save: jest.fn().mockResolvedValue(undefined),
+  });
+
+  it('should return navigation data with correct structure', async () => {
+    const course = createMockCourse();
+    const courseRepo = createMockCourseRepository(course);
+    const progressRepo = createMockProgressRepository(null);
+
+    const useCase = new GetCourseNavigationUseCase(courseRepo, progressRepo);
+    const result = await useCase.execute({ courseId: 'course-1' });
+
+    expect(result.courseId).toBe('course-1');
+    expect(result.courseTitle).toBe('Test Course');
+    expect(result.chapters).toHaveLength(2);
+    expect(result.chapters[0].lessons).toHaveLength(2);
+    expect(result.chapters[1].lessons).toHaveLength(1);
+  });
+
+  it('should mark first lesson as unlocked', async () => {
+    const course = createMockCourse();
+    const courseRepo = createMockCourseRepository(course);
+    const progressRepo = createMockProgressRepository(null);
+
+    const useCase = new GetCourseNavigationUseCase(courseRepo, progressRepo);
+    const result = await useCase.execute({ courseId: 'course-1' });
+
+    expect(result.chapters[0].lessons[0].isUnlocked).toBe(true);
+  });
+
+  it('should mark current lesson correctly', async () => {
+    const course = createMockCourse();
+    const courseRepo = createMockCourseRepository(course);
+    const progressRepo = createMockProgressRepository(null);
+
+    const useCase = new GetCourseNavigationUseCase(courseRepo, progressRepo);
+    const result = await useCase.execute({
+      courseId: 'course-1',
+      currentLessonId: 'lesson-1-2',
+    });
+
+    expect(result.chapters[0].lessons[0].isCurrent).toBe(false);
+    expect(result.chapters[0].lessons[1].isCurrent).toBe(true);
+    expect(result.chapters[0].isExpanded).toBe(true);
+    expect(result.chapters[1].isExpanded).toBe(false);
+  });
+
+  it('should calculate completion rate correctly', async () => {
+    const course = createMockCourse();
+    const courseRepo = createMockCourseRepository(course);
+    const courseId = CourseId.create('course-1');
+    const progress = Progress.restore(courseId, ['lesson-1-1', 'lesson-1-2']);
+    const progressRepo = createMockProgressRepository(progress);
+
+    const useCase = new GetCourseNavigationUseCase(courseRepo, progressRepo);
+    const result = await useCase.execute({ courseId: 'course-1' });
+
+    // 2 out of 3 lessons completed = 67%
+    expect(result.completionRate).toBe(67);
+  });
+
+  it('should throw error when course not found', async () => {
+    const courseRepo = createMockCourseRepository(null);
+    const progressRepo = createMockProgressRepository(null);
+
+    const useCase = new GetCourseNavigationUseCase(courseRepo, progressRepo);
+
+    await expect(useCase.execute({ courseId: 'nonexistent' })).rejects.toThrow('Course not found');
+  });
+
+  it('should mark completed lessons correctly', async () => {
+    const course = createMockCourse();
+    const courseRepo = createMockCourseRepository(course);
+    const courseId = CourseId.create('course-1');
+    const progress = Progress.restore(courseId, ['lesson-1-1']);
+    const progressRepo = createMockProgressRepository(progress);
+
+    const useCase = new GetCourseNavigationUseCase(courseRepo, progressRepo);
+    const result = await useCase.execute({ courseId: 'course-1' });
+
+    expect(result.chapters[0].lessons[0].isCompleted).toBe(true);
+    expect(result.chapters[0].lessons[1].isCompleted).toBe(false);
+  });
+});

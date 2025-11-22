@@ -1,0 +1,1 @@
+export { LessonUnlockSpecification } from './LessonUnlockSpecification';
