@@ -1,0 +1,330 @@
+<!-- Worker Instructions Template -->
+<!--
+  Usage: Replace all [PLACEHOLDERS] with task-specific values
+
+  This template follows Protocol Improvement 3, which has achieved
+  11+ consecutive successful completions in BookRAG Manager.
+-->
+
+# チケット[TICKET_NUMBER] ジョブ[JOB_LETTER]: [TASK_NAME]
+
+## 🚨 PROTOCOL REMINDER（作業開始前に必読）
+
+**このセクションは最重要です。必ず最初に読んでください。**
+
+---
+
+### ⚠️ 作業開始前チェックリスト
+
+作業を開始する**前に**、以下を必ず実行・確認すること:
+
+- [ ] **pwd で作業ディレクトリ確認**
+  ```bash
+  pwd
+  # 期待される出力: [REPO_PATH]
+  ```
+  **出力が期待値と異なる場合は即座に cd で移動**
+
+- [ ] **この指示書を最後まで読了**
+  - DoD（Definition of Done）を理解した
+  - 実装仕様を理解した
+  - 依存関係を理解した
+
+---
+
+### ⚠️ 作業完了前チェックリスト
+
+Boss1への完了報告を送信する**前に**、以下を必ず実行・確認すること:
+
+- [ ] **成果物ファイルの実在確認**
+  ```bash
+  ls -la [成果物のパス]
+  # ファイルが存在することを確認
+  ```
+
+- [ ] **Git ステージング確認**
+  ```bash
+  git status
+  # 変更ファイルが表示されることを確認
+  ```
+
+- [ ] **Git コミット実行**
+  ```bash
+  git add [ファイル]
+  git commit -m "[コミットメッセージ]"
+  ```
+
+- [ ] **Git コミット内容確認**
+  ```bash
+  git log -1 --stat
+  # コミットしたファイルが表示されることを確認
+  ```
+
+- [ ] **Boss1への完了報告送信**
+  ```bash
+  ./agent-send.sh boss1 "Worker[N]完了報告: [サマリー]"
+  ```
+
+- [ ] **通信ログ確認（オプション）**
+  ```bash
+  tail -5 logs/send_log.txt | grep "worker[N]"
+  # 自分の送信が記録されていることを確認
+  ```
+
+**すべてのチェックが完了するまで報告しないこと**
+
+---
+
+**Worker**: Worker[WORKER_NUMBER]
+**Ticket**: #[TICKET_NUMBER] [TICKET_TITLE]
+**Task**: [TASK_DESCRIPTION]
+**Priority**: [PRIORITY]
+**Dependencies**: [DEPENDENCIES] ([TIER_NUMBER])
+
+<!-- Example from BookRAG Manager:
+Ticket: #212 RAGシステム基盤構築（v0.9.0）
+Worker: Worker2
+Task: OpenAI Embeddings API統合
+Priority: High
+Dependencies: なし (Tier1)
+-->
+
+---
+
+## 📋 タスク概要
+
+[TASK_OVERVIEW]
+
+このタスクは[TIER_NUMBER]に属し、[DEPENDENCY_DESCRIPTION]。
+
+<!-- Example:
+このタスクはTier1に属し、他のWorkerと並列で実行可能です。
+または
+このタスクはTier2に属し、Worker1の完了後に実行可能です。
+-->
+
+---
+
+## 🎯 実装内容
+
+### 前提条件
+
+[PREREQUISITES]
+
+<!-- Example:
+- Worker1が src/lib/types.ts を更新済み
+- openai パッケージがインストール済み
+-->
+
+### 1. [IMPLEMENTATION_ITEM_1]
+
+**目的**: [PURPOSE_1]
+
+**実装仕様**:
+
+[SPEC_DETAILS_1]
+
+**サンプルコード**:
+```[LANGUAGE]
+[CODE_EXAMPLE_1]
+```
+
+### 2. [IMPLEMENTATION_ITEM_2]
+
+**目的**: [PURPOSE_2]
+
+**実装仕様**:
+
+[SPEC_DETAILS_2]
+
+**サンプルコード**:
+```[LANGUAGE]
+[CODE_EXAMPLE_2]
+```
+
+<!-- Add more items as needed -->
+
+---
+
+## ✅ Definition of Done (DoD)
+
+完了の定義は以下の通りです。**全項目を満たしてから完了報告を送信してください**。
+
+[DOD_ITEMS]
+
+<!-- Example DoD items:
+- [ ] src/lib/[filename].ts 作成完了
+- [ ] [function1] 関数実装完了
+- [ ] [function2] 関数実装完了
+- [ ] TypeScriptエラー: 0件（npx tsc --noEmit で確認）
+- [ ] テスト成功（該当する場合）
+- [ ] 完了レポート作成（runs/[TICKET_NUMBER]/worker[WORKER_NUMBER]-report.md）
+- [ ] Boss1 に完了報告送信
+-->
+
+**DoD達成状況**: 0/X → 目標: X/X (100%)
+
+---
+
+## 🧪 品質チェック
+
+### TypeScript エラーチェック
+
+```bash
+cd [REPO_PATH]
+npx tsc --noEmit
+```
+
+期待結果: エラー 0件
+
+### ビルドチェック（該当する場合）
+
+```bash
+npm run build
+```
+
+期待結果: ビルド成功
+
+---
+
+## 📤 完了報告フォーマット
+
+作業完了後、以下の形式で Boss1 に報告してください：
+
+```markdown
+# チケット[TICKET_NUMBER] ジョブ[JOB_LETTER] 完了報告
+
+**担当**: Worker[WORKER_NUMBER]
+**タスク**: [TASK_NAME]
+**日時**: YYYY-MM-DD
+
+---
+
+## 完了内容
+
+1. [実装項目1] 完了
+2. [実装項目2] 完了
+...
+
+## DoD達成状況
+
+- [x] [DoD項目1]
+- [x] [DoD項目2]
+...
+
+**DoD: X/X (100%)**
+
+## 成果物
+
+### ファイル一覧
+
+- [ファイル名1] (XXX行)
+- [ファイル名2] (XXX行)
+...
+
+### TypeScript エラー
+
+\`\`\`bash
+$ npx tsc --noEmit
+# エラー 0件
+\`\`\`
+
+✅ TypeScript エラー: 0件
+
+## 詳細レポート
+
+runs/[TICKET_NUMBER]/worker[WORKER_NUMBER]-report.md に詳細を記載しました。
+
+---
+
+以上、確認をお願いします。
+
+Worker[WORKER_NUMBER]
+```
+
+**送信方法**:
+```bash
+cd [REPO_PATH]
+bash ./scripts/agent-send.sh boss1 "上記の完了報告内容"
+```
+
+---
+
+## 💡 Tips
+
+### 1. 指示書を必ず読む
+
+**Protocol Improvement 3 の最重要ルール**
+
+- 指示書を読まずに作業開始 → NG
+- 指示書を読んでから作業開始 → OK
+
+### 2. DoD 100%達成
+
+全項目を達成してから報告してください。
+
+- 1項目でも未達成 → 報告しない
+- 全項目達成 → 報告する
+
+### 3. 質問は早めに
+
+不明点は Boss に質問してください。
+
+```bash
+bash ./scripts/agent-send.sh boss1 "【質問】..."
+```
+
+### 4. 完了報告は必須
+
+**作業完了 + 報告送信 = 完了**
+
+報告なし = 未完了とみなされます。
+
+### 5. Git操作は Boss が実施
+
+Worker は Git commit/push を実施しません。Boss が統合後に実施します。
+
+---
+
+## 📚 参考リソース
+
+### プロジェクト関連
+
+- **[PROJECT_NAME] リポジトリ**: [REPO_PATH]
+- **技術スタック**: [TECH_STACK]
+- **関連ドキュメント**: [DOCS_PATH]
+
+### Worker間の連携
+
+- **依存するWorker**: [DEPENDENT_WORKERS]
+- **依存されるWorker**: [DEPENDING_WORKERS]
+
+---
+
+**重要**: Protocol Improvement 3 に従い、この指示書を最後まで読んでから作業を開始してください。
+
+Worker[WORKER_NUMBER]、よろしくお願いします！
+
+<!-- BookRAG Manager実例 -->
+<!--
+実例: チケット212 ジョブB - Worker2 (OpenAI Embeddings API統合)
+
+Ticket: #212
+Worker: Worker2
+Task: OpenAI Embeddings API統合
+Tier: Tier1 (並列実行可能)
+Dependencies: なし
+
+DoD:
+- [x] src/lib/embeddings.ts 作成完了（91行）
+- [x] createEmbeddingText 関数実装完了
+- [x] embedText 関数実装完了（OpenAI API統合）
+- [x] embedBook 関数実装完了
+- [x] embedBooks 関数実装完了（バッチ処理用）
+- [x] TypeScript エラー: 0件
+- [x] 完了レポート作成
+
+Result: DoD 7/7 (100%), TypeScript 0 errors, Protocol Success
+
+この実例は Protocol Improvement 3 による11連続成功の一部です。
+-->
