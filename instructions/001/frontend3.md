@@ -432,13 +432,25 @@ npm run typecheck
 # コミット
 git add src/application/ src/presentation/features/navigation/ src/presentation/hooks/
 git commit -m "feat(presentation): add navigation components"
-git push origin agent/001/frontend6
+git push origin agent/001/frontend3
+```
+
+### Communication
+
+Boss1 への報告は `agent-send.sh` を使用:
+
+```bash
+# 完了報告
+./scripts/agent-send.sh boss1 "[DONE] Frontend3 ナビゲーション完了。PR: agent/001/frontend3"
+
+# 問題発生時
+./scripts/agent-send.sh boss1 "[BLOCKED] Frontend3: 〇〇の問題が発生。支援が必要です。"
 ```
 
 ### Report Template
 
 ```
-[DONE] Worker6 ナビゲーション完了
+[DONE] Frontend3 ナビゲーション完了
 
 作成ファイル:
 - src/application/usecases/GetCourseNavigationUseCase.ts

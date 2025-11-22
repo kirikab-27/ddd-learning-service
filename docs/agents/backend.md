@@ -257,8 +257,24 @@ class Score {
 }
 ```
 
-## 7. Reference Documents
+## 7. Communication
+
+Boss1 との通信には `agent-send.sh` を使用:
+
+```bash
+# 完了報告
+./scripts/agent-send.sh boss1 "[DONE] Backend1 共有カーネル完了。PR: agent/001/backend1"
+
+# 問題発生時
+./scripts/agent-send.sh boss1 "[BLOCKED] Backend2: 型定義の問題が発生。支援が必要です。"
+
+# 質問
+./scripts/agent-send.sh boss1 "[QUESTION] Backend3: リポジトリのインターフェースについて確認したいです。"
+```
+
+## 8. Reference Documents
 
 詳細な実装パターンは以下を参照:
 - `docs/IMPLEMENTATION_GUIDE.md` - 完全な実装ガイド
 - `docs/CONTEXT_MAP.md` - BC間の関係
+- `docs/AGENT_PROTOCOL.md` - エージェント間通信プロトコル
