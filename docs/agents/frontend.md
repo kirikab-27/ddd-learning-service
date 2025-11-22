@@ -305,7 +305,23 @@ import type { QuizResultDto } from '@/application/dto/QuizResultDto';
 ">
 ```
 
-## 9. Reference Documents
+## 9. Communication
+
+Boss1 との通信には `agent-send.sh` を使用:
+
+```bash
+# 完了報告
+./scripts/agent-send.sh boss1 "[DONE] Frontend1 レイアウト基盤完了。PR: agent/001/frontend1"
+
+# 問題発生時
+./scripts/agent-send.sh boss1 "[BLOCKED] Frontend2: UseCase呼び出しで型エラーが発生。支援が必要です。"
+
+# 質問
+./scripts/agent-send.sh boss1 "[QUESTION] Frontend3: ナビゲーションのUI仕様について確認したいです。"
+```
+
+## 10. Reference Documents
 
 - `docs/DESIGN_CONCEPT.md` - デザイン仕様の詳細
 - `docs/IMPLEMENTATION_GUIDE.md` - アプリケーション層のDTO定義
+- `docs/AGENT_PROTOCOL.md` - エージェント間通信プロトコル

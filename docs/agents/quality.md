@@ -353,7 +353,22 @@ jobs:
           fi
 ```
 
-## 9. Reference Documents
+## 9. Communication
+
+Boss1 との通信には `agent-send.sh` を使用:
+
+```bash
+# 完了報告
+./scripts/agent-send.sh boss1 "[DONE] Quality 品質レビュー完了。結果: PASS"
+
+# 問題発見時
+./scripts/agent-send.sh boss1 "[ISSUE] Quality: Backend2 のコードに型安全性の問題を発見。修正が必要です。"
+
+# Critical Issue（即座にエスカレーション）
+./scripts/agent-send.sh boss1 "[CRITICAL] Quality: ドメイン層にReactインポートを発見。即座に修正が必要です。"
+```
+
+## 10. Reference Documents
 
 - `docs/DOMAIN_VISION.md` - 品質基準の根拠
 - `docs/IMPLEMENTATION_GUIDE.md` - 実装パターンの詳細

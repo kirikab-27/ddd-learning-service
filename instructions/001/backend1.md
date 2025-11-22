@@ -124,12 +124,24 @@ git commit -m "feat(domain): add shared kernel identifiers"
 git push origin agent/001/backend1
 ```
 
+### Communication
+
+Boss1 への報告は `agent-send.sh` を使用:
+
+```bash
+# 完了報告
+./scripts/agent-send.sh boss1 "[DONE] Backend1 共有カーネル完了。PR: agent/001/backend1"
+
+# 問題発生時
+./scripts/agent-send.sh boss1 "[BLOCKED] Backend1: 〇〇の問題が発生。支援が必要です。"
+```
+
 ### Report Template
 
-完了時に Boss1 へ送信:
+完了時に以下の形式で Boss1 へ送信:
 
 ```
-[DONE] Worker1 共有カーネル完了
+[DONE] Backend1 共有カーネル完了
 
 作成ファイル:
 - src/domain/shared/CourseId.ts
