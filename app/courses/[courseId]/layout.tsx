@@ -1,4 +1,5 @@
 import { CourseLayout } from '@/presentation/layouts/CourseLayout';
+import { CourseSidebar } from '@/presentation/features/navigation/CourseSidebar';
 
 export default async function Layout({
   children,
@@ -9,16 +10,8 @@ export default async function Layout({
 }) {
   const { courseId } = await params;
 
-  // TODO: CourseSidebar will be implemented by another worker
-  const placeholderSidebar = (
-    <div style={{ padding: '1rem', color: 'var(--color-text-secondary)' }}>
-      <p>Course: {courseId}</p>
-      <p>Sidebar content coming soon...</p>
-    </div>
-  );
-
   return (
-    <CourseLayout sidebar={placeholderSidebar}>
+    <CourseLayout sidebar={<CourseSidebar courseId={courseId} />}>
       {children}
     </CourseLayout>
   );
