@@ -9,3 +9,9 @@ export type { LessonCreateParams } from './Lesson';
 
 export { LessonTitle } from './LessonTitle';
 export { MarkdownContent } from './MarkdownContent';
+
+export { Question } from './Question';
+export type { Option, QuestionCreateParams } from './Question';
+
+export { Quiz } from './Quiz';
+export type { QuizCreateParams } from './Quiz';
