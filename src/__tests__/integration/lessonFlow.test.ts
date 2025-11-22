@@ -41,7 +41,7 @@ describe('Lesson Flow Integration', () => {
     const useCase = new GetLessonUseCase(courseRepo, progressRepo);
 
     const result = await useCase.execute({
-      courseId: 'ddd-basics',
+      courseId: 'ddd-practice',
       chapterId: 'chapter-1',
       lessonId: 'lesson-1',
     });
@@ -54,7 +54,7 @@ describe('Lesson Flow Integration', () => {
     const useCase = new GetLessonUseCase(courseRepo, progressRepo);
 
     const result = await useCase.execute({
-      courseId: 'ddd-basics',
+      courseId: 'ddd-practice',
       chapterId: 'chapter-1',
       lessonId: 'lesson-2',
     });
@@ -64,7 +64,7 @@ describe('Lesson Flow Integration', () => {
 
   it('should unlock second lesson when first is completed', async () => {
     // Set up progress with first lesson completed
-    const courseId = CourseId.create('ddd-basics');
+    const courseId = CourseId.create('ddd-practice');
     const progress = Progress.create(courseId).markLessonAsCompleted(
       LessonId.create('lesson-1')
     );
@@ -73,7 +73,7 @@ describe('Lesson Flow Integration', () => {
     const useCase = new GetLessonUseCase(courseRepo, progressRepo);
 
     const result = await useCase.execute({
-      courseId: 'ddd-basics',
+      courseId: 'ddd-practice',
       chapterId: 'chapter-1',
       lessonId: 'lesson-2',
     });
@@ -85,7 +85,7 @@ describe('Lesson Flow Integration', () => {
     const navUseCase = new GetCourseNavigationUseCase(courseRepo, progressRepo);
 
     const result = await navUseCase.execute({
-      courseId: 'ddd-basics',
+      courseId: 'ddd-practice',
       currentLessonId: 'lesson-1',
     });
 
@@ -99,7 +99,7 @@ describe('Lesson Flow Integration', () => {
 
   it('should calculate completion rate correctly', async () => {
     // Complete 2 out of 4 lessons (50%)
-    const courseId = CourseId.create('ddd-basics');
+    const courseId = CourseId.create('ddd-practice');
     const progress = Progress.create(courseId)
       .markLessonAsCompleted(LessonId.create('lesson-1'))
       .markLessonAsCompleted(LessonId.create('lesson-2'));
@@ -108,7 +108,7 @@ describe('Lesson Flow Integration', () => {
     const navUseCase = new GetCourseNavigationUseCase(courseRepo, progressRepo);
 
     const result = await navUseCase.execute({
-      courseId: 'ddd-basics',
+      courseId: 'ddd-practice',
       currentLessonId: 'lesson-3',
     });
 
@@ -119,7 +119,7 @@ describe('Lesson Flow Integration', () => {
     const useCase = new GetLessonUseCase(courseRepo, progressRepo);
 
     const result = await useCase.execute({
-      courseId: 'ddd-basics',
+      courseId: 'ddd-practice',
       chapterId: 'chapter-1',
       lessonId: 'lesson-2',
     });
