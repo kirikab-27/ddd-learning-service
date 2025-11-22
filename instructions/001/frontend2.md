@@ -429,13 +429,25 @@ npm run typecheck
 # コミット
 git add src/application/ src/presentation/features/lesson/ src/presentation/hooks/ app/
 git commit -m "feat(presentation): add lesson display components"
-git push origin agent/001/frontend5
+git push origin agent/001/frontend2
+```
+
+### Communication
+
+Boss1 への報告は `agent-send.sh` を使用:
+
+```bash
+# 完了報告
+./scripts/agent-send.sh boss1 "[DONE] Frontend2 レッスン表示完了。PR: agent/001/frontend2"
+
+# 問題発生時
+./scripts/agent-send.sh boss1 "[BLOCKED] Frontend2: 〇〇の問題が発生。支援が必要です。"
 ```
 
 ### Report Template
 
 ```
-[DONE] Worker5 レッスン表示完了
+[DONE] Frontend2 レッスン表示完了
 
 作成ファイル:
 - src/application/usecases/GetLessonUseCase.ts
