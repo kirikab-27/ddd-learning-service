@@ -1,13 +1,16 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { LessonCompleteButton } from './LessonCompleteButton';
 
 // Mock CSS module
-jest.mock('./LessonCompleteButton.module.css', () => ({
-  button: 'button',
-  primary: 'primary',
-  completed: 'completed',
-  checkIcon: 'checkIcon',
-  spinner: 'spinner',
+vi.mock('./LessonCompleteButton.module.css', () => ({
+  default: {
+    button: 'button',
+    primary: 'primary',
+    completed: 'completed',
+    checkIcon: 'checkIcon',
+    spinner: 'spinner',
+  },
 }));
 
 describe('LessonCompleteButton', () => {
@@ -15,11 +18,11 @@ describe('LessonCompleteButton', () => {
     courseId: 'course-1',
     lessonId: 'lesson-1',
     isCompleted: false,
-    onComplete: jest.fn(),
+    onComplete: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('未完了状態', () => {
@@ -35,7 +38,7 @@ describe('LessonCompleteButton', () => {
     });
 
     it('クリック時にonCompleteが呼ばれる', async () => {
-      const onComplete = jest.fn().mockResolvedValue(undefined);
+      const onComplete = vi.fn().mockResolvedValue(undefined);
       render(<LessonCompleteButton {...defaultProps} onComplete={onComplete} />);
 
       const button = screen.getByTestId('lesson-complete-button');
@@ -88,7 +91,7 @@ describe('LessonCompleteButton', () => {
     });
 
     it('disabled=trueの場合、クリックしてもonCompleteが呼ばれない', () => {
-      const onComplete = jest.fn();
+      const onComplete = vi.fn();
       render(<LessonCompleteButton {...defaultProps} disabled={true} onComplete={onComplete} />);
 
       const button = screen.getByTestId('lesson-complete-button');
@@ -100,7 +103,7 @@ describe('LessonCompleteButton', () => {
 
   describe('ローディング状態', () => {
     it('処理中に「処理中...」が表示される', async () => {
-      const onComplete = jest.fn(() => new Promise(resolve => setTimeout(resolve, 100)));
+      const onComplete = vi.fn(() => new Promise(resolve => setTimeout(resolve, 100)));
       render(<LessonCompleteButton {...defaultProps} onComplete={onComplete} />);
 
       const button = screen.getByTestId('lesson-complete-button');
@@ -112,7 +115,7 @@ describe('LessonCompleteButton', () => {
     });
 
     it('処理中はaria-busy=trueになる', async () => {
-      const onComplete = jest.fn(() => new Promise(resolve => setTimeout(resolve, 100)));
+      const onComplete = vi.fn(() => new Promise(resolve => setTimeout(resolve, 100)));
       render(<LessonCompleteButton {...defaultProps} onComplete={onComplete} />);
 
       const button = screen.getByTestId('lesson-complete-button');
