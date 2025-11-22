@@ -1,3 +1,0 @@
-[2025-11-19T23:06:11+0900] from=kirikab session=agents-001 to=boss1 pane=1.0
-  instructions/task/task-004.md を読んで実行してください
-------------------------------------------------------------

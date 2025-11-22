@@ -1,9 +1,0 @@
-[2025-11-19T21:00:31+0900] from=kirikab session=agents-001 to=boss1 pane=1.0
-  runs/003/worker3-report.md
-------------------------------------------------------------
-[2025-11-19T21:04:26+0900] from=kirikab session=agents-001 to=boss1 pane=1.0
-  runs/003/worker3-report.md
-------------------------------------------------------------
-[2025-11-19T21:54:28+0900] from=kirikab session=agents-001 to=boss1 pane=1.0
-  /tmp/worker3-question.txt
-------------------------------------------------------------
