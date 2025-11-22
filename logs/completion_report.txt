@@ -1,0 +1,23 @@
+[DONE] Frontend3 ナビゲーション完了
+
+報告日時: 2025-11-22
+報告先: Boss1
+ブランチ: agent/001/frontend3
+コミット: 1ffe5cb
+
+作成ファイル:
+- src/application/usecases/GetCourseNavigationUseCase.ts
+- src/application/usecases/GetCourseNavigationUseCase.test.ts
+- src/presentation/features/navigation/CourseSidebar.tsx
+- src/presentation/features/navigation/CourseSidebar.test.tsx
+- src/presentation/features/navigation/ChapterNav.tsx
+- src/presentation/features/navigation/ChapterNav.test.tsx
+- src/presentation/features/navigation/LessonNav.tsx
+- src/presentation/features/navigation/LessonNav.test.tsx
+- src/presentation/features/navigation/LessonNavigation.tsx
+- src/presentation/features/navigation/LessonNavigation.test.tsx
+- src/presentation/hooks/useCourseNavigation.ts
+- 依存するドメイン層 (Course, Chapter, Lesson, Progress等)
+
+テスト結果: 27/27 パス
+型チェック: パス
