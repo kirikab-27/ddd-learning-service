@@ -1,27 +1,26 @@
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { CourseSidebar } from './CourseSidebar';
 import { useCourseNavigation } from '@/presentation/hooks/useCourseNavigation';
 
-jest.mock('next/navigation', () => ({
+vi.mock('next/navigation', () => ({
   useParams: () => ({ lessonId: 'lesson-1' }),
 }));
 
-jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
+vi.mock('next/link', () => ({
+  default: ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
-  );
-});
+  ),
+}));
 
-jest.mock('@/presentation/hooks/useCourseNavigation');
+vi.mock('@/presentation/hooks/useCourseNavigation');
 
-const mockUseCourseNavigation = useCourseNavigation as jest.MockedFunction<
-  typeof useCourseNavigation
->;
+const mockUseCourseNavigation = useCourseNavigation as Mock;
 
 describe('CourseSidebar', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders loading state', () => {

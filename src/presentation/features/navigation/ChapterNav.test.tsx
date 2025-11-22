@@ -1,12 +1,13 @@
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ChapterNav } from './ChapterNav';
 
-jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
+vi.mock('next/link', () => ({
+  default: ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
-  );
-});
+  ),
+}));
 
 describe('ChapterNav', () => {
   const defaultProps = {

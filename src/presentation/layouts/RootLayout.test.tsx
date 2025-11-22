@@ -1,9 +1,12 @@
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { RootLayout } from './RootLayout';
 
 // Mock CSS module
-jest.mock('./RootLayout.module.css', () => ({
-  container: 'container',
+vi.mock('./RootLayout.module.css', () => ({
+  default: {
+    container: 'container',
+  },
 }));
 
 describe('RootLayout', () => {
