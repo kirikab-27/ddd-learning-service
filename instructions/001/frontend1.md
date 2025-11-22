@@ -336,13 +336,25 @@ npm run typecheck
 # コミット
 git add src/presentation/ app/
 git commit -m "feat(presentation): add layout foundation"
-git push origin agent/001/frontend4
+git push origin agent/001/frontend1
+```
+
+### Communication
+
+Boss1 への報告は `agent-send.sh` を使用:
+
+```bash
+# 完了報告
+./scripts/agent-send.sh boss1 "[DONE] Frontend1 レイアウト基盤完了。PR: agent/001/frontend1"
+
+# 問題発生時
+./scripts/agent-send.sh boss1 "[BLOCKED] Frontend1: 〇〇の問題が発生。支援が必要です。"
 ```
 
 ### Report Template
 
 ```
-[DONE] Worker4 レイアウト基盤完了
+[DONE] Frontend1 レイアウト基盤完了
 
 作成ファイル:
 - src/presentation/styles/variables.css
