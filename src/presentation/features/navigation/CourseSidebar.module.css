@@ -1,0 +1,57 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-sidebar, #fafafa);
+  border-right: 1px solid var(--border-color, #e0e0e0);
+}
+
+.courseHeader {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.courseTitle {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+.progressBar {
+  height: 0.5rem;
+  background-color: var(--bg-progress, #e0e0e0);
+  border-radius: 0.25rem;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--color-primary, #1976d2);
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+}
+
+.nav {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.loading,
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 1rem;
+  color: var(--text-secondary, #666);
+}
+
+.error {
+  color: var(--color-error, #d32f2f);
+}
