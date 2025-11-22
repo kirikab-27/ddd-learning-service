@@ -1,2 +1,4 @@
-export * from './valueObjects';
-export * from './repositories';
+export { CourseId } from './CourseId';
+export { ChapterId } from './ChapterId';
+export { LessonId } from './LessonId';
+export { QuizId } from './QuizId';

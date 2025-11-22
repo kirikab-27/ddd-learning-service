@@ -1,33 +1,20 @@
-/** @type {import('jest').Config} */
-const config = {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
+const nextJest = require('next/jest');
+
+const createJestConfig = nextJest({
+  dir: './',
+});
+
+const customJestConfig = {
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.module\\.css$': 'identity-obj-proxy',
-    '\\.css$': '<rootDir>/__mocks__/styleMock.js',
+    '^@/(.*)$': '<rootDir>/$1',
+    '^@/domain/(.*)$': '<rootDir>/src/domain/$1',
+    '^@/application/(.*)$': '<rootDir>/src/application/$1',
+    '^@/infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
+    '^@/presentation/(.*)$': '<rootDir>/src/presentation/$1',
   },
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testMatch: ['**/*.test.ts', '**/*.test.tsx'],
-  transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'react-jsx',
-        esModuleInterop: true,
-        module: 'commonjs',
-        moduleResolution: 'node',
-        strict: true,
-        paths: {
-          '@/*': ['./src/*'],
-          '@/domain/*': ['./src/domain/*'],
-          '@/application/*': ['./src/application/*'],
-          '@/infrastructure/*': ['./src/infrastructure/*'],
-          '@/presentation/*': ['./src/presentation/*'],
-        },
-      },
-    }],
-  },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
 };
 
-module.exports = config;
+module.exports = createJestConfig(customJestConfig);

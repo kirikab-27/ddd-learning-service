@@ -1,15 +1,21 @@
 import { ICourseRepository } from '@/domain/shared/repositories/ICourseRepository';
-import { CourseId } from '@/domain/shared';
 import { Course } from '@/domain/content/models/Course';
+import { CourseId } from '@/domain/shared';
 
 export class InMemoryCourseRepository implements ICourseRepository {
-  constructor(private readonly courses: Course[]) {}
+  private courses: Map<string, Course> = new Map();
 
-  async findById(courseId: CourseId): Promise<Course | null> {
-    return this.courses.find(c => c.id.toString() === courseId.toString()) ?? null;
+  constructor(initialCourses: Course[] = []) {
+    initialCourses.forEach(course => {
+      this.courses.set(course.id.toString(), course);
+    });
+  }
+
+  async findById(id: CourseId): Promise<Course | null> {
+    return this.courses.get(id.toString()) ?? null;
   }
 
   async findAll(): Promise<Course[]> {
-    return [...this.courses];
+    return Array.from(this.courses.values());
   }
 }

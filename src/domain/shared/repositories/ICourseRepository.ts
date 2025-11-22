@@ -1,7 +1,7 @@
-import { CourseId } from '../valueObjects/CourseId';
 import { Course } from '@/domain/content/models/Course';
+import { CourseId } from '../CourseId';
 
 export interface ICourseRepository {
-  findById(courseId: CourseId): Promise<Course | null>;
+  findById(id: CourseId): Promise<Course | null>;
   findAll(): Promise<Course[]>;
 }

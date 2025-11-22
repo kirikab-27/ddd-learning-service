@@ -5,3 +5,5 @@ export {
   type NavigationChapter,
   type NavigationLesson,
 } from './GetCourseNavigationUseCase';
+export { GetLessonUseCase } from './GetLessonUseCase';
+export type { GetLessonInput, GetLessonOutput } from './GetLessonUseCase';
