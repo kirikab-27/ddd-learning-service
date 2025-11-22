@@ -268,10 +268,25 @@ grep -r "from 'next" src/domain/ && echo "FAIL: Next.js found" || echo "PASS"
 grep -rn ": any\|as any" src/ && echo "WARNING: any found" || echo "PASS"
 ```
 
+### Communication
+
+Boss1 への報告は `agent-send.sh` を使用:
+
+```bash
+# 完了報告
+./scripts/agent-send.sh boss1 "[DONE] Quality 品質レビュー完了。結果: PASS/FAIL"
+
+# 問題発生時
+./scripts/agent-send.sh boss1 "[BLOCKED] Quality: 〇〇の問題が発生。支援が必要です。"
+
+# Critical Issue 発見時
+./scripts/agent-send.sh boss1 "[CRITICAL] Quality: ドメイン層に外部依存を発見。修正が必要です。"
+```
+
 ### Report Template
 
 ```
-[DONE] Worker7 品質レビュー完了
+[DONE] Quality 品質レビュー完了
 
 レビュー結果: PASS / FAIL
 

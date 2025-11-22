@@ -260,10 +260,22 @@ git commit -m "feat(domain): add progress BC and repository implementations"
 git push origin agent/001/backend3
 ```
 
+### Communication
+
+Boss1 への報告は `agent-send.sh` を使用:
+
+```bash
+# 完了報告
+./scripts/agent-send.sh boss1 "[DONE] Backend3 Progress BC + インフラ完了。PR: agent/001/backend3"
+
+# 問題発生時
+./scripts/agent-send.sh boss1 "[BLOCKED] Backend3: 〇〇の問題が発生。支援が必要です。"
+```
+
 ### Report Template
 
 ```
-[DONE] Worker3 Progress BC + インフラ完了
+[DONE] Backend3 Progress BC + インフラ完了
 
 作成ファイル:
 - src/domain/progress/models/Progress.ts, LessonProgress.ts

@@ -197,10 +197,22 @@ export class LessonUnlockSpecification {
 - [ ] git commit & push
 - [ ] Boss1 に完了報告
 
+### Communication
+
+Boss1 への報告は `agent-send.sh` を使用:
+
+```bash
+# 完了報告
+./scripts/agent-send.sh boss1 "[DONE] Backend2 Content BC完了。PR: agent/001/backend2"
+
+# 問題発生時
+./scripts/agent-send.sh boss1 "[BLOCKED] Backend2: 〇〇の問題が発生。支援が必要です。"
+```
+
 ### Report Template
 
 ```
-[DONE] Worker2 Content BC完了
+[DONE] Backend2 Content BC完了
 
 作成ファイル:
 - src/domain/content/models/Lesson.ts, Chapter.ts, Course.ts
