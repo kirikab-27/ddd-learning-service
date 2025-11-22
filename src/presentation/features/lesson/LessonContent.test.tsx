@@ -5,6 +5,7 @@ import { LessonContent } from './LessonContent';
 describe('LessonContent', () => {
   const defaultProps = {
     lesson: {
+      id: 'lesson-1',
       title: 'Introduction to DDD',
       content: '# DDD\n\nDomain-Driven Design is a software design approach.',
       order: 1,
