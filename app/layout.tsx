@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import '@/presentation/styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'DDD Learning Service',
