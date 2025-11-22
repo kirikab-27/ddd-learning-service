@@ -3,8 +3,8 @@
 # tmux 上のエージェントペインにメッセージを送るヘルパー
 #
 # 使い方:
-#   ./agent-send.sh boss1   "チケット201をお願いします"
-#   ./agent-send.sh worker1 "Next.js セットアップの続きです"
+#   ./agent-send.sh boss1    "チケット001をお願いします"
+#   ./agent-send.sh backend1 "共有カーネルの実装を開始してください"
 #
 # セッション名:
 #   setup_ddd.sh <TICKET_ID> により `agents-<TICKET_ID>` が作成される想定です。
@@ -19,7 +19,8 @@ mkdir -p "$LOG_DIR"
 
 usage() {
   echo "Usage: $0 <agent-name> \"message...\"" >&2
-  echo "例:   $0 boss1 \"新しいチケット201をお願いします\"" >&2
+  echo "例:   $0 boss1 \"新しいチケット001をお願いします\"" >&2
+  echo "      $0 backend1 \"共有カーネルの実装を開始してください\"" >&2
   exit 1
 }
 
@@ -46,11 +47,21 @@ fi
 # エージェント名 → ペイン番号マッピング
 # setup_ddd.sh の構成:
 #   Window 0: president   (pane 0)
-#   Window 1: boss1, worker1, worker2, worker3  (pane 0..3)
-#   Window 2: worker4, worker5, worker6, worker7 (pane 0..3)
+#   Window 1: boss, backend1, backend2, backend3  (pane 0..3)
+#   Window 2: frontend1, frontend2, frontend3, quality (pane 0..3)
 declare -A AGENT_MAP=(
+  # Primary names
   [president]="0.0"
   [boss1]="1.0"
+  [backend1]="1.1"
+  [backend2]="1.2"
+  [backend3]="1.3"
+  [frontend1]="2.0"
+  [frontend2]="2.1"
+  [frontend3]="2.2"
+  [quality]="2.3"
+  # Aliases for backward compatibility
+  [boss]="1.0"
   [worker1]="1.1"
   [worker2]="1.2"
   [worker3]="1.3"
@@ -64,7 +75,8 @@ TARGET_PANE="${AGENT_MAP[$AGENT_NAME]:-}"
 
 if [ -z "$TARGET_PANE" ]; then
   echo "ERROR: unknown agent-name: ${AGENT_NAME}" >&2
-  echo "利用可能: president, boss1, worker1, worker2, worker3, worker4, worker5, worker6, worker7" >&2
+  echo "利用可能: president, boss1, backend1, backend2, backend3, frontend1, frontend2, frontend3, quality" >&2
+  echo "エイリアス: boss, worker1-7" >&2
   exit 1
 fi
 

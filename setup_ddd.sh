@@ -60,11 +60,15 @@ PRESIDENT_BRANCH="agent/${TICKET_ID}/${PRESIDENT_ROLE}"
 PRESIDENT_WT="${WT_ROOT}/${TICKET_ID}-${PRESIDENT_ROLE}"
 
 log_info "  - president worktree: ${PRESIDENT_WT} (branch: ${PRESIDENT_BRANCH})"
-git worktree add -B "$PRESIDENT_BRANCH" "$PRESIDENT_WT" "$BASE_REF" >/dev/null 2>&1 || {
-  echo "ERROR: git worktree add に失敗しました: branch=${PRESIDENT_BRANCH}, path=${PRESIDENT_WT}" >&2
-  echo "必要なら git worktree list / git worktree remove で既存を掃除してください。" >&2
-  exit 1
-}
+if [ -d "$PRESIDENT_WT" ]; then
+  log_info "    (既存のworktreeを再利用)"
+else
+  git worktree add -B "$PRESIDENT_BRANCH" "$PRESIDENT_WT" "$BASE_REF" >/dev/null 2>&1 || {
+    echo "ERROR: git worktree add に失敗しました: branch=${PRESIDENT_BRANCH}, path=${PRESIDENT_WT}" >&2
+    echo "必要なら git worktree list / git worktree remove で既存を掃除してください。" >&2
+    exit 1
+  }
+fi
 
 # 他のエージェント用 worktree
 BRANCHES=()
@@ -78,11 +82,15 @@ for i in $(seq 0 $((NUM_ROLES - 1))); do
   WORKTREES+=("$wt")
 
   log_info "  - worktree: ${wt} (branch: ${branch})"
-  git worktree add -B "$branch" "$wt" "$BASE_REF" >/dev/null 2>&1 || {
-    echo "ERROR: git worktree add に失敗しました: branch=${branch}, path=${wt}" >&2
-    echo "必要なら git worktree list / git worktree remove で既存を掃除してください。" >&2
-    exit 1
-  }
+  if [ -d "$wt" ]; then
+    log_info "    (既存のworktreeを再利用)"
+  else
+    git worktree add -B "$branch" "$wt" "$BASE_REF" >/dev/null 2>&1 || {
+      echo "ERROR: git worktree add に失敗しました: branch=${branch}, path=${wt}" >&2
+      echo "必要なら git worktree list / git worktree remove で既存を掃除してください。" >&2
+      exit 1
+    }
+  fi
 done
 
 log_success "✅ worktree 準備完了"
