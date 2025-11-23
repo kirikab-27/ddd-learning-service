@@ -542,6 +542,128 @@ const lesson3_3Questions: Question[] = [
 ];
 
 // =============================================================================
+// Chapter 4: コンテキストマップ
+// =============================================================================
+
+// Lesson 4-1: コンテキストマップとは（5問）
+const lesson4_1Questions: Question[] = [
+  Question.create({
+    id: 'q4-1-1',
+    text: 'コンテキストマップとは何ですか？',
+    options: [
+      { id: 'a', text: 'データベースのER図', isCorrect: false },
+      { id: 'b', text: '境界づけられたコンテキスト間の関係を可視化した図', isCorrect: true },
+      { id: 'c', text: 'クラスの継承関係図', isCorrect: false },
+      { id: 'd', text: 'ネットワーク構成図', isCorrect: false },
+    ],
+    explanation: 'コンテキストマップは、システム内の全ての境界づけられたコンテキストとその関係を俯瞰的に可視化した図です。',
+  }),
+  Question.create({
+    id: 'q4-1-2',
+    text: 'コンテキストマップを作成する主な目的として適切でないものは？',
+    options: [
+      { id: 'a', text: 'システムの全体像を把握する', isCorrect: false },
+      { id: 'b', text: '統合ポイントを明確にする', isCorrect: false },
+      { id: 'c', text: 'データベースのパフォーマンスを最適化する', isCorrect: true },
+      { id: 'd', text: 'チーム間の関係を可視化する', isCorrect: false },
+    ],
+    explanation: 'コンテキストマップの目的は全体像の把握、統合ポイントの明確化、チーム関係の可視化です。データベースパフォーマンス最適化は目的ではありません。',
+  }),
+  Question.create({
+    id: 'q4-1-3',
+    text: 'コンテキストマップで表現される「上流/下流」の関係について正しいのは？',
+    options: [
+      { id: 'a', text: '上流はデータを受け取る側', isCorrect: false },
+      { id: 'b', text: '上流は影響を与える側、下流は影響を受ける側', isCorrect: true },
+      { id: 'c', text: '上流と下流は相互に影響し合う', isCorrect: false },
+      { id: 'd', text: '物理的なサーバーの配置を表す', isCorrect: false },
+    ],
+    explanation: 'コンテキストマップでの上流/下流は依存の方向を示し、上流の変更は下流に影響しますが、逆は成り立ちません。',
+  }),
+  Question.create({
+    id: 'q4-1-4',
+    text: 'コンテキストマップに含めるべき情報として適切でないものは？',
+    options: [
+      { id: 'a', text: '境界づけられたコンテキスト', isCorrect: false },
+      { id: 'b', text: 'コンテキスト間の統合パターン', isCorrect: false },
+      { id: 'c', text: '各クラスのメソッド一覧', isCorrect: true },
+      { id: 'd', text: 'チームの責任範囲', isCorrect: false },
+    ],
+    explanation: 'コンテキストマップはコンテキスト、統合パターン、チーム責任範囲を表現しますが、クラスの詳細は含めません。',
+  }),
+  Question.create({
+    id: 'q4-1-5',
+    text: 'コンテキストマップの作成タイミングとして最も適切なのは？',
+    options: [
+      { id: 'a', text: 'コーディングが完了した後', isCorrect: false },
+      { id: 'b', text: 'プロジェクト初期から作成し、継続的に更新する', isCorrect: true },
+      { id: 'c', text: 'リリース直前に一度だけ作成する', isCorrect: false },
+      { id: 'd', text: 'テスト工程で作成する', isCorrect: false },
+    ],
+    explanation: 'コンテキストマップはプロジェクト初期に現状を把握するために作成し、システムの進化に合わせて継続的に更新します。',
+  }),
+];
+
+// Lesson 4-2: 統合パターン（5問）
+const lesson4_2Questions: Question[] = [
+  Question.create({
+    id: 'q4-2-1',
+    text: 'パートナーシップ（Partnership）パターンの特徴は？',
+    options: [
+      { id: 'a', text: '一方が他方に従う関係', isCorrect: false },
+      { id: 'b', text: '2つのチームが対等な関係で協力し、相互に調整する', isCorrect: true },
+      { id: 'c', text: '外部システムとの連携に使用する', isCorrect: false },
+      { id: 'd', text: '翻訳層を設けて通信する', isCorrect: false },
+    ],
+    explanation: 'パートナーシップは2つのチームが対等な立場で協力し、インターフェースの変更を相互に調整するパターンです。',
+  }),
+  Question.create({
+    id: 'q4-2-2',
+    text: '共有カーネル（Shared Kernel）を使用する際の注意点は？',
+    options: [
+      { id: 'a', text: 'できるだけ多くの概念を共有する', isCorrect: false },
+      { id: 'b', text: '共有部分は最小限に保ち、変更には関係者全員の合意が必要', isCorrect: true },
+      { id: 'c', text: '一方のチームだけが変更できる', isCorrect: false },
+      { id: 'd', text: '外部ライブラリとして公開する', isCorrect: false },
+    ],
+    explanation: '共有カーネルは便利ですが、変更時に全チームへの影響があるため、共有部分は最小限に保つべきです。',
+  }),
+  Question.create({
+    id: 'q4-2-3',
+    text: '腐敗防止層（Anti-Corruption Layer）を使用すべき場面は？',
+    options: [
+      { id: 'a', text: '新規システムの開発時', isCorrect: false },
+      { id: 'b', text: 'レガシーシステムや外部システムとの連携時', isCorrect: true },
+      { id: 'c', text: 'チーム内のコミュニケーション改善', isCorrect: false },
+      { id: 'd', text: 'データベース設計時', isCorrect: false },
+    ],
+    explanation: 'ACLは、レガシーシステムや外部システムの不適切なモデルが自分のモデルに「腐敗」として入り込むのを防ぐために使います。',
+  }),
+  Question.create({
+    id: 'q4-2-4',
+    text: '公開ホストサービス（Open Host Service）と公開言語（Published Language）の関係は？',
+    options: [
+      { id: 'a', text: '全く別の概念で関連がない', isCorrect: false },
+      { id: 'b', text: 'OHSがAPIを提供し、PLがそのデータ形式を定義する', isCorrect: true },
+      { id: 'c', text: 'PLがOHSの代替手段である', isCorrect: false },
+      { id: 'd', text: 'OHSは下流、PLは上流のパターン', isCorrect: false },
+    ],
+    explanation: 'OHSは明確なAPIを提供し、PLはそのAPIで使用される標準化されたデータ形式（JSON Schema、Protocol Buffersなど）を定義します。',
+  }),
+  Question.create({
+    id: 'q4-2-5',
+    text: '順応者（Conformist）パターンを選択する状況として適切なのは？',
+    options: [
+      { id: 'a', text: '上流チームが協力的で変更に応じてくれる場合', isCorrect: false },
+      { id: 'b', text: '上流のモデルに従うことが合理的で、翻訳コストが高い場合', isCorrect: true },
+      { id: 'c', text: '自チームのモデルを最優先したい場合', isCorrect: false },
+      { id: 'd', text: '外部システムと連携する場合', isCorrect: false },
+    ],
+    explanation: '順応者は、上流のモデルが十分に良く、独自モデルの構築や翻訳層のコストが見合わない場合に選択します。',
+  }),
+];
+
+// =============================================================================
 // Chapter 5: 値オブジェクト
 // =============================================================================
 
@@ -670,6 +792,21 @@ export const sampleQuizzes: Quiz[] = [
     title: 'コンテキスト間の関係 - 理解度チェック',
     description: 'コンテキスト間の関係と統合パターンについての理解度を確認するクイズです。',
     questions: lesson3_3Questions,
+  }),
+  // Chapter 4: コンテキストマップ
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-4-1'),
+    lessonId: LessonId.create('lesson-4-1'),
+    title: 'コンテキストマップとは - 理解度チェック',
+    description: 'コンテキストマップの定義と目的についての理解度を確認するクイズです。',
+    questions: lesson4_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-4-2'),
+    lessonId: LessonId.create('lesson-4-2'),
+    title: '統合パターン - 理解度チェック',
+    description: 'コンテキスト間の統合パターンについての理解度を確認するクイズです。',
+    questions: lesson4_2Questions,
   }),
   // Chapter 5: 値オブジェクト
   Quiz.create({

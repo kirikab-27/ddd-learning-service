@@ -1168,3 +1168,350 @@ class OrderController {
 });
 
 export const chapter3Lessons = [lesson3_1, lesson3_2, lesson3_3];
+
+// =============================================================================
+// Chapter 4: コンテキストマップ
+// =============================================================================
+
+// Lesson 4-1: コンテキストマップとは
+export const lesson4_1 = Lesson.create({
+  id: LessonId.create('lesson-4-1'),
+  title: LessonTitle.create('コンテキストマップとは'),
+  content: MarkdownContent.create(`
+# コンテキストマップとは
+
+## 概要
+
+このレッスンでは、システム全体のコンテキスト間の関係を可視化する「コンテキストマップ」について学びます。
+コンテキストマップの目的、読み方、作成方法を理解しましょう。
+
+## コンテキストマップの定義
+
+**コンテキストマップ**は、システム内のすべての境界づけられたコンテキストとその関係を
+図示した戦略的な設計ツールです。
+
+\`\`\`
+┌─────────────────────────────────────────────────────────┐
+│                  コンテキストマップ                      │
+│                                                         │
+│  ┌─────────┐      ┌─────────┐      ┌─────────┐        │
+│  │カタログ │ ───→ │  注文   │ ───→ │  配送   │        │
+│  │         │  API │         │ イベント│         │        │
+│  └─────────┘      └────┬────┘      └─────────┘        │
+│                        │                               │
+│                   ┌────▼────┐                          │
+│                   │  決済   │ ←── 外部決済             │
+│                   │         │  ACL                     │
+│                   └─────────┘                          │
+└─────────────────────────────────────────────────────────┘
+\`\`\`
+
+## コンテキストマップの目的
+
+### 1. 全体像の把握
+
+システム全体を俯瞰し、どのコンテキストが存在するかを理解します：
+
+- コンテキストの一覧
+- 依存関係の方向
+- 統合ポイント
+
+### 2. コミュニケーションの基盤
+
+チーム間で共通の理解を持つためのドキュメントとして機能します：
+
+\`\`\`
+「注文コンテキストと決済コンテキストの関係は？」
+  → コンテキストマップを見れば一目で分かる
+\`\`\`
+
+### 3. 設計判断の記録
+
+なぜその統合パターンを選んだかの記録になります：
+
+| コンテキスト間 | パターン | 理由 |
+|--------------|---------|------|
+| 注文 → 配送 | イベント | 疎結合を維持 |
+| 決済 ← 外部 | ACL | 外部仕様の影響を遮断 |
+
+## コンテキストマップの読み方
+
+### 関係の方向
+
+\`\`\`
+上流（Upstream）    →    下流（Downstream）
+┌──────────┐             ┌──────────┐
+│ 提供する │  ────────→  │ 利用する │
+│ コンテキスト │             │ コンテキスト │
+└──────────┘             └──────────┘
+
+U: Upstream（上流）
+D: Downstream（下流）
+\`\`\`
+
+### 統合パターンの記号
+
+\`\`\`
+OHS: Open Host Service（公開ホストサービス）
+ACL: Anti-Corruption Layer（腐敗防止層）
+SK: Shared Kernel（共有カーネル）
+CF: Conformist（順応者）
+PL: Published Language（公開言語）
+\`\`\`
+
+## コンテキストマップの作成方法
+
+### Step 1: コンテキストの洗い出し
+
+\`\`\`
+ECシステムのコンテキスト:
+□ カタログ管理
+□ 在庫管理
+□ 注文処理
+□ 決済処理
+□ 配送管理
+□ 顧客管理
+\`\`\`
+
+### Step 2: 関係の特定
+
+各コンテキスト間でデータや機能のやり取りがあるかを確認：
+
+\`\`\`
+カタログ → 注文: 商品情報を参照
+注文 → 在庫: 在庫を引き当て
+注文 → 決済: 支払いを処理
+注文 → 配送: 出荷を依頼
+\`\`\`
+
+### Step 3: 統合パターンの決定
+
+各関係に適切なパターンを選択：
+
+\`\`\`
+カタログ ──[OHS]──→ 注文
+注文 ──[イベント]──→ 在庫
+注文 ──[ACL]──→ 外部決済
+\`\`\`
+
+### Step 4: 図の作成
+
+チーム全員が理解できる形で図示します。
+
+## まとめ
+
+- **コンテキストマップ**はシステム全体のコンテキスト関係を可視化した図
+- **全体像の把握**、**コミュニケーション基盤**、**設計判断の記録**として機能
+- **上流/下流**の関係と**統合パターン**を図に記載する
+- コンテキストの洗い出し → 関係特定 → パターン決定 → 図作成の手順で作成
+`),
+  order: 1,
+});
+
+// Lesson 4-2: 統合パターン
+export const lesson4_2 = Lesson.create({
+  id: LessonId.create('lesson-4-2'),
+  title: LessonTitle.create('統合パターン'),
+  content: MarkdownContent.create(`
+# 統合パターン
+
+## 概要
+
+このレッスンでは、コンテキスト間の統合に使用する主要なパターンについて詳しく学びます。
+各パターンの特徴、使い分け、実装方法を理解しましょう。
+
+## パートナーシップ（Partnership）
+
+2つのチームが対等な関係で協力するパターンです。
+
+\`\`\`
+┌─────────────┐    協力    ┌─────────────┐
+│ コンテキストA │◀────────▶│ コンテキストB │
+│  チームA     │    調整    │  チームB     │
+└─────────────┘           └─────────────┘
+\`\`\`
+
+**特徴:**
+- 対等な関係
+- 変更時は相互に調整
+- 密なコミュニケーションが必要
+
+**適用場面:** 同じ組織内の密接に連携するチーム
+
+## 共有カーネル（Shared Kernel）
+
+2つのコンテキストが共通のモデルを共有します。
+
+\`\`\`typescript
+// shared-kernel パッケージ
+export class Money {
+  constructor(
+    private readonly amount: number,
+    private readonly currency: Currency
+  ) {}
+
+  add(other: Money): Money {
+    if (!this.currency.equals(other.currency)) {
+      throw new CurrencyMismatchError();
+    }
+    return new Money(this.amount + other.amount, this.currency);
+  }
+}
+
+// 注文コンテキストで使用
+import { Money } from '@shared-kernel';
+
+// 決済コンテキストでも使用
+import { Money } from '@shared-kernel';
+\`\`\`
+
+**注意:** 変更には両チームの合意が必要。共有範囲は最小限に。
+
+## 顧客/供給者（Customer/Supplier）
+
+下流（顧客）のニーズに上流（供給者）が応える関係です。
+
+\`\`\`
+上流（Supplier）          下流（Customer）
+┌─────────────┐          ┌─────────────┐
+│  注文       │ ───────→ │  配送       │
+│  サービス   │   要件    │  サービス   │
+└─────────────┘   提示    └─────────────┘
+                ←───────
+                 対応
+\`\`\`
+
+**特徴:**
+- 下流が要件を提示
+- 上流が対応する責任を持つ
+- 計画的な変更管理
+
+## 順応者（Conformist）
+
+下流が上流のモデルにそのまま従うパターンです。
+
+\`\`\`typescript
+// 上流（外部API）のモデルをそのまま使用
+interface ExternalProductDTO {
+  product_id: string;
+  product_name: string;
+  unit_price: number;
+}
+
+// 下流はそのまま使用（変換なし）
+class ProductService {
+  async getProduct(id: string): Promise<ExternalProductDTO> {
+    return await this.externalApi.fetchProduct(id);
+  }
+}
+\`\`\`
+
+**適用場面:** 外部APIの変更を期待できない場合
+
+## 腐敗防止層（Anti-Corruption Layer）
+
+外部モデルから自分のモデルを守る翻訳層を設けます。
+
+\`\`\`typescript
+// 腐敗防止層
+class ProductTranslator {
+  translateFromExternal(dto: ExternalProductDTO): Product {
+    return Product.create({
+      id: ProductId.create(dto.product_id),
+      name: ProductName.create(dto.product_name),
+      price: Money.create(dto.unit_price, Currency.JPY),
+    });
+  }
+}
+
+// 使用側は自分のモデルのみ扱う
+class CatalogService {
+  constructor(
+    private readonly externalApi: ExternalApi,
+    private readonly translator: ProductTranslator
+  ) {}
+
+  async getProduct(id: ProductId): Promise<Product> {
+    const dto = await this.externalApi.fetchProduct(id.value);
+    return this.translator.translateFromExternal(dto);
+  }
+}
+\`\`\`
+
+**適用場面:** レガシーシステム統合、外部API連携
+
+## 公開ホストサービス（Open Host Service）
+
+明確なAPIを公開して複数の消費者にサービスを提供します。
+
+\`\`\`typescript
+// REST APIとして公開
+@Controller('/api/v1/orders')
+class OrderController {
+  @Get('/:id')
+  async getOrder(@Param('id') id: string): Promise<OrderResponse> {
+    const order = await this.orderService.findById(id);
+    return OrderResponse.fromDomain(order);
+  }
+
+  @Post('/')
+  async createOrder(@Body() request: CreateOrderRequest): Promise<OrderResponse> {
+    const order = await this.orderService.create(request.toCommand());
+    return OrderResponse.fromDomain(order);
+  }
+}
+\`\`\`
+
+**特徴:**
+- バージョン管理（v1, v2...）
+- ドキュメント化（OpenAPI/Swagger）
+- 公開言語（Published Language）と組み合わせることが多い
+
+## パターン選択の指針
+
+| 状況 | 推奨パターン |
+|------|------------|
+| 密接に連携するチーム | パートナーシップ、共有カーネル |
+| 下流のニーズに応える | 顧客/供給者 |
+| 外部APIの変更不可 | 順応者 |
+| レガシー/外部システム | 腐敗防止層 |
+| 複数消費者へのサービス | 公開ホストサービス |
+| チーム間の独立性重視 | 腐敗防止層 + 公開ホストサービス |
+
+## 実装例：ECシステム
+
+\`\`\`
+┌───────────────────────────────────────────────────┐
+│                   ECシステム                       │
+│                                                   │
+│  ┌─────────┐                    ┌─────────┐      │
+│  │カタログ │───[OHS/PL]──────→ │  注文   │      │
+│  │         │    REST API       │         │      │
+│  └─────────┘                    └────┬────┘      │
+│                                      │           │
+│            ┌─────────────────────────┼───┐       │
+│            │                         │   │       │
+│            ▼                         ▼   ▼       │
+│  ┌─────────────┐          ┌─────────┐ ┌───────┐ │
+│  │    在庫     │          │  決済   │ │ 配送  │ │
+│  │             │          │  [ACL]  │ │       │ │
+│  └─────────────┘          └────┬────┘ └───────┘ │
+│                                │                 │
+│                           外部決済API            │
+└───────────────────────────────────────────────────┘
+\`\`\`
+
+## まとめ
+
+- **パートナーシップ**: 対等な協力関係
+- **共有カーネル**: 共通モデルの共有（最小限に）
+- **顧客/供給者**: 下流のニーズに上流が応える
+- **順応者**: 上流のモデルにそのまま従う
+- **腐敗防止層**: 翻訳層で自分のモデルを守る
+- **公開ホストサービス**: 明確なAPIを公開
+- パターンは**状況に応じて選択**し、**組み合わせ**て使うことも多い
+`),
+  order: 2,
+});
+
+export const chapter4Lessons = [lesson4_1, lesson4_2];
