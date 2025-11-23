@@ -43,10 +43,10 @@ describe('Lesson Flow Integration', () => {
     const result = await useCase.execute({
       courseId: 'ddd-practice',
       chapterId: 'chapter-1',
-      lessonId: 'lesson-1',
+      lessonId: 'lesson-1-1',
     });
 
-    expect(result.lesson.title).toBe('DDDとは何か');
+    expect(result.lesson.title).toBe('なぜDDDが必要なのか');
     expect(result.isUnlocked).toBe(true);
   });
 
@@ -56,7 +56,7 @@ describe('Lesson Flow Integration', () => {
     const result = await useCase.execute({
       courseId: 'ddd-practice',
       chapterId: 'chapter-1',
-      lessonId: 'lesson-2',
+      lessonId: 'lesson-1-2',
     });
 
     expect(result.isUnlocked).toBe(false);
@@ -66,7 +66,7 @@ describe('Lesson Flow Integration', () => {
     // Set up progress with first lesson completed
     const courseId = CourseId.create('ddd-practice');
     const progress = Progress.create(courseId).markLessonAsCompleted(
-      LessonId.create('lesson-1')
+      LessonId.create('lesson-1-1')
     );
     await progressRepo.save(progress);
 
@@ -75,7 +75,7 @@ describe('Lesson Flow Integration', () => {
     const result = await useCase.execute({
       courseId: 'ddd-practice',
       chapterId: 'chapter-1',
-      lessonId: 'lesson-2',
+      lessonId: 'lesson-1-2',
     });
 
     expect(result.isUnlocked).toBe(true);
@@ -86,7 +86,7 @@ describe('Lesson Flow Integration', () => {
 
     const result = await navUseCase.execute({
       courseId: 'ddd-practice',
-      currentLessonId: 'lesson-1',
+      currentLessonId: 'lesson-1-1',
     });
 
     expect(result.chapters.length).toBeGreaterThan(0);
@@ -98,21 +98,21 @@ describe('Lesson Flow Integration', () => {
   });
 
   it('should calculate completion rate correctly', async () => {
-    // Complete 2 out of 4 lessons (50%)
+    // Complete 2 out of 12 lessons (17%)
     const courseId = CourseId.create('ddd-practice');
     const progress = Progress.create(courseId)
-      .markLessonAsCompleted(LessonId.create('lesson-1'))
-      .markLessonAsCompleted(LessonId.create('lesson-2'));
+      .markLessonAsCompleted(LessonId.create('lesson-1-1'))
+      .markLessonAsCompleted(LessonId.create('lesson-1-2'));
     await progressRepo.save(progress);
 
     const navUseCase = new GetCourseNavigationUseCase(courseRepo, progressRepo);
 
     const result = await navUseCase.execute({
       courseId: 'ddd-practice',
-      currentLessonId: 'lesson-3',
+      currentLessonId: 'lesson-1-3',
     });
 
-    expect(result.completionRate).toBe(50);
+    expect(result.completionRate).toBe(17);
   });
 
   it('should provide correct navigation links', async () => {
@@ -121,12 +121,12 @@ describe('Lesson Flow Integration', () => {
     const result = await useCase.execute({
       courseId: 'ddd-practice',
       chapterId: 'chapter-1',
-      lessonId: 'lesson-2',
+      lessonId: 'lesson-1-2',
     });
 
     expect(result.navigation.previous).not.toBeNull();
-    expect(result.navigation.previous?.lessonId).toBe('lesson-1');
+    expect(result.navigation.previous?.lessonId).toBe('lesson-1-1');
     expect(result.navigation.next).not.toBeNull();
-    expect(result.navigation.next?.lessonId).toBe('lesson-3');
+    expect(result.navigation.next?.lessonId).toBe('lesson-1-3');
   });
 });
