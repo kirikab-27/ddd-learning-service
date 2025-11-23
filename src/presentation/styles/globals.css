@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @import './variables.css';
 
@@ -20,7 +18,9 @@
   }
 
   body {
-    @apply bg-slate-900 text-slate-50 min-h-screen;
+    background-color: #0f172a;
+    color: #f8fafc;
+    min-height: 100vh;
   }
 
   a {
