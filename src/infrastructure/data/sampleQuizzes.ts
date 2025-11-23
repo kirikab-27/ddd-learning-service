@@ -361,6 +361,187 @@ const lesson2_3Questions: Question[] = [
 ];
 
 // =============================================================================
+// Chapter 3: 境界づけられたコンテキスト
+// =============================================================================
+
+// Lesson 3-1: コンテキストとは何か（5問）
+const lesson3_1Questions: Question[] = [
+  Question.create({
+    id: 'q3-1-1',
+    text: '境界づけられたコンテキストとは何ですか？',
+    options: [
+      { id: 'a', text: 'プログラミング言語の境界', isCorrect: false },
+      { id: 'b', text: 'モデルとユビキタス言語が一貫して適用される範囲', isCorrect: true },
+      { id: 'c', text: 'データベースのスキーマ', isCorrect: false },
+      { id: 'd', text: 'ネットワークの境界', isCorrect: false },
+    ],
+    explanation: '境界づけられたコンテキストは、特定のモデルとユビキタス言語が一貫して適用される明確な境界を持つ領域です。',
+  }),
+  Question.create({
+    id: 'q3-1-2',
+    text: '境界が必要な理由として適切でないものは？',
+    options: [
+      { id: 'a', text: '言語の衝突を防ぐため', isCorrect: false },
+      { id: 'b', text: '複雑さを分離するため', isCorrect: false },
+      { id: 'c', text: 'コードの行数を減らすため', isCorrect: true },
+      { id: 'd', text: 'チームの自律性を確保するため', isCorrect: false },
+    ],
+    explanation: '境界は言語の衝突防止、複雑さの分離、チームの自律性確保のために必要です。コード行数の削減は目的ではありません。',
+  }),
+  Question.create({
+    id: 'q3-1-3',
+    text: 'ECサイトで「商品」が異なる意味を持つコンテキストの例として正しいのは？',
+    options: [
+      { id: 'a', text: 'カタログ：名前・説明、在庫：SKU・在庫数', isCorrect: true },
+      { id: 'b', text: 'すべてのコンテキストで同じ意味', isCorrect: false },
+      { id: 'c', text: '商品という概念は1つのコンテキストにのみ存在する', isCorrect: false },
+      { id: 'd', text: 'コンテキストごとに異なる商品を扱う', isCorrect: false },
+    ],
+    explanation: '同じ「商品」でも、カタログでは名前・説明・画像、在庫ではSKU・在庫数・倉庫位置など、コンテキストによって異なる属性が重要になります。',
+  }),
+  Question.create({
+    id: 'q3-1-4',
+    text: '境界がない場合に起きる問題は？',
+    options: [
+      { id: 'a', text: 'クラスが肥大化し責務が不明確になる', isCorrect: true },
+      { id: 'b', text: 'コンパイル時間が短くなる', isCorrect: false },
+      { id: 'c', text: 'テストが書きやすくなる', isCorrect: false },
+      { id: 'd', text: 'チーム間の連携が不要になる', isCorrect: false },
+    ],
+    explanation: '境界がないとクラスが肥大化し、責務が不明確になり、変更が困難になります。',
+  }),
+  Question.create({
+    id: 'q3-1-5',
+    text: 'コンテキスト内でのユビキタス言語について正しいのは？',
+    options: [
+      { id: 'a', text: 'コンテキストごとに異なる言語を使う', isCorrect: false },
+      { id: 'b', text: '同じ言葉は常に同じ意味を持つ', isCorrect: true },
+      { id: 'c', text: '技術用語のみを使用する', isCorrect: false },
+      { id: 'd', text: '英語で統一する', isCorrect: false },
+    ],
+    explanation: 'コンテキスト内では、ユビキタス言語により同じ言葉は常に同じ意味で使われます。',
+  }),
+];
+
+// Lesson 3-2: コンテキストの見つけ方（5問）
+const lesson3_2Questions: Question[] = [
+  Question.create({
+    id: 'q3-2-1',
+    text: 'コンテキストを見つけるための分析パターンとして適切でないものは？',
+    options: [
+      { id: 'a', text: '言語の違いに注目する', isCorrect: false },
+      { id: 'b', text: 'ビジネスプロセスの境界を探す', isCorrect: false },
+      { id: 'c', text: 'データベースのテーブル数で決める', isCorrect: true },
+      { id: 'd', text: 'チーム構造との関連を見る', isCorrect: false },
+    ],
+    explanation: 'コンテキストは言語の違い、ビジネスプロセスの境界、チーム構造から見つけます。データベースのテーブル数は基準になりません。',
+  }),
+  Question.create({
+    id: 'q3-2-2',
+    text: 'コンウェイの法則とは何ですか？',
+    options: [
+      { id: 'a', text: 'コードの品質は時間とともに低下する法則', isCorrect: false },
+      { id: 'b', text: '組織構造がシステム構造に影響を与える法則', isCorrect: true },
+      { id: 'c', text: 'バグの数はコード行数に比例する法則', isCorrect: false },
+      { id: 'd', text: 'テストカバレッジに関する法則', isCorrect: false },
+    ],
+    explanation: 'コンウェイの法則は、組織のコミュニケーション構造がシステムの設計に反映されることを示しています。',
+  }),
+  Question.create({
+    id: 'q3-2-3',
+    text: 'コンテキストの境界の適切なサイズは？',
+    options: [
+      { id: 'a', text: 'できるだけ大きくする', isCorrect: false },
+      { id: 'b', text: 'できるだけ小さくする', isCorrect: false },
+      { id: 'c', text: '独立して開発・デプロイ可能な単位', isCorrect: true },
+      { id: 'd', text: 'データベーステーブルごと', isCorrect: false },
+    ],
+    explanation: 'コンテキストは大きすぎず小さすぎず、独立して開発・デプロイ可能な単位が適切です。',
+  }),
+  Question.create({
+    id: 'q3-2-4',
+    text: '境界を決める際に考慮すべきことは？',
+    options: [
+      { id: 'a', text: 'プログラミング言語の種類', isCorrect: false },
+      { id: 'b', text: '変更の頻度とチームの責任範囲', isCorrect: true },
+      { id: 'c', text: 'サーバーの台数', isCorrect: false },
+      { id: 'd', text: 'ファイルの拡張子', isCorrect: false },
+    ],
+    explanation: '頻繁に一緒に変更されるものは同じコンテキストに、チームが責任を持てる範囲で境界を決めます。',
+  }),
+  Question.create({
+    id: 'q3-2-5',
+    text: 'イベントストーミングでコンテキストを見つける手順として正しいのは？',
+    options: [
+      { id: 'a', text: 'クラス図を描く → テーブル設計 → API設計', isCorrect: false },
+      { id: 'b', text: 'ドメインイベント → コマンド/アクター → 集約 → 境界', isCorrect: true },
+      { id: 'c', text: 'UI設計 → DB設計 → バックエンド実装', isCorrect: false },
+      { id: 'd', text: 'テスト作成 → 実装 → リファクタリング', isCorrect: false },
+    ],
+    explanation: 'イベントストーミングでは、まずドメインイベントを洗い出し、コマンドとアクターを追加し、集約を特定してから境界を引きます。',
+  }),
+];
+
+// Lesson 3-3: コンテキスト間の関係（5問）
+const lesson3_3Questions: Question[] = [
+  Question.create({
+    id: 'q3-3-1',
+    text: '上流/下流の関係について正しいのは？',
+    options: [
+      { id: 'a', text: '下流の変更が上流に影響する', isCorrect: false },
+      { id: 'b', text: '上流の変更が下流に影響する', isCorrect: true },
+      { id: 'c', text: '相互に影響し合う', isCorrect: false },
+      { id: 'd', text: '影響関係はない', isCorrect: false },
+    ],
+    explanation: '上流コンテキストの変更は下流に影響しますが、下流の変更は上流に影響しません。',
+  }),
+  Question.create({
+    id: 'q3-3-2',
+    text: '共有カーネル（Shared Kernel）の使用場面として適切なのは？',
+    options: [
+      { id: 'a', text: '外部システムとの連携', isCorrect: false },
+      { id: 'b', text: '密接に連携するチーム間での共通概念の共有', isCorrect: true },
+      { id: 'c', text: 'レガシーシステムの置き換え', isCorrect: false },
+      { id: 'd', text: '独立性を重視する場合', isCorrect: false },
+    ],
+    explanation: '共有カーネルは、密接に連携するチーム間でMoneyやAddressなどの共通概念を共有する場合に使います。',
+  }),
+  Question.create({
+    id: 'q3-3-3',
+    text: '腐敗防止層（Anti-Corruption Layer）の目的は？',
+    options: [
+      { id: 'a', text: 'データベースのセキュリティ強化', isCorrect: false },
+      { id: 'b', text: '外部システムの影響から自分のモデルを守る', isCorrect: true },
+      { id: 'c', text: 'ネットワーク通信の暗号化', isCorrect: false },
+      { id: 'd', text: 'コードの圧縮', isCorrect: false },
+    ],
+    explanation: '腐敗防止層は、外部システムやレガシーシステムのモデルが自分のモデルに「腐敗」として入り込むのを防ぎます。',
+  }),
+  Question.create({
+    id: 'q3-3-4',
+    text: '公開ホストサービス（Open Host Service）はどのような場面で使いますか？',
+    options: [
+      { id: 'a', text: 'チーム内部での通信', isCorrect: false },
+      { id: 'b', text: '複数のコンテキストに同じサービスを提供する場合', isCorrect: true },
+      { id: 'c', text: 'データベースの共有', isCorrect: false },
+      { id: 'd', text: 'コードの共有', isCorrect: false },
+    ],
+    explanation: '公開ホストサービスは、明確なAPIを定義して複数の消費者コンテキストにサービスを提供する場合に使います。',
+  }),
+  Question.create({
+    id: 'q3-3-5',
+    text: 'コンテキストマップとは何ですか？',
+    options: [
+      { id: 'a', text: 'データベースのER図', isCorrect: false },
+      { id: 'b', text: 'コンテキスト間の関係を図示したもの', isCorrect: true },
+      { id: 'c', text: 'クラスの継承関係図', isCorrect: false },
+      { id: 'd', text: 'ネットワーク構成図', isCorrect: false },
+    ],
+    explanation: 'コンテキストマップは、システム内の全コンテキストとその関係（上流/下流、統合パターンなど）を可視化した図です。',
+  }),
+];
+
+// =============================================================================
 // Chapter 5: 値オブジェクト
 // =============================================================================
 
@@ -467,6 +648,28 @@ export const sampleQuizzes: Quiz[] = [
     title: 'コードに反映する - 理解度チェック',
     description: 'ユビキタス言語をコードに反映する方法についての理解度を確認するクイズです。',
     questions: lesson2_3Questions,
+  }),
+  // Chapter 3: 境界づけられたコンテキスト
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-3-1'),
+    lessonId: LessonId.create('lesson-3-1'),
+    title: 'コンテキストとは何か - 理解度チェック',
+    description: '境界づけられたコンテキストの定義と意味についての理解度を確認するクイズです。',
+    questions: lesson3_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-3-2'),
+    lessonId: LessonId.create('lesson-3-2'),
+    title: 'コンテキストの見つけ方 - 理解度チェック',
+    description: 'コンテキストの分析パターンと境界の決め方についての理解度を確認するクイズです。',
+    questions: lesson3_2Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-3-3'),
+    lessonId: LessonId.create('lesson-3-3'),
+    title: 'コンテキスト間の関係 - 理解度チェック',
+    description: 'コンテキスト間の関係と統合パターンについての理解度を確認するクイズです。',
+    questions: lesson3_3Questions,
   }),
   // Chapter 5: 値オブジェクト
   Quiz.create({
