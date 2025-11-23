@@ -1,15 +1,22 @@
 import { IQuizResultRepository } from '@/domain/shared/repositories/IQuizResultRepository';
 import { QuizResult } from '@/domain/progress/models/QuizResult';
+import { createAnswer } from '@/domain/progress/models/Answer';
 import { QuizId, CourseId } from '@/domain/shared';
 
 const STORAGE_KEY_PREFIX = 'ddd-learning-quiz-result-';
 
+interface StoredAnswer {
+  questionId: string;
+  selectedOptionId: string;
+  isCorrect: boolean;
+}
+
 interface StoredQuizResult {
+  id: string;
   quizId: string;
   courseId: string;
+  answers: StoredAnswer[];
   score: number;
-  totalQuestions: number;
-  correctAnswers: number;
   completedAt: string;
 }
 
@@ -54,11 +61,15 @@ export class LocalStorageQuizResultRepository implements IQuizResultRepository {
 
     // Add new result
     filteredResults.push({
+      id: result.id,
       quizId: result.quizId.toString(),
       courseId: result.courseId.toString(),
+      answers: result.answers.map(a => ({
+        questionId: a.questionId,
+        selectedOptionId: a.selectedOptionId,
+        isCorrect: a.isCorrect,
+      })),
       score: result.score,
-      totalQuestions: result.totalQuestions,
-      correctAnswers: result.correctAnswers,
       completedAt: result.completedAt.toISOString(),
     });
 
@@ -73,12 +84,16 @@ export class LocalStorageQuizResultRepository implements IQuizResultRepository {
       return null;
     }
 
-    return QuizResult.create({
+    return QuizResult.reconstruct({
+      id: stored.id,
       quizId: QuizId.create(stored.quizId),
       courseId: CourseId.create(stored.courseId),
+      answers: stored.answers.map(a => createAnswer(
+        a.questionId,
+        a.selectedOptionId,
+        a.isCorrect,
+      )),
       score: stored.score,
-      totalQuestions: stored.totalQuestions,
-      correctAnswers: stored.correctAnswers,
       completedAt: new Date(stored.completedAt),
     });
   }
@@ -87,12 +102,16 @@ export class LocalStorageQuizResultRepository implements IQuizResultRepository {
     const storedResults = this.getAllResults(courseId);
 
     return storedResults.map(stored =>
-      QuizResult.create({
+      QuizResult.reconstruct({
+        id: stored.id,
         quizId: QuizId.create(stored.quizId),
         courseId: CourseId.create(stored.courseId),
+        answers: stored.answers.map(a => createAnswer(
+          a.questionId,
+          a.selectedOptionId,
+          a.isCorrect,
+        )),
         score: stored.score,
-        totalQuestions: stored.totalQuestions,
-        correctAnswers: stored.correctAnswers,
         completedAt: new Date(stored.completedAt),
       })
     );

@@ -44,6 +44,27 @@ export class QuizResult {
     );
   }
 
+  /**
+   * Reconstruct a QuizResult from stored data (used by repositories)
+   */
+  static reconstruct(params: {
+    id: string;
+    quizId: QuizId;
+    courseId: CourseId;
+    answers: Answer[];
+    score: number;
+    completedAt: Date;
+  }): QuizResult {
+    return new QuizResult(
+      params.id,
+      params.quizId,
+      params.courseId,
+      [...params.answers],
+      params.score,
+      params.completedAt
+    );
+  }
+
   private static calculateScore(answers: Answer[]): number {
     if (answers.length === 0) {
       return 0;

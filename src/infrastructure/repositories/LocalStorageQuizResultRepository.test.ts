@@ -1,5 +1,6 @@
 import { LocalStorageQuizResultRepository } from './LocalStorageQuizResultRepository';
 import { QuizResult } from '@/domain/progress/models/QuizResult';
+import { createAnswer } from '@/domain/progress/models/Answer';
 import { QuizId, CourseId } from '@/domain/shared';
 
 // Mock localStorage for Node.js environment
@@ -35,6 +36,13 @@ describe('LocalStorageQuizResultRepository', () => {
   const courseId = CourseId.create('course-1');
   const quizId = QuizId.create('quiz-1');
 
+  // Helper to create answers with specified correct count
+  const createAnswers = (totalQuestions: number, correctCount: number) => {
+    return Array.from({ length: totalQuestions }, (_, i) =>
+      createAnswer(`q${i + 1}`, `opt-${i + 1}`, i < correctCount)
+    );
+  };
+
   beforeEach(() => {
     localStorageMock.clear();
     repository = new LocalStorageQuizResultRepository();
@@ -45,9 +53,7 @@ describe('LocalStorageQuizResultRepository', () => {
       const result = QuizResult.create({
         quizId,
         courseId,
-        score: 80,
-        totalQuestions: 5,
-        correctAnswers: 4,
+        answers: createAnswers(5, 4), // 80%
       });
 
       await repository.save(result);
@@ -65,17 +71,13 @@ describe('LocalStorageQuizResultRepository', () => {
       const result1 = QuizResult.create({
         quizId,
         courseId,
-        score: 60,
-        totalQuestions: 5,
-        correctAnswers: 3,
+        answers: createAnswers(5, 3), // 60%
       });
 
       const result2 = QuizResult.create({
         quizId,
         courseId,
-        score: 100,
-        totalQuestions: 5,
-        correctAnswers: 5,
+        answers: createAnswers(5, 5), // 100%
       });
 
       await repository.save(result1);
@@ -92,9 +94,7 @@ describe('LocalStorageQuizResultRepository', () => {
       const result = QuizResult.create({
         quizId,
         courseId,
-        score: 80,
-        totalQuestions: 5,
-        correctAnswers: 4,
+        answers: createAnswers(5, 4), // 80%
       });
 
       await repository.save(result);
@@ -116,17 +116,13 @@ describe('LocalStorageQuizResultRepository', () => {
       const result1 = QuizResult.create({
         quizId: QuizId.create('quiz-1'),
         courseId,
-        score: 80,
-        totalQuestions: 5,
-        correctAnswers: 4,
+        answers: createAnswers(5, 4), // 80%
       });
 
       const result2 = QuizResult.create({
         quizId: QuizId.create('quiz-2'),
         courseId,
-        score: 90,
-        totalQuestions: 5,
-        correctAnswers: 4,
+        answers: createAnswers(5, 5), // 100%
       });
 
       await repository.save(result1);

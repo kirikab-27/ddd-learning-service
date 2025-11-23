@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Quiz } from '@/domain/content/models';
 import { SubmitQuizUseCase, SubmitQuizOutput } from '@/application/usecases';
 import { InMemoryQuizRepository } from '@/infrastructure/repositories';
+import { LessonId } from '@/domain/shared';
 
 export interface UseQuizResult {
   quiz: Quiz | null;
@@ -26,7 +27,7 @@ export function useQuiz(lessonId: string, courseId: string): UseQuizResult {
         setError(null);
 
         const quizRepository = new InMemoryQuizRepository();
-        const foundQuiz = await quizRepository.findByLessonId(lessonId);
+        const foundQuiz = await quizRepository.findByLessonId(LessonId.create(lessonId));
 
         setQuiz(foundQuiz);
       } catch (err) {
