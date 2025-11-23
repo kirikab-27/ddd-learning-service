@@ -43,21 +43,21 @@ describe('Progress Flow Integration', () => {
     const beforeComplete = await getLessonUseCase.execute({
       courseId: 'ddd-practice',
       chapterId: 'chapter-1',
-      lessonId: 'lesson-1',
+      lessonId: 'lesson-1-1',
     });
     expect(beforeComplete.isCompleted).toBe(false);
 
     // Complete the lesson
     await completeUseCase.execute({
       courseId: 'ddd-practice',
-      lessonId: 'lesson-1',
+      lessonId: 'lesson-1-1',
     });
 
     // Verify lesson is now completed
     const afterComplete = await getLessonUseCase.execute({
       courseId: 'ddd-practice',
       chapterId: 'chapter-1',
-      lessonId: 'lesson-1',
+      lessonId: 'lesson-1-1',
     });
     expect(afterComplete.isCompleted).toBe(true);
   });
@@ -70,21 +70,21 @@ describe('Progress Flow Integration', () => {
     const beforeComplete = await getLessonUseCase.execute({
       courseId: 'ddd-practice',
       chapterId: 'chapter-1',
-      lessonId: 'lesson-2',
+      lessonId: 'lesson-1-2',
     });
     expect(beforeComplete.isUnlocked).toBe(false);
 
     // Complete first lesson
     await completeUseCase.execute({
       courseId: 'ddd-practice',
-      lessonId: 'lesson-1',
+      lessonId: 'lesson-1-1',
     });
 
     // Second lesson should now be unlocked
     const afterComplete = await getLessonUseCase.execute({
       courseId: 'ddd-practice',
       chapterId: 'chapter-1',
-      lessonId: 'lesson-2',
+      lessonId: 'lesson-1-2',
     });
     expect(afterComplete.isUnlocked).toBe(true);
   });
@@ -96,33 +96,33 @@ describe('Progress Flow Integration', () => {
     // Initially 0% completion
     const beforeNav = await navUseCase.execute({
       courseId: 'ddd-practice',
-      currentLessonId: 'lesson-1',
+      currentLessonId: 'lesson-1-1',
     });
     expect(beforeNav.completionRate).toBe(0);
 
-    // Complete first lesson (1 of 4 = 25%)
+    // Complete first lesson (1 of 12 = 8%)
     await completeUseCase.execute({
       courseId: 'ddd-practice',
-      lessonId: 'lesson-1',
+      lessonId: 'lesson-1-1',
     });
 
     const afterOneLesson = await navUseCase.execute({
       courseId: 'ddd-practice',
-      currentLessonId: 'lesson-2',
+      currentLessonId: 'lesson-1-2',
     });
-    expect(afterOneLesson.completionRate).toBe(25);
+    expect(afterOneLesson.completionRate).toBe(8);
 
-    // Complete second lesson (2 of 4 = 50%)
+    // Complete second lesson (2 of 12 = 17%)
     await completeUseCase.execute({
       courseId: 'ddd-practice',
-      lessonId: 'lesson-2',
+      lessonId: 'lesson-1-2',
     });
 
     const afterTwoLessons = await navUseCase.execute({
       courseId: 'ddd-practice',
-      currentLessonId: 'lesson-3',
+      currentLessonId: 'lesson-1-3',
     });
-    expect(afterTwoLessons.completionRate).toBe(50);
+    expect(afterTwoLessons.completionRate).toBe(17);
   });
 
   it('should mark completed lessons in sidebar navigation', async () => {
@@ -132,12 +132,12 @@ describe('Progress Flow Integration', () => {
     // Complete first lesson
     await completeUseCase.execute({
       courseId: 'ddd-practice',
-      lessonId: 'lesson-1',
+      lessonId: 'lesson-1-1',
     });
 
     const nav = await navUseCase.execute({
       courseId: 'ddd-practice',
-      currentLessonId: 'lesson-2',
+      currentLessonId: 'lesson-1-2',
     });
 
     // First lesson should be marked as completed
@@ -152,7 +152,7 @@ describe('Progress Flow Integration', () => {
     // Complete lesson with first repository instance
     await completeUseCase.execute({
       courseId: 'ddd-practice',
-      lessonId: 'lesson-1',
+      lessonId: 'lesson-1-1',
     });
 
     // Create new repository instance (simulates page reload)
@@ -163,7 +163,7 @@ describe('Progress Flow Integration', () => {
     const result = await getLessonUseCase.execute({
       courseId: 'ddd-practice',
       chapterId: 'chapter-1',
-      lessonId: 'lesson-1',
+      lessonId: 'lesson-1-1',
     });
     expect(result.isCompleted).toBe(true);
   });
