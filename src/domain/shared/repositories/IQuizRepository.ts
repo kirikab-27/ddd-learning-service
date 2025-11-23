@@ -3,5 +3,4 @@ import { QuizId } from '../QuizId';
 
 export interface IQuizRepository {
   findById(id: QuizId): Promise<Quiz | null>;
-  findByLessonId(lessonId: string): Promise<Quiz | null>;
 }
