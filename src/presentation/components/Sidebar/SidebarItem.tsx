@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import styles from './SidebarItem.module.css';
 
 interface SidebarItemProps {
   href: string;
@@ -20,12 +19,13 @@ export function SidebarItem({
   isLocked = false,
   indent = 0,
 }: SidebarItemProps) {
-  const className = [
-    styles.item,
-    isActive && styles.active,
-    isCompleted && styles.completed,
-    isLocked && styles.locked,
-  ]
+  const baseClasses = 'flex items-center gap-2 py-2 px-4 text-text-secondary transition-colors duration-150';
+  const hoverClasses = !isLocked ? 'hover:bg-bg-tertiary hover:text-text-primary' : '';
+  const activeClasses = isActive ? 'bg-bg-tertiary text-accent border-l-[3px] border-accent' : '';
+  const completedClasses = isCompleted ? 'text-success' : '';
+  const lockedClasses = isLocked ? 'text-text-muted cursor-not-allowed' : '';
+
+  const className = [baseClasses, hoverClasses, activeClasses, completedClasses, lockedClasses]
     .filter(Boolean)
     .join(' ');
 
@@ -35,8 +35,8 @@ export function SidebarItem({
         className={className}
         style={{ paddingLeft: `${indent * 12 + 16}px` }}
       >
-        <span className={styles.lockIcon}>🔒</span>
-        <span className={styles.label}>{label}</span>
+        <span className="text-sm">🔒</span>
+        <span className="text-sm leading-snug">{label}</span>
       </div>
     );
   }
@@ -47,8 +47,8 @@ export function SidebarItem({
       className={className}
       style={{ paddingLeft: `${indent * 12 + 16}px` }}
     >
-      {isCompleted && <span className={styles.checkIcon}>✓</span>}
-      <span className={styles.label}>{label}</span>
+      {isCompleted && <span className="text-success font-bold">✓</span>}
+      <span className="text-sm leading-snug">{label}</span>
     </Link>
   );
 }
