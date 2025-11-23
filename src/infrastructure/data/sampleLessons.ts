@@ -1515,3 +1515,754 @@ class OrderController {
 });
 
 export const chapter4Lessons = [lesson4_1, lesson4_2];
+
+// =============================================================================
+// Chapter 5: 値オブジェクト
+// =============================================================================
+
+// Lesson 5-1: 値オブジェクトとは
+export const lesson5_1 = Lesson.create({
+  id: LessonId.create('lesson-5-1'),
+  title: LessonTitle.create('値オブジェクトとは'),
+  content: MarkdownContent.create(`
+# 値オブジェクトとは
+
+## 概要
+
+このレッスンでは、DDDの戦術的設計パターンの基本となる「値オブジェクト」について学びます。
+値オブジェクトとは何か、なぜ重要なのか、エンティティとの違いを理解しましょう。
+
+## 値オブジェクトの定義
+
+**値オブジェクト（Value Object）** は、概念的な同一性を持たず、
+その属性の値によってのみ特徴づけられるオブジェクトです。
+
+### 日常の例
+
+\`\`\`
+値オブジェクトの例:
+- 1000円札 → 別の1000円札と交換しても価値は同じ
+- 住所「東京都渋谷区...」→ 同じ住所なら同一と見なす
+- RGB(255, 0, 0) → 赤色を表す、同じ値なら同じ色
+\`\`\`
+
+### エンティティとの対比
+
+\`\`\`
+エンティティの例:
+- 銀行口座 → 口座番号で識別、残高は変わる
+- 人物 → 名前が変わっても同一人物
+- 注文 → 注文IDで識別、状態が変化
+\`\`\`
+
+## 値オブジェクトの3つの特徴
+
+### 1. 不変性（Immutability）
+
+一度作成されたら、その状態を変更することができません。
+
+\`\`\`typescript
+// 良い例：不変な値オブジェクト
+class Money {
+  private constructor(
+    private readonly amount: number,
+    private readonly currency: Currency
+  ) {}
+
+  // 新しいインスタンスを返す（自身は変更しない）
+  add(other: Money): Money {
+    return new Money(this.amount + other.amount, this.currency);
+  }
+}
+
+// 悪い例：可変な実装
+class MutableMoney {
+  private amount: number;
+
+  add(other: MutableMoney): void {
+    this.amount += other.amount; // 自身を変更 - これは値オブジェクトではない
+  }
+}
+\`\`\`
+
+### 2. 等価性（Equality）
+
+値オブジェクトは、IDではなく**全ての属性の値**で等価性を判断します。
+
+\`\`\`typescript
+class Money {
+  equals(other: Money): boolean {
+    return this.amount === other.amount &&
+           this.currency === other.currency;
+  }
+}
+
+// 使用例
+const money1 = Money.create(1000, Currency.JPY);
+const money2 = Money.create(1000, Currency.JPY);
+
+money1.equals(money2); // true - 同じ値なので等価
+money1 === money2;     // false - 異なるインスタンス
+\`\`\`
+
+### 3. 自己完結性
+
+値オブジェクトは、自身のバリデーションロジックを持ちます。
+
+\`\`\`typescript
+class Email {
+  private constructor(private readonly value: string) {}
+
+  static create(value: string): Email {
+    if (!this.isValidFormat(value)) {
+      throw new InvalidEmailFormatError(value);
+    }
+    return new Email(value);
+  }
+
+  private static isValidFormat(value: string): boolean {
+    return /^[^@]+@[^@]+\\.[^@]+$/.test(value);
+  }
+}
+\`\`\`
+
+## なぜ値オブジェクトが重要か
+
+### 1. ドメインロジックの集約
+
+プリミティブ型を使うと、バリデーションが散在します：
+
+\`\`\`typescript
+// 悪い例：バリデーションが散在
+function createUser(email: string, age: number) {
+  if (!isValidEmail(email)) throw new Error('Invalid email');
+  if (age < 0 || age > 150) throw new Error('Invalid age');
+  // ...
+}
+
+function updateEmail(userId: string, email: string) {
+  if (!isValidEmail(email)) throw new Error('Invalid email'); // 重複！
+  // ...
+}
+
+// 良い例：値オブジェクトに集約
+function createUser(email: Email, age: Age) {
+  // バリデーション不要 - Email, Ageの作成時に検証済み
+}
+\`\`\`
+
+### 2. 型安全性の向上
+
+\`\`\`typescript
+// 悪い例：取り違えの危険
+function transfer(from: string, to: string, amount: number) { }
+transfer(toAccount, fromAccount, 1000); // 引数の順番を間違えてもコンパイル通る
+
+// 良い例：型で守る
+function transfer(from: AccountId, to: AccountId, amount: Money) { }
+transfer(toAccountId, fromAccountId, money); // AccountIdは交換可能だが意図は明確
+\`\`\`
+
+### 3. 副作用の防止
+
+\`\`\`typescript
+// 不変なので、意図しない変更が起きない
+const price = Money.create(1000, Currency.JPY);
+const discountedPrice = price.multiply(0.9); // 新しいインスタンス
+
+console.log(price.amount);          // 1000（元の値は変わらない）
+console.log(discountedPrice.amount); // 900
+\`\`\`
+
+## いつ値オブジェクトを使うか
+
+| ユースケース | 例 |
+|------------|-----|
+| 計測・定量化 | 金額、距離、重量、期間 |
+| 識別情報 | メールアドレス、電話番号、郵便番号 |
+| 概念の組み合わせ | 住所（都道府県+市区町村+...）、氏名（姓+名） |
+| 範囲・区間 | 日付範囲、価格帯 |
+
+## まとめ
+
+- **値オブジェクト**は属性の値で特徴づけられ、同一性を持たない
+- **3つの特徴**: 不変性、等価性、自己完結性
+- 値オブジェクトにより**ドメインロジックの集約**、**型安全性**、**副作用防止**を実現
+- **計測・定量化**、**識別情報**、**概念の組み合わせ**に値オブジェクトを使う
+`),
+  order: 1,
+});
+
+// Lesson 5-2: 値オブジェクトの実装
+export const lesson5_2 = Lesson.create({
+  id: LessonId.create('lesson-5-2'),
+  title: LessonTitle.create('値オブジェクトの実装'),
+  content: MarkdownContent.create(`
+# 値オブジェクトの実装
+
+## 概要
+
+このレッスンでは、値オブジェクトの具体的な実装パターンについて学びます。
+TypeScriptでの実装方法、ファクトリメソッド、演算メソッドの設計を理解しましょう。
+
+## 基本的な実装パターン
+
+### privateコンストラクタとファクトリメソッド
+
+\`\`\`typescript
+export class Money {
+  // privateコンストラクタで直接インスタンス化を防ぐ
+  private constructor(
+    private readonly amount: number,
+    private readonly currency: Currency
+  ) {}
+
+  // ファクトリメソッドでバリデーション付きの生成
+  static create(amount: number, currency: Currency): Money {
+    if (amount < 0) {
+      throw new NegativeAmountError(amount);
+    }
+    if (!Number.isFinite(amount)) {
+      throw new InvalidAmountError(amount);
+    }
+    return new Money(amount, currency);
+  }
+
+  // ゼロ値の生成
+  static zero(currency: Currency): Money {
+    return new Money(0, currency);
+  }
+}
+\`\`\`
+
+### なぜprivateコンストラクタか
+
+\`\`\`typescript
+// publicコンストラクタの問題
+class BadMoney {
+  constructor(public amount: number, public currency: string) {}
+}
+
+new BadMoney(-1000, 'JPY');  // 不正な値が作れてしまう
+new BadMoney(100, 'INVALID'); // 存在しない通貨も作れる
+
+// privateコンストラクタ + ファクトリメソッドの利点
+class GoodMoney {
+  private constructor(/*...*/) {}
+  static create(amount: number, currency: Currency): GoodMoney {
+    // 必ずバリデーションを通る
+  }
+}
+
+// Money.create(-1000, Currency.JPY); // → エラー
+\`\`\`
+
+## 不変性の実装
+
+### readonlyによる不変性の保証
+
+\`\`\`typescript
+class Address {
+  private constructor(
+    private readonly prefecture: Prefecture,
+    private readonly city: City,
+    private readonly street: Street,
+    private readonly building: Building | null
+  ) {}
+
+  // getterでアクセス（setterは提供しない）
+  get prefectureName(): string {
+    return this.prefecture.name;
+  }
+
+  // 変更メソッドは新しいインスタンスを返す
+  withBuilding(building: Building): Address {
+    return new Address(
+      this.prefecture,
+      this.city,
+      this.street,
+      building
+    );
+  }
+}
+\`\`\`
+
+### Object.freezeによる追加の保護（オプション）
+
+\`\`\`typescript
+class ImmutableConfig {
+  private constructor(private readonly data: ConfigData) {
+    Object.freeze(this);
+    Object.freeze(this.data);
+  }
+}
+\`\`\`
+
+## 等価性の実装
+
+### equalsメソッドの実装
+
+\`\`\`typescript
+class DateRange {
+  private constructor(
+    private readonly start: Date,
+    private readonly end: Date
+  ) {}
+
+  equals(other: DateRange): boolean {
+    if (other === null || other === undefined) {
+      return false;
+    }
+    return this.start.getTime() === other.start.getTime() &&
+           this.end.getTime() === other.end.getTime();
+  }
+
+  // hashCodeの実装（MapやSetで使う場合）
+  hashCode(): number {
+    return this.start.getTime() * 31 + this.end.getTime();
+  }
+}
+\`\`\`
+
+### 複合値オブジェクトの等価性
+
+\`\`\`typescript
+class FullName {
+  private constructor(
+    private readonly firstName: FirstName,
+    private readonly lastName: LastName
+  ) {}
+
+  equals(other: FullName): boolean {
+    return this.firstName.equals(other.firstName) &&
+           this.lastName.equals(other.lastName);
+  }
+}
+\`\`\`
+
+## 演算メソッドの設計
+
+### 算術演算
+
+\`\`\`typescript
+class Money {
+  add(other: Money): Money {
+    this.ensureSameCurrency(other);
+    return Money.create(this.amount + other.amount, this.currency);
+  }
+
+  subtract(other: Money): Money {
+    this.ensureSameCurrency(other);
+    return Money.create(this.amount - other.amount, this.currency);
+  }
+
+  multiply(multiplier: number): Money {
+    return Money.create(this.amount * multiplier, this.currency);
+  }
+
+  private ensureSameCurrency(other: Money): void {
+    if (!this.currency.equals(other.currency)) {
+      throw new CurrencyMismatchError(this.currency, other.currency);
+    }
+  }
+}
+\`\`\`
+
+### 比較演算
+
+\`\`\`typescript
+class Money {
+  isGreaterThan(other: Money): boolean {
+    this.ensureSameCurrency(other);
+    return this.amount > other.amount;
+  }
+
+  isLessThan(other: Money): boolean {
+    this.ensureSameCurrency(other);
+    return this.amount < other.amount;
+  }
+
+  isZero(): boolean {
+    return this.amount === 0;
+  }
+
+  isPositive(): boolean {
+    return this.amount > 0;
+  }
+}
+\`\`\`
+
+## 変換メソッドの実装
+
+### 文字列表現
+
+\`\`\`typescript
+class Money {
+  toString(): string {
+    return \`\${this.currency.symbol}\${this.amount.toLocaleString()}\`;
+  }
+
+  toJSON(): { amount: number; currency: string } {
+    return {
+      amount: this.amount,
+      currency: this.currency.code,
+    };
+  }
+}
+
+class Email {
+  toString(): string {
+    return this.value;
+  }
+
+  get localPart(): string {
+    return this.value.split('@')[0];
+  }
+
+  get domain(): string {
+    return this.value.split('@')[1];
+  }
+}
+\`\`\`
+
+### 再構築（デシリアライズ）
+
+\`\`\`typescript
+class Money {
+  // DBやJSONからの再構築用
+  static reconstruct(amount: number, currencyCode: string): Money {
+    const currency = Currency.fromCode(currencyCode);
+    return new Money(amount, currency);
+  }
+}
+\`\`\`
+
+## 実装のベストプラクティス
+
+### 1. 単一責任の原則
+
+\`\`\`typescript
+// 良い例：単一の概念を表す
+class PhoneNumber { /* 電話番号のみ */ }
+class Email { /* メールアドレスのみ */ }
+
+// 悪い例：複数の概念を混ぜる
+class ContactInfo {
+  phone?: string;
+  email?: string;
+  fax?: string;
+}
+\`\`\`
+
+### 2. ドメイン用語を使う
+
+\`\`\`typescript
+// 良い例
+class OrderQuantity { }
+class UnitPrice { }
+class TotalAmount { }
+
+// 悪い例
+class IntWrapper { }
+class DecimalValue { }
+\`\`\`
+
+## まとめ
+
+- **privateコンストラクタ + ファクトリメソッド**でバリデーションを強制
+- **readonly**で不変性を保証
+- **equalsメソッド**で値による等価性を実装
+- 演算メソッドは**新しいインスタンスを返す**
+- **ドメイン用語**を使い、**単一の概念**を表現する
+`),
+  order: 2,
+});
+
+// Lesson 5-3: 自己検証と不変条件
+export const lesson5_3 = Lesson.create({
+  id: LessonId.create('lesson-5-3'),
+  title: LessonTitle.create('自己検証と不変条件'),
+  content: MarkdownContent.create(`
+# 自己検証と不変条件
+
+## 概要
+
+このレッスンでは、値オブジェクトの重要な特性である「自己検証」と「不変条件」について学びます。
+どのようにバリデーションを実装し、常に有効な状態を保つかを理解しましょう。
+
+## 自己検証とは
+
+**自己検証（Self-Validation）** とは、値オブジェクトが自身の有効性を
+生成時に検証し、不正な状態のオブジェクトが存在できないようにすることです。
+
+### プリミティブ型の問題
+
+\`\`\`typescript
+// プリミティブ型では不正な値が通る
+interface User {
+  email: string;  // 空文字列も通る
+  age: number;    // -1 も通る
+}
+
+const invalidUser: User = {
+  email: '',      // 不正だが通る
+  age: -50,       // 不正だが通る
+};
+\`\`\`
+
+### 値オブジェクトによる解決
+
+\`\`\`typescript
+class Email {
+  private constructor(private readonly value: string) {}
+
+  static create(value: string): Email {
+    if (!value || value.trim() === '') {
+      throw new EmptyEmailError();
+    }
+    if (!this.isValidFormat(value)) {
+      throw new InvalidEmailFormatError(value);
+    }
+    return new Email(value.toLowerCase().trim());
+  }
+
+  private static isValidFormat(value: string): boolean {
+    return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);
+  }
+}
+
+// 不正なEmailは作成できない
+// Email.create('');        // → EmptyEmailError
+// Email.create('invalid'); // → InvalidEmailFormatError
+\`\`\`
+
+## 不変条件（Invariant）
+
+**不変条件**とは、オブジェクトが常に満たすべきルールのことです。
+値オブジェクトは、生成時にこれらの条件を検証し、以降は不変なので常に条件を満たします。
+
+### 単一属性の不変条件
+
+\`\`\`typescript
+class Percentage {
+  private constructor(private readonly value: number) {}
+
+  static create(value: number): Percentage {
+    // 不変条件: 0〜100の範囲
+    if (value < 0 || value > 100) {
+      throw new InvalidPercentageError(value);
+    }
+    return new Percentage(value);
+  }
+}
+
+class Age {
+  private constructor(private readonly value: number) {}
+
+  static create(value: number): Age {
+    // 不変条件: 0以上150以下の整数
+    if (!Number.isInteger(value)) {
+      throw new AgeNotIntegerError(value);
+    }
+    if (value < 0 || value > 150) {
+      throw new AgeOutOfRangeError(value);
+    }
+    return new Age(value);
+  }
+}
+\`\`\`
+
+### 複数属性間の不変条件
+
+\`\`\`typescript
+class DateRange {
+  private constructor(
+    private readonly start: Date,
+    private readonly end: Date
+  ) {}
+
+  static create(start: Date, end: Date): DateRange {
+    // 不変条件: 開始日 <= 終了日
+    if (start > end) {
+      throw new InvalidDateRangeError(start, end);
+    }
+    return new DateRange(start, end);
+  }
+
+  get durationInDays(): number {
+    const msPerDay = 24 * 60 * 60 * 1000;
+    return Math.round((this.end.getTime() - this.start.getTime()) / msPerDay);
+  }
+}
+
+class PriceRange {
+  private constructor(
+    private readonly min: Money,
+    private readonly max: Money
+  ) {}
+
+  static create(min: Money, max: Money): PriceRange {
+    // 不変条件1: 同じ通貨
+    if (!min.currency.equals(max.currency)) {
+      throw new CurrencyMismatchError();
+    }
+    // 不変条件2: min <= max
+    if (min.isGreaterThan(max)) {
+      throw new InvalidPriceRangeError(min, max);
+    }
+    return new PriceRange(min, max);
+  }
+}
+\`\`\`
+
+## バリデーションパターン
+
+### パターン1: 例外をスローする
+
+\`\`\`typescript
+class Email {
+  static create(value: string): Email {
+    if (!this.isValid(value)) {
+      throw new InvalidEmailError(value);
+    }
+    return new Email(value);
+  }
+}
+
+// 使用側
+try {
+  const email = Email.create(input);
+} catch (error) {
+  if (error instanceof InvalidEmailError) {
+    // エラーハンドリング
+  }
+}
+\`\`\`
+
+### パターン2: Result型を返す
+
+\`\`\`typescript
+type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
+
+class Email {
+  static create(value: string): Result<Email, EmailValidationError> {
+    if (!value) {
+      return { ok: false, error: new EmptyEmailError() };
+    }
+    if (!this.isValidFormat(value)) {
+      return { ok: false, error: new InvalidFormatError(value) };
+    }
+    return { ok: true, value: new Email(value) };
+  }
+}
+
+// 使用側
+const result = Email.create(input);
+if (result.ok) {
+  const email = result.value;
+} else {
+  const error = result.error;
+}
+\`\`\`
+
+### パターン3: 検証メソッドを分離
+
+\`\`\`typescript
+class Email {
+  static isValid(value: string): boolean {
+    return !!value && this.isValidFormat(value);
+  }
+
+  static create(value: string): Email {
+    if (!this.isValid(value)) {
+      throw new InvalidEmailError(value);
+    }
+    return new Email(value);
+  }
+}
+
+// 使用側（事前チェック可能）
+if (Email.isValid(input)) {
+  const email = Email.create(input);
+}
+\`\`\`
+
+## 正規化（Normalization）
+
+バリデーションと同時に、値を正規化することもあります：
+
+\`\`\`typescript
+class Email {
+  static create(value: string): Email {
+    const normalized = value.toLowerCase().trim();
+    if (!this.isValidFormat(normalized)) {
+      throw new InvalidEmailError(value);
+    }
+    return new Email(normalized);
+  }
+}
+
+class PhoneNumber {
+  static create(value: string): PhoneNumber {
+    // ハイフンや空白を除去して正規化
+    const normalized = value.replace(/[-\\s]/g, '');
+    if (!this.isValidFormat(normalized)) {
+      throw new InvalidPhoneNumberError(value);
+    }
+    return new PhoneNumber(normalized);
+  }
+}
+
+class PostalCode {
+  static create(value: string): PostalCode {
+    // "123-4567" も "1234567" も受け付け、統一形式で保存
+    const normalized = value.replace(/-/g, '');
+    if (!/^\\d{7}$/.test(normalized)) {
+      throw new InvalidPostalCodeError(value);
+    }
+    return new PostalCode(normalized);
+  }
+
+  // 表示用にフォーマット
+  format(): string {
+    return \`\${this.value.slice(0, 3)}-\${this.value.slice(3)}\`;
+  }
+}
+\`\`\`
+
+## エラーメッセージの設計
+
+### ドメイン固有のエラー
+
+\`\`\`typescript
+// 汎用的すぎる
+throw new Error('Invalid value');
+
+// ドメイン固有で具体的
+class InvalidEmailError extends Error {
+  constructor(value: string) {
+    super(\`メールアドレスの形式が正しくありません: \${value}\`);
+    this.name = 'InvalidEmailError';
+  }
+}
+
+class AgeOutOfRangeError extends Error {
+  constructor(value: number) {
+    super(\`年齢は0〜150の範囲で指定してください: \${value}\`);
+    this.name = 'AgeOutOfRangeError';
+  }
+}
+\`\`\`
+
+## まとめ
+
+- **自己検証**により、不正な状態の値オブジェクトが存在できなくなる
+- **不変条件**は、値オブジェクトが常に満たすべきルール
+- バリデーションは**例外**、**Result型**、**検証メソッド分離**などのパターンがある
+- **正規化**により、同じ意味の値を統一的に扱える
+- **ドメイン固有のエラー**で、問題を明確に伝える
+`),
+  order: 3,
+});
+
+export const chapter5Lessons = [lesson5_1, lesson5_2, lesson5_3];

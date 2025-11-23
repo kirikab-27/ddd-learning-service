@@ -1,6 +1,6 @@
 import { Course, Chapter, Lesson, LessonTitle, MarkdownContent } from '@/domain/content/models';
 import { CourseId, ChapterId, LessonId } from '@/domain/shared';
-import { chapter1Lessons, chapter2Lessons, chapter3Lessons, chapter4Lessons } from './sampleLessons';
+import { chapter1Lessons, chapter2Lessons, chapter3Lessons, chapter4Lessons, chapter5Lessons } from './sampleLessons';
 
 // =============================================================================
 // 第1部: DDDの基礎概念
@@ -43,64 +43,11 @@ const chapter4 = Chapter.create({
 // =============================================================================
 
 // Chapter 5: 値オブジェクト
-const lesson5_1 = Lesson.create({
-  id: LessonId.create('lesson-5-1'),
-  title: LessonTitle.create('値オブジェクト'),
-  content: MarkdownContent.create(`
-# 値オブジェクト
-
-**値オブジェクト（Value Object）** は、DDDにおける基本的な構成要素の一つです。
-
-## 値オブジェクトの特徴
-
-1. **不変性（Immutability）**: 一度作成されたら変更されない
-2. **等価性（Equality）**: アイデンティティではなく、属性の値で比較される
-3. **自己完結性**: 自身のバリデーションロジックを持つ
-
-## 実装例
-
-\`\`\`typescript
-export class Money {
-  private constructor(
-    private readonly amount: number,
-    private readonly currency: string
-  ) {}
-
-  static create(amount: number, currency: string): Money {
-    if (amount < 0) {
-      throw new Error('Amount cannot be negative');
-    }
-    return new Money(amount, currency);
-  }
-
-  add(other: Money): Money {
-    if (this.currency !== other.currency) {
-      throw new Error('Cannot add different currencies');
-    }
-    return Money.create(this.amount + other.amount, this.currency);
-  }
-
-  equals(other: Money): boolean {
-    return this.amount === other.amount &&
-           this.currency === other.currency;
-  }
-}
-\`\`\`
-
-## いつ値オブジェクトを使うか
-
-- 計測や定量化を行う場合（金額、距離など）
-- 他のオブジェクトの属性を記述する場合
-- 不変性が望ましい場合
-`),
-  order: 1,
-});
-
 const chapter5 = Chapter.create({
   id: ChapterId.create('chapter-5'),
   title: 'Chapter 5: 値オブジェクト',
   order: 5,
-  lessons: [lesson5_1],
+  lessons: chapter5Lessons,
 });
 
 // Chapter 6: エンティティ

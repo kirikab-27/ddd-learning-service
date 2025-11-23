@@ -667,22 +667,33 @@ const lesson4_2Questions: Question[] = [
 // Chapter 5: 値オブジェクト
 // =============================================================================
 
-// 値オブジェクト理解クイズ（lesson-5-1用）
-const valueObjectQuestions: Question[] = [
+// Lesson 5-1: 値オブジェクトとは（5問）
+const lesson5_1Questions: Question[] = [
   Question.create({
-    id: 'q1',
-    text: 'DDDにおける「値オブジェクト」の特徴として正しいものはどれですか？',
+    id: 'q5-1-1',
+    text: '値オブジェクトの特徴として正しいものはどれですか？',
     options: [
       { id: 'a', text: '一意のIDで識別される', isCorrect: false },
       { id: 'b', text: '可変（ミュータブル）である', isCorrect: false },
-      { id: 'c', text: '属性の値によって同一性が決まり、不変（イミュータブル）である', isCorrect: true },
+      { id: 'c', text: '属性の値によって同一性が決まり、不変である', isCorrect: true },
       { id: 'd', text: '必ずデータベースに永続化される', isCorrect: false },
     ],
     explanation: '値オブジェクトはその属性の値によって同一性が決まります。例えば「1000円」という金額は、別の「1000円」と同じ価値を持ちます。',
   }),
   Question.create({
-    id: 'q2',
-    text: '値オブジェクトを使うべき場面として最も適切なものはどれですか？',
+    id: 'q5-1-2',
+    text: '値オブジェクトとエンティティの違いとして正しいのは？',
+    options: [
+      { id: 'a', text: 'エンティティは値で比較し、値オブジェクトはIDで比較する', isCorrect: false },
+      { id: 'b', text: '値オブジェクトは不変で、エンティティは状態が変化しうる', isCorrect: true },
+      { id: 'c', text: 'エンティティはプリミティブ型のラッパーである', isCorrect: false },
+      { id: 'd', text: '値オブジェクトはデータベースに保存できない', isCorrect: false },
+    ],
+    explanation: '値オブジェクトは不変で属性の値で比較します。エンティティはIDで識別され、状態が変化することがあります。',
+  }),
+  Question.create({
+    id: 'q5-1-3',
+    text: '値オブジェクトを使うべき場面として最も適切なものは？',
     options: [
       { id: 'a', text: 'ユーザーアカウントの管理', isCorrect: false },
       { id: 'b', text: '金額や住所など、計測や定量化を行う場合', isCorrect: true },
@@ -692,7 +703,7 @@ const valueObjectQuestions: Question[] = [
     explanation: '値オブジェクトは金額、距離、住所など、属性の組み合わせで意味を持つものに適しています。',
   }),
   Question.create({
-    id: 'q3',
+    id: 'q5-1-4',
     text: '値オブジェクトの等価性について正しい説明はどれですか？',
     options: [
       { id: 'a', text: 'メモリアドレスで比較する', isCorrect: false },
@@ -703,19 +714,23 @@ const valueObjectQuestions: Question[] = [
     explanation: '値オブジェクトは全ての属性の値が等しければ等価とみなされます。Money(1000, "JPY")とMoney(1000, "JPY")は同じです。',
   }),
   Question.create({
-    id: 'q4',
-    text: '値オブジェクトが不変である理由として最も適切なものはどれですか？',
+    id: 'q5-1-5',
+    text: '値オブジェクトがドメインロジックを集約するメリットは？',
     options: [
-      { id: 'a', text: 'メモリ使用量を削減するため', isCorrect: false },
-      { id: 'b', text: 'データベースへの書き込みを減らすため', isCorrect: false },
-      { id: 'c', text: '副作用を防ぎ、コードの予測可能性を高めるため', isCorrect: true },
-      { id: 'd', text: 'パフォーマンスを向上させるため', isCorrect: false },
+      { id: 'a', text: 'パフォーマンスが向上する', isCorrect: false },
+      { id: 'b', text: 'バリデーションの重複を防ぎ、型安全性が向上する', isCorrect: true },
+      { id: 'c', text: 'データベースのクエリが高速化する', isCorrect: false },
+      { id: 'd', text: 'メモリ使用量が減少する', isCorrect: false },
     ],
-    explanation: '不変性により、オブジェクトが予期せず変更されることを防ぎ、コードの理解と保守が容易になります。',
+    explanation: '値オブジェクトにバリデーションを集約することで、重複を防ぎ、型によって引数の取り違えを防止できます。',
   }),
+];
+
+// Lesson 5-2: 値オブジェクトの実装（5問）
+const lesson5_2Questions: Question[] = [
   Question.create({
-    id: 'q5',
-    text: '値オブジェクトの実装で推奨されるパターンはどれですか？',
+    id: 'q5-2-1',
+    text: '値オブジェクトの実装で推奨されるコンストラクタのパターンは？',
     options: [
       { id: 'a', text: 'publicコンストラクタとセッターメソッド', isCorrect: false },
       { id: 'b', text: 'privateコンストラクタとファクトリメソッド（create）', isCorrect: true },
@@ -723,6 +738,109 @@ const valueObjectQuestions: Question[] = [
       { id: 'd', text: 'シングルトンパターン', isCorrect: false },
     ],
     explanation: 'privateコンストラクタとファクトリメソッドを使うことで、バリデーションを強制し、不正な状態のオブジェクト生成を防ぎます。',
+  }),
+  Question.create({
+    id: 'q5-2-2',
+    text: 'TypeScriptで値オブジェクトの不変性を保証する方法は？',
+    options: [
+      { id: 'a', text: 'letキーワードを使う', isCorrect: false },
+      { id: 'b', text: 'readonlyキーワードを使う', isCorrect: true },
+      { id: 'c', text: 'varキーワードを使う', isCorrect: false },
+      { id: 'd', text: 'publicキーワードを使う', isCorrect: false },
+    ],
+    explanation: 'readonlyを使うことで、プロパティが初期化後に変更されないことをコンパイラレベルで保証できます。',
+  }),
+  Question.create({
+    id: 'q5-2-3',
+    text: '値オブジェクトの演算メソッドの実装で正しいのは？',
+    options: [
+      { id: 'a', text: '自身の状態を変更して返す', isCorrect: false },
+      { id: 'b', text: '新しいインスタンスを生成して返す', isCorrect: true },
+      { id: 'c', text: 'voidを返す', isCorrect: false },
+      { id: 'd', text: 'プリミティブ値を返す', isCorrect: false },
+    ],
+    explanation: '値オブジェクトは不変なので、演算結果は新しいインスタンスとして返します。例：money.add(other)は新しいMoneyを返す。',
+  }),
+  Question.create({
+    id: 'q5-2-4',
+    text: 'equalsメソッドの実装で考慮すべきことは？',
+    options: [
+      { id: 'a', text: 'メモリアドレスのみを比較する', isCorrect: false },
+      { id: 'b', text: '全ての属性の値を比較し、nullチェックも行う', isCorrect: true },
+      { id: 'c', text: 'IDのみを比較する', isCorrect: false },
+      { id: 'd', text: '型チェックは不要', isCorrect: false },
+    ],
+    explanation: 'equalsメソッドでは、nullチェック、型チェック、全属性の値の比較を行う必要があります。',
+  }),
+  Question.create({
+    id: 'q5-2-5',
+    text: '値オブジェクトのクラス命名で適切なのは？',
+    options: [
+      { id: 'a', text: 'IntWrapper, StringWrapper', isCorrect: false },
+      { id: 'b', text: 'OrderQuantity, UnitPrice, Email', isCorrect: true },
+      { id: 'c', text: 'Data1, Data2, Data3', isCorrect: false },
+      { id: 'd', text: 'ValueObject1, ValueObject2', isCorrect: false },
+    ],
+    explanation: 'ドメイン用語を使い、単一の概念を表す名前を付けます。技術的な命名は避けましょう。',
+  }),
+];
+
+// Lesson 5-3: 自己検証と不変条件（5問）
+const lesson5_3Questions: Question[] = [
+  Question.create({
+    id: 'q5-3-1',
+    text: '自己検証（Self-Validation）の目的は？',
+    options: [
+      { id: 'a', text: 'パフォーマンスの最適化', isCorrect: false },
+      { id: 'b', text: '不正な状態のオブジェクトが存在できないようにする', isCorrect: true },
+      { id: 'c', text: 'メモリ使用量の削減', isCorrect: false },
+      { id: 'd', text: 'データベースとの同期', isCorrect: false },
+    ],
+    explanation: '自己検証により、値オブジェクトは生成時に有効性を検証し、不正な状態のオブジェクトの存在を防ぎます。',
+  }),
+  Question.create({
+    id: 'q5-3-2',
+    text: '不変条件（Invariant）とは何ですか？',
+    options: [
+      { id: 'a', text: 'コードの変更禁止ルール', isCorrect: false },
+      { id: 'b', text: 'オブジェクトが常に満たすべきビジネスルール', isCorrect: true },
+      { id: 'c', text: 'データベースの制約', isCorrect: false },
+      { id: 'd', text: 'APIの仕様', isCorrect: false },
+    ],
+    explanation: '不変条件は、オブジェクトが常に満たすべきルールです。例：Percentageは0〜100の範囲、DateRangeは開始日≦終了日。',
+  }),
+  Question.create({
+    id: 'q5-3-3',
+    text: '複数属性間の不変条件の例として正しいのは？',
+    options: [
+      { id: 'a', text: 'Emailのフォーマットチェック', isCorrect: false },
+      { id: 'b', text: 'DateRangeの開始日が終了日以前であること', isCorrect: true },
+      { id: 'c', text: 'Ageが整数であること', isCorrect: false },
+      { id: 'd', text: 'PhoneNumberが数字のみであること', isCorrect: false },
+    ],
+    explanation: 'DateRangeの「開始日≦終了日」は2つの属性の関係を検証する不変条件です。単一属性の検証とは異なります。',
+  }),
+  Question.create({
+    id: 'q5-3-4',
+    text: 'バリデーションでResult型を使うメリットは？',
+    options: [
+      { id: 'a', text: 'コードが短くなる', isCorrect: false },
+      { id: 'b', text: 'エラーを型安全に扱え、呼び出し側でのハンドリングが明確になる', isCorrect: true },
+      { id: 'c', text: '実行速度が向上する', isCorrect: false },
+      { id: 'd', text: 'テストが不要になる', isCorrect: false },
+    ],
+    explanation: 'Result型を使うと、成功/失敗を型で表現でき、呼び出し側で適切にハンドリングすることが強制されます。',
+  }),
+  Question.create({
+    id: 'q5-3-5',
+    text: '正規化（Normalization）の例として正しいのは？',
+    options: [
+      { id: 'a', text: 'メールアドレスを小文字に統一する', isCorrect: true },
+      { id: 'b', text: 'データベースのテーブルを分割する', isCorrect: false },
+      { id: 'c', text: 'クラスを複数ファイルに分ける', isCorrect: false },
+      { id: 'd', text: 'テストケースを整理する', isCorrect: false },
+    ],
+    explanation: '正規化は、同じ意味の値を統一的に扱うために形式を揃えることです。メールの小文字化、電話番号のハイフン除去などが例です。',
   }),
 ];
 
@@ -812,9 +930,23 @@ export const sampleQuizzes: Quiz[] = [
   Quiz.create({
     id: QuizId.create('quiz-lesson-5-1'),
     lessonId: LessonId.create('lesson-5-1'),
-    title: '値オブジェクトの理解チェック',
-    description: '値オブジェクトの特徴と実装パターンについての理解度を確認するクイズです。',
-    questions: valueObjectQuestions,
+    title: '値オブジェクトとは - 理解度チェック',
+    description: '値オブジェクトの定義と特徴についての理解度を確認するクイズです。',
+    questions: lesson5_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-5-2'),
+    lessonId: LessonId.create('lesson-5-2'),
+    title: '値オブジェクトの実装 - 理解度チェック',
+    description: '値オブジェクトの実装パターンについての理解度を確認するクイズです。',
+    questions: lesson5_2Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-5-3'),
+    lessonId: LessonId.create('lesson-5-3'),
+    title: '自己検証と不変条件 - 理解度チェック',
+    description: '自己検証と不変条件についての理解度を確認するクイズです。',
+    questions: lesson5_3Questions,
   }),
 ];
 
