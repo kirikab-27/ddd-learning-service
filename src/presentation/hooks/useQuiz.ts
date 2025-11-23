@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Quiz } from '@/domain/content/models';
 import { SubmitQuizUseCase, SubmitQuizOutput } from '@/application/usecases';
 import { InMemoryQuizRepository } from '@/infrastructure/repositories';
+import { sampleQuizzes } from '@/infrastructure/data/sampleQuizzes';
 import { LessonId } from '@/domain/shared';
 
 export interface UseQuizResult {
@@ -26,7 +27,7 @@ export function useQuiz(lessonId: string, courseId: string): UseQuizResult {
         setIsLoading(true);
         setError(null);
 
-        const quizRepository = new InMemoryQuizRepository();
+        const quizRepository = new InMemoryQuizRepository(sampleQuizzes);
         const foundQuiz = await quizRepository.findByLessonId(LessonId.create(lessonId));
 
         setQuiz(foundQuiz);
@@ -47,7 +48,7 @@ export function useQuiz(lessonId: string, courseId: string): UseQuizResult {
 
     setIsSubmitting(true);
     try {
-      const quizRepository = new InMemoryQuizRepository();
+      const quizRepository = new InMemoryQuizRepository(sampleQuizzes);
       const submitQuizUseCase = new SubmitQuizUseCase(quizRepository);
 
       const answersArray = Array.from(answers.entries()).map(([questionId, selectedOptionId]) => ({

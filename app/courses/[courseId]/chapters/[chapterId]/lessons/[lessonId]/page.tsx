@@ -5,6 +5,7 @@ import { useLesson } from '@/presentation/hooks/useLesson';
 import { useProgress } from '@/presentation/hooks/useProgress';
 import { LessonContent } from '@/presentation/features/lesson/LessonContent';
 import { InMemoryQuizRepository } from '@/infrastructure/repositories';
+import { sampleQuizzes } from '@/infrastructure/data/sampleQuizzes';
 import { LessonId } from '@/domain/shared';
 
 interface PageProps {
@@ -24,7 +25,7 @@ export default function LessonPage({ params }: PageProps) {
 
   useEffect(() => {
     const checkQuiz = async () => {
-      const quizRepository = new InMemoryQuizRepository();
+      const quizRepository = new InMemoryQuizRepository(sampleQuizzes);
       const quiz = await quizRepository.findByLessonId(LessonId.create(lessonId));
       setHasQuiz(quiz !== null);
     };
