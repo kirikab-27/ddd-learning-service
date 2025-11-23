@@ -20,9 +20,7 @@
   }
 
   body {
-    background-color: var(--color-bg-primary);
-    color: var(--color-text-primary);
-    min-height: 100vh;
+    @apply bg-slate-900 text-slate-50 min-h-screen;
   }
 
   a {

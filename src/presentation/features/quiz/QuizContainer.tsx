@@ -7,7 +7,6 @@ import { SubmitQuizOutput } from '@/application/usecases';
 import { QuizProgress } from './QuizProgress';
 import { QuizQuestion } from './QuizQuestion';
 import { QuizResult } from './QuizResult';
-import styles from './QuizContainer.module.css';
 
 interface QuizContainerProps {
   lessonId: string;
@@ -84,17 +83,17 @@ export function QuizContainer({ lessonId, courseId, chapterId }: QuizContainerPr
 
   if (isLoading) {
     return (
-      <div className={styles.loading}>
-        <p>クイズを読み込んでいます...</p>
+      <div className="flex flex-col items-center justify-center min-h-[300px] gap-6 p-8 text-center">
+        <p className="text-slate-400">クイズを読み込んでいます...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className={styles.error}>
-        <p>エラーが発生しました: {error.message}</p>
-        <button onClick={handleBack} className={styles.backButton}>
+      <div className="flex flex-col items-center justify-center min-h-[300px] gap-6 p-8 text-center">
+        <p className="text-red-400">エラーが発生しました: {error.message}</p>
+        <button onClick={handleBack} className="px-8 py-3 bg-slate-700 text-slate-50 border border-slate-600 rounded-lg text-sm cursor-pointer transition-colors hover:bg-slate-600">
           レッスンに戻る
         </button>
       </div>
@@ -103,9 +102,9 @@ export function QuizContainer({ lessonId, courseId, chapterId }: QuizContainerPr
 
   if (!quiz) {
     return (
-      <div className={styles.notFound}>
-        <p>このレッスンにはクイズがありません。</p>
-        <button onClick={handleBack} className={styles.backButton}>
+      <div className="flex flex-col items-center justify-center min-h-[300px] gap-6 p-8 text-center">
+        <p className="text-slate-400">このレッスンにはクイズがありません。</p>
+        <button onClick={handleBack} className="px-8 py-3 bg-slate-700 text-slate-50 border border-slate-600 rounded-lg text-sm cursor-pointer transition-colors hover:bg-slate-600">
           レッスンに戻る
         </button>
       </div>
@@ -145,15 +144,15 @@ export function QuizContainer({ lessonId, courseId, chapterId }: QuizContainerPr
   const allQuestionsAnswered = quiz.questions.every(q => answers.has(q.id));
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>{quiz.title}</h1>
-        {quiz.description && <p className={styles.description}>{quiz.description}</p>}
+    <div className="max-w-3xl mx-auto">
+      <header className="p-6 text-center border-b border-slate-700">
+        <h1 className="text-2xl font-semibold text-slate-50 mb-2">{quiz.title}</h1>
+        {quiz.description && <p className="text-sm text-slate-400">{quiz.description}</p>}
       </header>
 
       <QuizProgress current={currentQuestionIndex + 1} total={quiz.questions.length} />
 
-      <div className={styles.questionContainer}>
+      <div className="min-h-[300px]">
         <QuizQuestion
           question={{
             id: currentQuestion.id,
@@ -165,12 +164,12 @@ export function QuizContainer({ lessonId, courseId, chapterId }: QuizContainerPr
         />
       </div>
 
-      <div className={styles.navigation}>
+      <div className="flex justify-between gap-4 p-6 border-t border-slate-700 max-sm:flex-col">
         <button
           type="button"
           onClick={handlePrevious}
           disabled={currentQuestionIndex === 0}
-          className={styles.navButton}
+          className="px-8 py-3 bg-slate-700 text-slate-50 border border-slate-600 rounded-lg text-sm cursor-pointer transition-colors hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed max-sm:w-full"
         >
           前の問題
         </button>
@@ -180,7 +179,7 @@ export function QuizContainer({ lessonId, courseId, chapterId }: QuizContainerPr
             type="button"
             onClick={handleSubmit}
             disabled={!allQuestionsAnswered || isSubmitting}
-            className={styles.submitButton}
+            className="px-8 py-3 bg-blue-600 text-white border-none rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed max-sm:w-full"
           >
             {isSubmitting ? '送信中...' : '回答を送信'}
           </button>
@@ -189,22 +188,26 @@ export function QuizContainer({ lessonId, courseId, chapterId }: QuizContainerPr
             type="button"
             onClick={handleNext}
             disabled={!selectedOptionId}
-            className={styles.navButton}
+            className="px-8 py-3 bg-slate-700 text-slate-50 border border-slate-600 rounded-lg text-sm cursor-pointer transition-colors hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed max-sm:w-full"
           >
             次の問題
           </button>
         )}
       </div>
 
-      <div className={styles.questionIndicators}>
+      <div className="flex justify-center gap-2 p-6 flex-wrap">
         {quiz.questions.map((q, index) => (
           <button
             key={q.id}
             type="button"
             onClick={() => setCurrentQuestionIndex(index)}
-            className={`${styles.indicator} ${
-              index === currentQuestionIndex ? styles.current : ''
-            } ${answers.has(q.id) ? styles.answered : ''}`}
+            className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-medium cursor-pointer transition-colors ${
+              index === currentQuestionIndex
+                ? 'bg-blue-600 border-blue-600 text-white'
+                : answers.has(q.id)
+                ? 'bg-slate-700 border-green-500 text-green-400 border-2'
+                : 'bg-slate-700 border-slate-600 text-slate-400 border-2 hover:border-blue-500 hover:text-blue-400'
+            }`}
             aria-label={`問題 ${index + 1}`}
           >
             {index + 1}

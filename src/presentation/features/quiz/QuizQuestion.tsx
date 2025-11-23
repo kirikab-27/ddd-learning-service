@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import styles from './QuizQuestion.module.css';
 
 interface QuizOption {
   id: string;
@@ -36,39 +35,42 @@ export function QuizQuestion({
   const [isExplanationOpen, setIsExplanationOpen] = useState(false);
 
   const getOptionClassName = (optionId: string) => {
-    const classNames = [styles.option];
+    const baseClasses = 'flex items-center gap-4 px-6 py-4 bg-slate-800 border-2 border-slate-700 rounded-lg cursor-pointer transition-all max-sm:px-4 max-sm:py-3';
+    const classes = [baseClasses];
 
     if (selectedOptionId === optionId) {
-      classNames.push(styles.selected);
+      classes.push('border-blue-600 bg-slate-700');
     }
 
     if (showResult) {
       if (optionId === correctOptionId) {
-        classNames.push(styles.correct);
+        classes.push('border-green-400 bg-green-400/10');
       } else if (selectedOptionId === optionId && optionId !== correctOptionId) {
-        classNames.push(styles.incorrect);
+        classes.push('border-red-400 bg-red-400/10');
       }
     }
 
     if (disabled) {
-      classNames.push(styles.disabled);
+      classes.push('cursor-not-allowed opacity-70');
+    } else {
+      classes.push('hover:border-blue-600 hover:bg-slate-700');
     }
 
-    return classNames.join(' ');
+    return classes.join(' ');
   };
 
   const isCorrectAnswer = showResult && selectedOptionId === correctOptionId;
 
   return (
-    <div className={styles.container} data-testid="quiz-question">
-      <h2 className={styles.questionText}>{question.text}</h2>
+    <div className="p-6 max-sm:p-4" data-testid="quiz-question">
+      <h2 className="text-xl font-semibold text-slate-50 mb-6 leading-relaxed max-sm:text-lg">{question.text}</h2>
 
       <fieldset
-        className={styles.options}
+        className="flex flex-col gap-4 border-none p-0 m-0"
         disabled={disabled}
         aria-describedby={showResult ? 'quiz-result' : undefined}
       >
-        <legend className={styles.srOnly}>選択肢</legend>
+        <legend className="sr-only">選択肢</legend>
         {question.options.map((option) => (
           <label
             key={option.id}
@@ -82,15 +84,15 @@ export function QuizQuestion({
               checked={selectedOptionId === option.id}
               onChange={() => onSelect(option.id)}
               disabled={disabled}
-              className={styles.radio}
+              className="w-5 h-5 accent-blue-600 cursor-inherit"
               aria-label={option.text}
             />
-            <span className={styles.optionText}>{option.text}</span>
+            <span className="flex-1 text-base text-slate-50">{option.text}</span>
             {showResult && option.id === correctOptionId && (
-              <span className={styles.correctBadge} aria-hidden="true">✓</span>
+              <span className="text-green-400 font-bold text-xl" aria-hidden="true">✓</span>
             )}
             {showResult && selectedOptionId === option.id && option.id !== correctOptionId && (
-              <span className={styles.incorrectBadge} aria-hidden="true">✗</span>
+              <span className="text-red-400 font-bold text-xl" aria-hidden="true">✗</span>
             )}
           </label>
         ))}
@@ -99,22 +101,22 @@ export function QuizQuestion({
       {showResult && (
         <div
           id="quiz-result"
-          className={styles.result}
+          className="mt-6 p-4 rounded-lg text-center"
           role="status"
           aria-live="polite"
           data-testid="quiz-result"
         >
-          <p className={isCorrectAnswer ? styles.resultCorrect : styles.resultIncorrect}>
+          <p className={`font-semibold text-lg ${isCorrectAnswer ? 'text-green-400' : 'text-red-400'}`}>
             {isCorrectAnswer ? '正解です！' : '不正解です'}
           </p>
         </div>
       )}
 
       {showResult && explanation && (
-        <div className={styles.explanationContainer}>
+        <div className="mt-6">
           <button
             type="button"
-            className={styles.explanationToggle}
+            className="flex items-center gap-2 bg-transparent border-none text-slate-400 text-sm cursor-pointer p-2 hover:text-slate-50"
             onClick={() => setIsExplanationOpen(!isExplanationOpen)}
             aria-expanded={isExplanationOpen}
             aria-controls="quiz-explanation"
@@ -126,7 +128,7 @@ export function QuizQuestion({
           {isExplanationOpen && (
             <div
               id="quiz-explanation"
-              className={styles.explanation}
+              className="mt-4 p-4 bg-slate-800 rounded-lg text-slate-400 leading-relaxed"
               data-testid="quiz-explanation"
             >
               {explanation}
