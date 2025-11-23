@@ -1,9 +1,10 @@
 'use client';
 
-import { use, useState, useCallback } from 'react';
+import { use, useState, useCallback, useEffect } from 'react';
 import { useLesson } from '@/presentation/hooks/useLesson';
 import { useProgress } from '@/presentation/hooks/useProgress';
 import { LessonContent } from '@/presentation/features/lesson/LessonContent';
+import { InMemoryQuizRepository } from '@/infrastructure/repositories';
 
 interface PageProps {
   params: Promise<{
@@ -18,6 +19,16 @@ export default function LessonPage({ params }: PageProps) {
   const { data, isLoading, error } = useLesson({ courseId, chapterId, lessonId });
   const { completeLesson, isCompleted: checkCompleted } = useProgress(courseId);
   const [localCompleted, setLocalCompleted] = useState(false);
+  const [hasQuiz, setHasQuiz] = useState(false);
+
+  useEffect(() => {
+    const checkQuiz = async () => {
+      const quizRepository = new InMemoryQuizRepository();
+      const quiz = await quizRepository.findByLessonId(lessonId);
+      setHasQuiz(quiz !== null);
+    };
+    checkQuiz();
+  }, [lessonId]);
 
   const handleComplete = useCallback(async () => {
     try {
@@ -50,11 +61,12 @@ export default function LessonPage({ params }: PageProps) {
   return (
     <LessonContent
       lesson={data.lesson}
-      chapter={data.chapter}
+      chapter={{ id: chapterId, title: data.chapter.title }}
       navigation={data.navigation}
       courseId={data.course.id}
       isCompleted={isCompleted}
       onComplete={handleComplete}
+      hasQuiz={hasQuiz}
     />
   );
 }

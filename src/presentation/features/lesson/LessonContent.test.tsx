@@ -11,6 +11,7 @@ describe('LessonContent', () => {
       order: 1,
     },
     chapter: {
+      id: 'ch-1',
       title: 'Chapter 1: Basics',
     },
     navigation: {

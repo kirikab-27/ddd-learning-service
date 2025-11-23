@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { LessonHeader } from './LessonHeader';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { LessonNavigation } from './LessonNavigation';
@@ -14,6 +15,7 @@ interface LessonContentProps {
     order: number;
   };
   chapter: {
+    id: string;
     title: string;
   };
   navigation: {
@@ -23,6 +25,7 @@ interface LessonContentProps {
   courseId: string;
   isCompleted: boolean;
   onComplete?: () => void;
+  hasQuiz?: boolean;
 }
 
 export function LessonContent({
@@ -32,12 +35,15 @@ export function LessonContent({
   courseId,
   isCompleted,
   onComplete,
+  hasQuiz = false,
 }: LessonContentProps) {
   const handleComplete = () => {
     if (onComplete) {
       onComplete();
     }
   };
+
+  const quizUrl = `/courses/${courseId}/chapters/${chapter.id}/lessons/${lesson.id}/quiz`;
 
   return (
     <article className={styles.article}>
@@ -59,6 +65,11 @@ export function LessonContent({
           isCompleted={isCompleted}
           onComplete={handleComplete}
         />
+        {isCompleted && hasQuiz && (
+          <Link href={quizUrl} className={styles.quizLink}>
+            理解度チェック
+          </Link>
+        )}
       </div>
 
       <LessonNavigation
