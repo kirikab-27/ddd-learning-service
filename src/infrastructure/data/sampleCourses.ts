@@ -1,55 +1,27 @@
 import { Course, Chapter, Lesson, LessonTitle, MarkdownContent } from '@/domain/content/models';
 import { CourseId, ChapterId, LessonId } from '@/domain/shared';
 
-const lesson1 = Lesson.create({
-  id: LessonId.create('lesson-1'),
-  title: LessonTitle.create('DDDとは何か'),
-  content: MarkdownContent.create(`
-# DDDとは何か
+// =============================================================================
+// 第1部: DDDの基礎概念
+// =============================================================================
 
-**ドメイン駆動設計（Domain-Driven Design: DDD）** は、複雑なソフトウェア開発において、
-ビジネスドメインの理解を中心に据えたアプローチです。
-
-## なぜDDDが重要なのか
-
-1. **ビジネスとコードの整合性**: ドメインエキスパートと開発者が同じ言語で会話できる
-2. **保守性の向上**: 変更に強い設計が可能
-3. **複雑性の管理**: 境界づけられたコンテキストで複雑性を分離
-
-## DDDの主要な概念
-
-### 戦略的設計
-- ユビキタス言語
-- 境界づけられたコンテキスト
-- コンテキストマップ
-
-### 戦術的設計
-- エンティティ
-- 値オブジェクト
-- 集約
-- リポジトリ
-
-\`\`\`typescript
-// 値オブジェクトの例
-class Email {
-  private constructor(private readonly value: string) {}
-
-  static create(value: string): Email {
-    if (!value.includes('@')) {
-      throw new Error('Invalid email format');
-    }
-    return new Email(value);
-  }
-}
-\`\`\`
-
-次のレッスンでは、値オブジェクトについて詳しく学びます。
-`),
+// Chapter 1: ドメインとは何か（Frontend2が作成予定 - プレースホルダー）
+const chapter1 = Chapter.create({
+  id: ChapterId.create('chapter-1'),
+  title: 'Chapter 1: ドメインとは何か',
   order: 1,
+  lessons: [], // Frontend2が lesson-1-1, lesson-1-2, lesson-1-3 を追加予定
 });
 
-const lesson2 = Lesson.create({
-  id: LessonId.create('lesson-2'),
+// Chapter 2-4: 後続チケットで追加予定
+
+// =============================================================================
+// 第2部: 戦術的設計パターン
+// =============================================================================
+
+// Chapter 5: 値オブジェクト
+const lesson5_1 = Lesson.create({
+  id: LessonId.create('lesson-5-1'),
   title: LessonTitle.create('値オブジェクト'),
   content: MarkdownContent.create(`
 # 値オブジェクト
@@ -98,11 +70,19 @@ export class Money {
 - 他のオブジェクトの属性を記述する場合
 - 不変性が望ましい場合
 `),
-  order: 2,
+  order: 1,
 });
 
-const lesson3 = Lesson.create({
-  id: LessonId.create('lesson-3'),
+const chapter5 = Chapter.create({
+  id: ChapterId.create('chapter-5'),
+  title: 'Chapter 5: 値オブジェクト',
+  order: 5,
+  lessons: [lesson5_1],
+});
+
+// Chapter 6: エンティティ
+const lesson6_1 = Lesson.create({
+  id: LessonId.create('lesson-6-1'),
   title: LessonTitle.create('エンティティ'),
   content: MarkdownContent.create(`
 # エンティティ
@@ -155,18 +135,21 @@ export class User {
 }
 \`\`\`
 `),
-  order: 3,
-});
-
-const chapter1 = Chapter.create({
-  id: ChapterId.create('chapter-1'),
-  title: '第1章: DDD入門',
   order: 1,
-  lessons: [lesson1, lesson2, lesson3],
 });
 
-const lesson4 = Lesson.create({
-  id: LessonId.create('lesson-4'),
+const chapter6 = Chapter.create({
+  id: ChapterId.create('chapter-6'),
+  title: 'Chapter 6: エンティティ',
+  order: 6,
+  lessons: [lesson6_1],
+});
+
+// Chapter 7: ドメインサービス（後続チケットで追加予定）
+
+// Chapter 8: 集約
+const lesson8_1 = Lesson.create({
+  id: LessonId.create('lesson-8-1'),
   title: LessonTitle.create('集約とは'),
   content: MarkdownContent.create(`
 # 集約（Aggregate）
@@ -212,18 +195,22 @@ export class Order {
   order: 1,
 });
 
-const chapter2 = Chapter.create({
-  id: ChapterId.create('chapter-2'),
-  title: '第2章: 戦術的設計',
-  order: 2,
-  lessons: [lesson4],
+const chapter8 = Chapter.create({
+  id: ChapterId.create('chapter-8'),
+  title: 'Chapter 8: 集約',
+  order: 8,
+  lessons: [lesson8_1],
 });
 
+// =============================================================================
+// コース定義
+// =============================================================================
+
 const ddsCourse = Course.create({
-  id: CourseId.create('ddd-practice'),
+  id: CourseId.create('course-ddd-basics'),
   title: 'DDD基礎コース',
   description: 'ドメイン駆動設計の基礎を学ぶコースです。',
-  chapters: [chapter1, chapter2],
+  chapters: [chapter1, chapter5, chapter6, chapter8],
 });
 
 export const sampleCourses: Course[] = [ddsCourse];
