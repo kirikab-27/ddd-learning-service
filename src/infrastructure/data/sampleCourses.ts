@@ -1,16 +1,17 @@
 import { Course, Chapter, Lesson, LessonTitle, MarkdownContent } from '@/domain/content/models';
 import { CourseId, ChapterId, LessonId } from '@/domain/shared';
+import { chapter1Lessons } from './sampleLessons';
 
 // =============================================================================
 // 第1部: DDDの基礎概念
 // =============================================================================
 
-// Chapter 1: ドメインとは何か（Frontend2が作成予定 - プレースホルダー）
+// Chapter 1: ドメインとは何か
 const chapter1 = Chapter.create({
   id: ChapterId.create('chapter-1'),
   title: 'Chapter 1: ドメインとは何か',
   order: 1,
-  lessons: [], // Frontend2が lesson-1-1, lesson-1-2, lesson-1-3 を追加予定
+  lessons: chapter1Lessons,
 });
 
 // Chapter 2-4: 後続チケットで追加予定
