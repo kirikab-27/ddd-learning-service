@@ -272,3 +272,458 @@ class Order {
 });
 
 export const chapter1Lessons = [lesson1_1, lesson1_2, lesson1_3];
+
+// =============================================================================
+// Chapter 2: ユビキタス言語
+// =============================================================================
+
+// Lesson 2-1: ユビキタス言語とは
+export const lesson2_1 = Lesson.create({
+  id: LessonId.create('lesson-2-1'),
+  title: LessonTitle.create('ユビキタス言語とは'),
+  content: MarkdownContent.create(`
+# ユビキタス言語とは
+
+## 概要
+
+このレッスンでは、DDDの核心概念である「ユビキタス言語」について学びます。
+ユビキタス言語とは何か、なぜ重要なのか、そしてどのような特徴を持つのかを理解しましょう。
+
+## ユビキタス言語の定義
+
+**ユビキタス言語（Ubiquitous Language）** とは、プロジェクトに関わる全員が使う共通のドメイン言語です。
+
+### チーム全員が使う共通言語
+
+ユビキタス言語は以下の人々が共通して使用します：
+
+| 立場 | 使用場面 |
+|------|---------|
+| ドメインエキスパート | 要件の説明、業務の相談 |
+| 開発者 | コードの実装、設計の議論 |
+| プロジェクトマネージャー | 仕様書の作成、進捗報告 |
+| QAエンジニア | テストケースの作成 |
+
+### ドメインエキスパートと開発者の橋渡し
+
+\`\`\`
+ドメインエキスパート ←→ ユビキタス言語 ←→ 開発者
+       ↓                    ↓                ↓
+    業務知識              共通理解            コード
+\`\`\`
+
+## 言語の不一致による問題
+
+ユビキタス言語がない場合、以下のような問題が発生します。
+
+### 1. コミュニケーションエラー
+
+\`\`\`
+ビジネス: 「顧客を凍結して」
+開発者A: 「アカウントを無効化すればいいんだな」
+開発者B: 「いや、ログインを一時停止するだけでは？」
+→ 実装がバラバラになる
+\`\`\`
+
+### 2. 実装ミス
+
+言葉の解釈が異なると、ビジネスの意図と異なるコードが書かれます。
+
+\`\`\`typescript
+// ビジネスの意図：「注文をキャンセルする」＝在庫を戻し、決済を取り消す
+// 開発者の解釈：削除フラグを立てるだけ
+function cancelOrder(orderId: string) {
+  db.orders.update(orderId, { deleted: true }); // 不完全な実装
+}
+\`\`\`
+
+### 3. ドキュメントとコードの乖離
+
+\`\`\`
+仕様書: 「ユーザー」
+コード: User, Customer, Account, Member が混在
+→ どれが何を指すのか分からない
+\`\`\`
+
+## ユビキタス言語の特徴
+
+### 1. ドメイン固有
+
+ユビキタス言語は、その事業ドメインに特化した言葉です。
+
+\`\`\`typescript
+// ECサイトのユビキタス言語
+class ShoppingCart { ... }  // 買い物かご
+class Checkout { ... }      // 購入手続き
+class Shipment { ... }      // 出荷
+
+// 医療システムのユビキタス言語
+class Patient { ... }       // 患者
+class Prescription { ... }  // 処方箋
+class Diagnosis { ... }     // 診断
+\`\`\`
+
+### 2. 進化する
+
+ビジネスの理解が深まるにつれて、ユビキタス言語も進化します。
+
+\`\`\`
+初期: 「ユーザー」
+  ↓ ビジネスの理解が深まる
+中期: 「会員」と「ゲスト」に分離
+  ↓ さらに詳細化
+後期: 「プレミアム会員」「一般会員」「ゲスト」
+\`\`\`
+
+### 3. コードに反映される
+
+ユビキタス言語はドキュメントだけでなく、コードにも反映されます。
+
+\`\`\`typescript
+// 良い例：ユビキタス言語がそのままコードに
+class Order {
+  confirm(): void { ... }      // 「注文を確定する」
+  cancel(): void { ... }       // 「注文をキャンセルする」
+  requestRefund(): void { ... } // 「返金を依頼する」
+}
+\`\`\`
+
+## まとめ
+
+- **ユビキタス言語**は、チーム全員が使う共通のドメイン言語
+- 言語の不一致は、**コミュニケーションエラー**、**実装ミス**、**ドキュメントとコードの乖離**を引き起こす
+- ユビキタス言語は**ドメイン固有**で、**進化**し、**コードに反映**される
+`),
+  order: 1,
+});
+
+// Lesson 2-2: チームで共通言語を作る
+export const lesson2_2 = Lesson.create({
+  id: LessonId.create('lesson-2-2'),
+  title: LessonTitle.create('チームで共通言語を作る'),
+  content: MarkdownContent.create(`
+# チームで共通言語を作る
+
+## 概要
+
+このレッスンでは、ユビキタス言語をチームで構築する方法について学びます。
+用語集の作成、モデリングワークショップ、言語の洗練プロセスを理解しましょう。
+
+## 用語集の作成
+
+### 用語の定義方法
+
+用語集には以下の要素を含めます：
+
+| 項目 | 説明 | 例 |
+|------|-----|-----|
+| 用語 | ドメインで使う言葉 | 「注文」 |
+| 定義 | 用語の明確な意味 | 顧客が商品を購入する意思表示 |
+| 同義語 | 同じ意味で使われる言葉 | オーダー、発注 |
+| 反例 | この用語に含まれないもの | 見積り依頼は含まない |
+| コード表現 | コードでの表現 | \`Order\` クラス |
+
+\`\`\`markdown
+## 用語集の例
+
+### 注文（Order）
+**定義**: 顧客が1つ以上の商品を購入する意思を示したもの
+
+**同義語**: オーダー
+**反例**: 見積り依頼、問い合わせは含まない
+
+**状態**:
+- 下書き（Draft）: 作成中、変更可能
+- 確定済み（Confirmed）: 確定後、変更不可
+- キャンセル（Cancelled）: 取り消し済み
+
+**コード**: \`class Order\`
+\`\`\`
+
+### 用語集の管理・更新
+
+- **バージョン管理**: Gitで用語集を管理し、変更履歴を追跡
+- **レビュープロセス**: 用語の追加・変更時はチームでレビュー
+- **定期的な見直し**: スプリントレトロスペクティブで用語集を確認
+
+## モデリングワークショップ
+
+### ドメインエキスパートとの対話
+
+効果的な質問の例：
+
+\`\`\`
+開発者: 「『注文をキャンセルする』とは具体的にどういうことですか？」
+ドメインエキスパート: 「在庫を戻して、決済を取り消して、顧客に通知を送ることです」
+開発者: 「決済が既に完了している場合は？」
+ドメインエキスパート: 「その場合は『返金処理』になります」
+\`\`\`
+
+### ホワイトボードセッション
+
+1. **概念の可視化**: 主要な概念を付箋やボックスで表現
+2. **関係の明確化**: 概念間の関係を矢印で結ぶ
+3. **境界の発見**: 異なるコンテキストを色分けで表現
+
+\`\`\`
+┌─────────────┐      ┌─────────────┐
+│    顧客     │──────│    注文     │
+│  Customer   │ 作成 │   Order     │
+└─────────────┘      └──────┬──────┘
+                            │ 含む
+                     ┌──────┴──────┐
+                     │   注文明細   │
+                     │  OrderItem  │
+                     └─────────────┘
+\`\`\`
+
+## 言語の洗練プロセス
+
+### 曖昧さの排除
+
+\`\`\`
+曖昧な表現:「商品」
+  ↓ 質問：「商品」は何を指しますか？
+洗練後:
+  - Product: カタログに載っている商品マスタ
+  - OrderItem: 注文に含まれる商品（数量付き）
+  - InventoryItem: 倉庫にある在庫
+\`\`\`
+
+### コンテキストの明確化
+
+同じ言葉でも、コンテキストによって意味が異なることがあります：
+
+\`\`\`
+「顧客」という言葉の意味:
+- 営業コンテキスト: 見込み客から既存顧客まで
+- 配送コンテキスト: 届け先の住所を持つ人
+- 請求コンテキスト: 支払い責任者
+\`\`\`
+
+それぞれのコンテキストで適切な名前を定義します：
+
+\`\`\`typescript
+// 営業コンテキスト
+class Lead { ... }      // 見込み客
+class Customer { ... }  // 既存顧客
+
+// 配送コンテキスト
+class Recipient { ... } // 届け先
+
+// 請求コンテキスト
+class Payer { ... }     // 支払い者
+\`\`\`
+
+## まとめ
+
+- **用語集**は用語、定義、同義語、反例、コード表現を含め、バージョン管理する
+- **モデリングワークショップ**では、ドメインエキスパートとの対話とホワイトボードセッションを活用
+- **言語の洗練**では、曖昧さを排除し、コンテキストを明確化する
+- ユビキタス言語は**継続的に進化**させていくもの
+`),
+  order: 2,
+});
+
+// Lesson 2-3: コードに反映する
+export const lesson2_3 = Lesson.create({
+  id: LessonId.create('lesson-2-3'),
+  title: LessonTitle.create('コードに反映する'),
+  content: MarkdownContent.create(`
+# コードに反映する
+
+## 概要
+
+このレッスンでは、ユビキタス言語をコードに反映する方法について学びます。
+命名規則、コード例の比較、リファクタリングの手法を理解しましょう。
+
+## 命名規則
+
+### クラス名の付け方
+
+ドメインの概念をそのままクラス名にします：
+
+\`\`\`typescript
+// 良い例：ユビキタス言語をそのまま使用
+class Order { }         // 注文
+class Customer { }      // 顧客
+class ShoppingCart { }  // 買い物かご
+class Shipment { }      // 出荷
+
+// 悪い例：技術的な命名
+class OrderData { }     // 「Data」は不要
+class CustomerInfo { }  // 「Info」は曖昧
+class CartManager { }   // 「Manager」は責務が不明確
+\`\`\`
+
+### メソッド名の付け方
+
+ビジネスアクションをそのままメソッド名にします：
+
+\`\`\`typescript
+class Order {
+  // 良い例：ビジネスの言葉
+  confirm(): void { }       // 「注文を確定する」
+  cancel(): void { }        // 「注文をキャンセルする」
+  requestRefund(): void { } // 「返金を依頼する」
+
+  // 悪い例：技術的な言葉
+  setStatus(): void { }     // 何のステータス？
+  process(): void { }       // 何を処理？
+  update(): void { }        // 何を更新？
+}
+\`\`\`
+
+### ドメイン用語をそのまま使う
+
+ドメインエキスパートが使う言葉を、そのままコードに反映します：
+
+\`\`\`typescript
+// ドメインエキスパートの言葉
+// 「在庫を引き当てる」「出荷指示を出す」「配送完了を記録する」
+
+class Inventory {
+  allocate(orderId: OrderId, quantity: number): Allocation {
+    // 在庫を引き当てる
+  }
+}
+
+class Warehouse {
+  issueShipmentInstruction(order: Order): ShipmentInstruction {
+    // 出荷指示を出す
+  }
+}
+
+class Delivery {
+  recordCompletion(shipmentId: ShipmentId): void {
+    // 配送完了を記録する
+  }
+}
+\`\`\`
+
+## コード例
+
+### ユビキタス言語を反映したコード
+
+\`\`\`typescript
+// 用語集:
+// - 注文（Order）: 顧客が商品を購入する意思表示
+// - 確定する（confirm）: 注文を変更不可にする
+// - キャンセルする（cancel）: 注文を取り消す
+
+class Order {
+  private status: OrderStatus;
+  private items: OrderItem[];
+
+  confirm(): void {
+    if (this.items.length === 0) {
+      throw new EmptyOrderCannotBeConfirmedError();
+    }
+    if (this.status !== OrderStatus.Draft) {
+      throw new OrderAlreadyConfirmedError();
+    }
+    this.status = OrderStatus.Confirmed;
+  }
+
+  cancel(): void {
+    if (this.status === OrderStatus.Shipped) {
+      throw new ShippedOrderCannotBeCancelledError();
+    }
+    this.status = OrderStatus.Cancelled;
+  }
+}
+\`\`\`
+
+### 反映されていないコードとの比較
+
+\`\`\`typescript
+// 悪い例：ユビキタス言語が反映されていない
+class OrderService {
+  processOrder(data: OrderData): void {
+    if (data.items.length === 0) {
+      throw new Error('Items required');
+    }
+    data.status = 1; // マジックナンバー
+    db.save(data);
+  }
+
+  updateOrderStatus(id: string, status: number): void {
+    const data = db.find(id);
+    data.status = status;
+    db.save(data);
+  }
+}
+
+// 良い例：ユビキタス言語が反映されている
+class Order {
+  confirm(): void {
+    this.ensureNotEmpty();
+    this.ensureDraft();
+    this.status = OrderStatus.Confirmed;
+  }
+
+  private ensureNotEmpty(): void {
+    if (this.items.length === 0) {
+      throw new EmptyOrderCannotBeConfirmedError();
+    }
+  }
+}
+\`\`\`
+
+## リファクタリング
+
+### 既存コードへの適用方法
+
+1. **用語の洗い出し**: コード内の命名を一覧化
+2. **用語集との照合**: ユビキタス言語と比較
+3. **リネーム**: 段階的に命名を変更
+
+\`\`\`typescript
+// Step 1: 現状の確認
+class UserData {
+  updateStatus(s: number): void { }
+}
+
+// Step 2: クラス名の変更
+class Customer {  // UserData → Customer
+  updateStatus(s: number): void { }
+}
+
+// Step 3: メソッド名の変更
+class Customer {
+  activate(): void { }  // updateStatus → activate（有効化する）
+  suspend(): void { }   // updateStatus → suspend（一時停止する）
+}
+
+// Step 4: パラメータの明確化
+class Customer {
+  activate(): void {
+    this.status = CustomerStatus.Active;
+  }
+  suspend(reason: SuspensionReason): void {
+    this.status = CustomerStatus.Suspended;
+    this.suspensionReason = reason;
+  }
+}
+\`\`\`
+
+### 段階的なリファクタリング
+
+大きな変更は避け、小さな変更を積み重ねます：
+
+1. **テストを書く**: 現状の動作を保証
+2. **命名を変更**: IDEのリファクタリング機能を活用
+3. **テストを実行**: 動作が変わっていないことを確認
+4. **コミット**: 小さな単位でコミット
+
+## まとめ
+
+- **クラス名**はドメインの概念を、**メソッド名**はビジネスアクションをそのまま表現
+- 技術的な命名（Data, Info, Manager, process, update）を避け、**ドメイン用語をそのまま使う**
+- **リファクタリング**は段階的に行い、テストで動作を保証しながら進める
+- コードがユビキタス言語を反映することで、**可読性**と**保守性**が向上する
+`),
+  order: 3,
+});
+
+export const chapter2Lessons = [lesson2_1, lesson2_2, lesson2_3];

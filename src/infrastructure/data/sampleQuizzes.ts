@@ -179,6 +179,191 @@ const lesson1_3Questions: Question[] = [
   }),
 ];
 
+// =============================================================================
+// Chapter 2: ユビキタス言語
+// =============================================================================
+
+// Lesson 2-1: ユビキタス言語とは（5問）
+const lesson2_1Questions: Question[] = [
+  Question.create({
+    id: 'q2-1-1',
+    text: 'ユビキタス言語とは何ですか？',
+    options: [
+      { id: 'a', text: 'プログラミング言語の一種', isCorrect: false },
+      { id: 'b', text: 'チーム全員が使う共通のドメイン言語', isCorrect: true },
+      { id: 'c', text: '英語のこと', isCorrect: false },
+      { id: 'd', text: 'データベース設計用語', isCorrect: false },
+    ],
+    explanation: 'ユビキタス言語は、ドメインエキスパートと開発者が共通で使うドメイン固有の言語です。',
+  }),
+  Question.create({
+    id: 'q2-1-2',
+    text: 'ユビキタス言語がない場合に起きる問題として適切でないものは？',
+    options: [
+      { id: 'a', text: 'コミュニケーションエラー', isCorrect: false },
+      { id: 'b', text: '実装ミス', isCorrect: false },
+      { id: 'c', text: 'コンパイルエラー', isCorrect: true },
+      { id: 'd', text: 'ドキュメントとコードの乖離', isCorrect: false },
+    ],
+    explanation: 'ユビキタス言語がないと、コミュニケーションエラー、実装ミス、乖離が生じますが、コンパイルエラーは言語の問題ではありません。',
+  }),
+  Question.create({
+    id: 'q2-1-3',
+    text: 'ユビキタス言語の特徴として正しくないものは？',
+    options: [
+      { id: 'a', text: 'ドメイン固有である', isCorrect: false },
+      { id: 'b', text: '一度決めたら変更しない', isCorrect: true },
+      { id: 'c', text: 'コードに反映される', isCorrect: false },
+      { id: 'd', text: '進化する', isCorrect: false },
+    ],
+    explanation: 'ユビキタス言語はビジネスの理解が深まるにつれて進化します。固定されたものではありません。',
+  }),
+  Question.create({
+    id: 'q2-1-4',
+    text: 'ユビキタス言語を使用するべき人として含まれないのは？',
+    options: [
+      { id: 'a', text: 'ドメインエキスパート', isCorrect: false },
+      { id: 'b', text: '開発者', isCorrect: false },
+      { id: 'c', text: 'プロジェクトマネージャー', isCorrect: false },
+      { id: 'd', text: '競合他社の社員', isCorrect: true },
+    ],
+    explanation: 'ユビキタス言語はプロジェクトに関わる全員（ドメインエキスパート、開発者、PM、QAなど）が使います。',
+  }),
+  Question.create({
+    id: 'q2-1-5',
+    text: 'ドキュメントとコードの乖離とはどういう状態ですか？',
+    options: [
+      { id: 'a', text: 'ドキュメントが多すぎる状態', isCorrect: false },
+      { id: 'b', text: '仕様書の用語とコードの命名が異なる状態', isCorrect: true },
+      { id: 'c', text: 'コードにコメントがない状態', isCorrect: false },
+      { id: 'd', text: 'テストがない状態', isCorrect: false },
+    ],
+    explanation: '仕様書では「ユーザー」と書いてあるのに、コードではUser、Customer、Accountなどが混在している状態が乖離の例です。',
+  }),
+];
+
+// Lesson 2-2: チームで共通言語を作る（5問）
+const lesson2_2Questions: Question[] = [
+  Question.create({
+    id: 'q2-2-1',
+    text: '用語集に含めるべき項目として適切でないものは？',
+    options: [
+      { id: 'a', text: '用語の定義', isCorrect: false },
+      { id: 'b', text: '同義語', isCorrect: false },
+      { id: 'c', text: '担当者の名前', isCorrect: true },
+      { id: 'd', text: 'コードでの表現', isCorrect: false },
+    ],
+    explanation: '用語集には用語、定義、同義語、反例、コード表現を含めます。担当者の名前は用語集の項目ではありません。',
+  }),
+  Question.create({
+    id: 'q2-2-2',
+    text: '用語集の管理方法として推奨されるのは？',
+    options: [
+      { id: 'a', text: '紙に印刷して保管する', isCorrect: false },
+      { id: 'b', text: 'Gitでバージョン管理する', isCorrect: true },
+      { id: 'c', text: '口頭で伝える', isCorrect: false },
+      { id: 'd', text: '一人だけが管理する', isCorrect: false },
+    ],
+    explanation: '用語集はGitでバージョン管理し、変更履歴を追跡することが推奨されます。',
+  }),
+  Question.create({
+    id: 'q2-2-3',
+    text: 'ホワイトボードセッションで重要なことは？',
+    options: [
+      { id: 'a', text: 'きれいな図を描くこと', isCorrect: false },
+      { id: 'b', text: '図を描きながら対話し、認識を合わせること', isCorrect: true },
+      { id: 'c', text: 'できるだけ短時間で終わらせること', isCorrect: false },
+      { id: 'd', text: '開発者だけで行うこと', isCorrect: false },
+    ],
+    explanation: 'ホワイトボードセッションでは、きれいな図より、対話を通じて認識を合わせることが重要です。',
+  }),
+  Question.create({
+    id: 'q2-2-4',
+    text: '「商品」という曖昧な表現を洗練する例として適切なのは？',
+    options: [
+      { id: 'a', text: 'ProductA、ProductB、ProductCに分ける', isCorrect: false },
+      { id: 'b', text: 'Product（カタログ）、OrderItem（注文明細）、InventoryItem（在庫）に分ける', isCorrect: true },
+      { id: 'c', text: '商品1、商品2、商品3に分ける', isCorrect: false },
+      { id: 'd', text: 'すべてItemに統一する', isCorrect: false },
+    ],
+    explanation: '曖昧な「商品」を、用途に応じてProduct、OrderItem、InventoryItemなど明確な概念に分けます。',
+  }),
+  Question.create({
+    id: 'q2-2-5',
+    text: 'コンテキストの明確化が必要な理由は？',
+    options: [
+      { id: 'a', text: 'コードを短くするため', isCorrect: false },
+      { id: 'b', text: '同じ言葉でもコンテキストによって意味が異なるため', isCorrect: true },
+      { id: 'c', text: 'データベースを正規化するため', isCorrect: false },
+      { id: 'd', text: 'テストを書きやすくするため', isCorrect: false },
+    ],
+    explanation: '「顧客」という言葉も、営業、配送、請求の各コンテキストで異なる意味を持つことがあります。',
+  }),
+];
+
+// Lesson 2-3: コードに反映する（5問）
+const lesson2_3Questions: Question[] = [
+  Question.create({
+    id: 'q2-3-1',
+    text: 'クラス名の命名として適切なのは？',
+    options: [
+      { id: 'a', text: 'OrderData', isCorrect: false },
+      { id: 'b', text: 'Order', isCorrect: true },
+      { id: 'c', text: 'OrderManager', isCorrect: false },
+      { id: 'd', text: 'OrderInfo', isCorrect: false },
+    ],
+    explanation: 'ドメインの概念をそのままクラス名にします。Data、Manager、Infoなどの接尾辞は避けます。',
+  }),
+  Question.create({
+    id: 'q2-3-2',
+    text: 'メソッド名として適切なのは？',
+    options: [
+      { id: 'a', text: 'setStatus()', isCorrect: false },
+      { id: 'b', text: 'process()', isCorrect: false },
+      { id: 'c', text: 'confirm()', isCorrect: true },
+      { id: 'd', text: 'update()', isCorrect: false },
+    ],
+    explanation: 'ビジネスアクション（確定する→confirm）をそのままメソッド名にします。技術的な名前は避けます。',
+  }),
+  Question.create({
+    id: 'q2-3-3',
+    text: 'ユビキタス言語が反映されていないコードの特徴は？',
+    options: [
+      { id: 'a', text: 'マジックナンバーを使用している', isCorrect: true },
+      { id: 'b', text: 'テストが書かれている', isCorrect: false },
+      { id: 'c', text: 'TypeScriptで書かれている', isCorrect: false },
+      { id: 'd', text: 'クラスが分割されている', isCorrect: false },
+    ],
+    explanation: 'status = 1 のようなマジックナンバーは、ビジネスの意味が分からない悪い例です。',
+  }),
+  Question.create({
+    id: 'q2-3-4',
+    text: 'リファクタリングの正しい進め方は？',
+    options: [
+      { id: 'a', text: '一度に全ての命名を変更する', isCorrect: false },
+      { id: 'b', text: 'テストを書き、段階的に命名を変更する', isCorrect: true },
+      { id: 'c', text: 'ドキュメントだけ更新する', isCorrect: false },
+      { id: 'd', text: 'コメントで補足する', isCorrect: false },
+    ],
+    explanation: 'リファクタリングはテストで動作を保証しながら、小さな変更を積み重ねて進めます。',
+  }),
+  Question.create({
+    id: 'q2-3-5',
+    text: 'ドメイン用語をコードに反映するメリットとして正しいのは？',
+    options: [
+      { id: 'a', text: 'コンパイルが速くなる', isCorrect: false },
+      { id: 'b', text: 'コードの可読性と保守性が向上する', isCorrect: true },
+      { id: 'c', text: 'メモリ使用量が減る', isCorrect: false },
+      { id: 'd', text: 'ファイルサイズが小さくなる', isCorrect: false },
+    ],
+    explanation: 'ユビキタス言語をコードに反映することで、コードがビジネスの言葉で書かれ、可読性と保守性が向上します。',
+  }),
+];
+
+// =============================================================================
+// Chapter 5: 値オブジェクト
+// =============================================================================
+
 // 値オブジェクト理解クイズ（lesson-5-1用）
 const valueObjectQuestions: Question[] = [
   Question.create({
@@ -261,7 +446,29 @@ export const sampleQuizzes: Quiz[] = [
     description: 'ドメインモデルの役割と表現方法についての理解度を確認するクイズです。',
     questions: lesson1_3Questions,
   }),
-  // 既存のクイズ
+  // Chapter 2: ユビキタス言語
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-2-1'),
+    lessonId: LessonId.create('lesson-2-1'),
+    title: 'ユビキタス言語とは - 理解度チェック',
+    description: 'ユビキタス言語の定義と特徴についての理解度を確認するクイズです。',
+    questions: lesson2_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-2-2'),
+    lessonId: LessonId.create('lesson-2-2'),
+    title: 'チームで共通言語を作る - 理解度チェック',
+    description: '用語集の作成とモデリングワークショップについての理解度を確認するクイズです。',
+    questions: lesson2_2Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-2-3'),
+    lessonId: LessonId.create('lesson-2-3'),
+    title: 'コードに反映する - 理解度チェック',
+    description: 'ユビキタス言語をコードに反映する方法についての理解度を確認するクイズです。',
+    questions: lesson2_3Questions,
+  }),
+  // Chapter 5: 値オブジェクト
   Quiz.create({
     id: QuizId.create('quiz-lesson-5-1'),
     lessonId: LessonId.create('lesson-5-1'),
