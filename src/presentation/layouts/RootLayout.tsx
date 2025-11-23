@@ -1,7 +1,6 @@
 'use client';
 
 import { ReactNode } from 'react';
-import styles from './RootLayout.module.css';
 
 interface RootLayoutProps {
   children: ReactNode;
@@ -9,7 +8,7 @@ interface RootLayoutProps {
 
 export function RootLayout({ children }: RootLayoutProps) {
   return (
-    <div className={styles.container}>
+    <div className="min-h-screen flex flex-col bg-bg-primary">
       {children}
     </div>
   );
