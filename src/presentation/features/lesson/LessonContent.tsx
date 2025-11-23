@@ -5,7 +5,6 @@ import { LessonHeader } from './LessonHeader';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { LessonNavigation } from './LessonNavigation';
 import { LessonCompleteButton } from './LessonCompleteButton';
-import styles from './LessonContent.module.css';
 
 interface LessonContentProps {
   lesson: {
@@ -46,7 +45,7 @@ export function LessonContent({
   const quizUrl = `/courses/${courseId}/chapters/${chapter.id}/lessons/${lesson.id}/quiz`;
 
   return (
-    <article className={styles.article}>
+    <article className="max-w-3xl mx-auto p-8">
       <LessonHeader
         chapterTitle={chapter.title}
         lessonTitle={lesson.title}
@@ -54,11 +53,11 @@ export function LessonContent({
         isCompleted={isCompleted}
       />
 
-      <div className={styles.body}>
+      <div className="min-h-[400px]">
         <MarkdownRenderer content={lesson.content} />
       </div>
 
-      <div className={styles.actions}>
+      <div className="flex justify-center items-center gap-4 my-8 py-6 border-t border-slate-700 flex-wrap">
         <LessonCompleteButton
           courseId={courseId}
           lessonId={lesson.id}
@@ -66,7 +65,10 @@ export function LessonContent({
           onComplete={handleComplete}
         />
         {isCompleted && hasQuiz && (
-          <Link href={quizUrl} className={styles.quizLink}>
+          <Link
+            href={quizUrl}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium no-underline transition-colors hover:bg-emerald-500"
+          >
             理解度チェック
           </Link>
         )}

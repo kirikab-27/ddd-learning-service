@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import styles from './LessonNavigation.module.css';
 
 interface LessonNavigationProps {
   courseId: string;
@@ -15,24 +14,24 @@ export function LessonNavigation({
   next,
 }: LessonNavigationProps) {
   return (
-    <nav className={styles.navigation}>
-      <div className={styles.navItem}>
+    <nav className="flex justify-between mt-12 pt-8 border-t border-slate-700">
+      <div className="flex-1">
         {previous && (
           <Link
             href={`/courses/${courseId}/chapters/${previous.chapterId}/lessons/${previous.lessonId}`}
-            className={styles.navLink}
+            className="inline-flex items-center px-6 py-3 text-blue-400 no-underline rounded-lg transition-colors hover:bg-slate-800"
           >
-            <span className={styles.navLabel}>← 前のレッスン</span>
+            <span className="font-medium">← 前のレッスン</span>
           </Link>
         )}
       </div>
-      <div className={styles.navItem}>
+      <div className="flex-1 text-right">
         {next && (
           <Link
             href={`/courses/${courseId}/chapters/${next.chapterId}/lessons/${next.lessonId}`}
-            className={styles.navLink}
+            className="inline-flex items-center px-6 py-3 text-blue-400 no-underline rounded-lg transition-colors hover:bg-slate-800"
           >
-            <span className={styles.navLabel}>次のレッスン →</span>
+            <span className="font-medium">次のレッスン →</span>
           </Link>
         )}
       </div>

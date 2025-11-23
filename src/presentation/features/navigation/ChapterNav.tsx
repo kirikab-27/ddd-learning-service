@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { LessonNav } from './LessonNav';
-import styles from './ChapterNav.module.css';
 
 interface ChapterNavProps {
   courseId: string;
@@ -29,23 +28,23 @@ export function ChapterNav({ courseId, chapter }: ChapterNavProps) {
   const totalCount = chapter.lessons.length;
 
   return (
-    <div className={styles.chapter}>
+    <div className="border-b border-slate-700">
       <button
-        className={styles.header}
+        className="flex items-center gap-2 w-full p-3 bg-transparent border-none cursor-pointer text-left transition-colors hover:bg-slate-800"
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
       >
-        <span className={styles.expandIcon}>{isExpanded ? '▼' : '▶'}</span>
-        <span className={styles.title}>
+        <span className="text-xs text-slate-400">{isExpanded ? '▼' : '▶'}</span>
+        <span className="flex-1 font-medium text-slate-50">
           {chapter.order}. {chapter.title}
         </span>
-        <span className={styles.progress}>
+        <span className="text-xs text-slate-400 bg-slate-700 px-2 py-0.5 rounded-full">
           {completedCount}/{totalCount}
         </span>
       </button>
 
       {isExpanded && (
-        <div className={styles.lessons}>
+        <div className="pb-2">
           {chapter.lessons.map(lesson => (
             <LessonNav
               key={lesson.id}
