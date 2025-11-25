@@ -844,6 +844,187 @@ const lesson5_3Questions: Question[] = [
   }),
 ];
 
+// =============================================================================
+// Chapter 6: エンティティ
+// =============================================================================
+
+// Lesson 6-1: エンティティとは（5問）
+const lesson6_1Questions: Question[] = [
+  Question.create({
+    id: 'q6-1-1',
+    text: 'エンティティの最も重要な特徴は何ですか？',
+    options: [
+      { id: 'a', text: '不変であること', isCorrect: false },
+      { id: 'b', text: '一意の識別子による同一性を持つこと', isCorrect: true },
+      { id: 'c', text: '全ての属性が必須であること', isCorrect: false },
+      { id: 'd', text: 'データベースに必ず永続化されること', isCorrect: false },
+    ],
+    explanation: 'エンティティはライフサイクルを通じて一貫した同一性を持ちます。IDで識別され、属性が変わっても同じエンティティとして扱われます。',
+  }),
+  Question.create({
+    id: 'q6-1-2',
+    text: '日常の例で、エンティティとして適切なものはどれですか？',
+    options: [
+      { id: 'a', text: '1000円という金額', isCorrect: false },
+      { id: 'b', text: '銀行口座（口座番号で識別、残高は変わる）', isCorrect: true },
+      { id: 'c', text: '郵便番号', isCorrect: false },
+      { id: 'd', text: 'RGB(255, 0, 0)という色', isCorrect: false },
+    ],
+    explanation: '銀行口座は口座番号で識別され、残高や名義人情報が変わっても同じ口座として扱われます。これがエンティティの典型例です。',
+  }),
+  Question.create({
+    id: 'q6-1-3',
+    text: 'エンティティと値オブジェクトの比較として正しいのは？',
+    options: [
+      { id: 'a', text: 'エンティティは値で識別され、値オブジェクトはIDで識別される', isCorrect: false },
+      { id: 'b', text: 'エンティティはIDで識別され、値オブジェクトは全属性で識別される', isCorrect: true },
+      { id: 'c', text: 'エンティティは不変で、値オブジェクトは変更可能', isCorrect: false },
+      { id: 'd', text: 'エンティティはプリミティブ型、値オブジェクトはオブジェクト型', isCorrect: false },
+    ],
+    explanation: 'エンティティはIDで識別され変更可能、値オブジェクトは全属性の値で識別され不変です。',
+  }),
+  Question.create({
+    id: 'q6-1-4',
+    text: 'エンティティの同一性を検証するequalsメソッドで比較すべきものは？',
+    options: [
+      { id: 'a', text: '全ての属性の値', isCorrect: false },
+      { id: 'b', text: 'IDのみ', isCorrect: true },
+      { id: 'c', text: 'メモリアドレス', isCorrect: false },
+      { id: 'd', text: '作成日時', isCorrect: false },
+    ],
+    explanation: 'エンティティのequalsメソッドでは、IDのみを比較します。属性が変わってもIDが同じなら同一のエンティティです。',
+  }),
+  Question.create({
+    id: 'q6-1-5',
+    text: 'エンティティで状態が変化する例として適切なのは？',
+    options: [
+      { id: 'a', text: '注文の状態が「下書き」から「確定」に変わる', isCorrect: true },
+      { id: 'b', text: '1000円が2000円になる', isCorrect: false },
+      { id: 'c', text: '郵便番号100-0001が100-0002になる', isCorrect: false },
+      { id: 'd', text: 'true が false になる', isCorrect: false },
+    ],
+    explanation: '注文エンティティは注文番号で識別され、状態（下書き→確定→配送中）が時間とともに変化します。これがエンティティの変更可能性の典型例です。',
+  }),
+];
+
+// Lesson 6-2: ライフサイクルと同一性（5問）
+const lesson6_2Questions: Question[] = [
+  Question.create({
+    id: 'q6-2-1',
+    text: 'エンティティのライフサイクルの4つのフェーズに含まれないものは？',
+    options: [
+      { id: 'a', text: '生成（create）', isCorrect: false },
+      { id: 'b', text: '取得（retrieve）', isCorrect: false },
+      { id: 'c', text: '変更（update）', isCorrect: false },
+      { id: 'd', text: '複製（clone）', isCorrect: true },
+    ],
+    explanation: 'エンティティのライフサイクルは「生成→取得→変更→削除」の4つのフェーズです。複製は通常のライフサイクルには含まれません。',
+  }),
+  Question.create({
+    id: 'q6-2-2',
+    text: 'UUID/GUIDをIDとして使用するメリットは？',
+    options: [
+      { id: 'a', text: 'URLに使いやすい', isCorrect: false },
+      { id: 'b', text: '衝突の心配がなく、分散システムに適している', isCorrect: true },
+      { id: 'c', text: '見た目が分かりやすい', isCorrect: false },
+      { id: 'd', text: 'データベースのインデックスが高速', isCorrect: false },
+    ],
+    explanation: 'UUIDは事実上一意であるため、複数のサーバーやクライアントで独立してIDを生成しても衝突しません。分散システムに最適です。',
+  }),
+  Question.create({
+    id: 'q6-2-3',
+    text: '連番（Auto Increment）IDのデメリットとして正しいのは？',
+    options: [
+      { id: 'a', text: 'データベースのパフォーマンスが悪い', isCorrect: false },
+      { id: 'b', text: '分散システムには不向きで、IDが推測可能', isCorrect: true },
+      { id: 'c', text: 'メモリ使用量が多い', isCorrect: false },
+      { id: 'd', text: '実装が複雑', isCorrect: false },
+    ],
+    explanation: '連番IDは単一データベースで採番するため分散システムには不向きです。また、1, 2, 3...と推測可能なため、セキュリティ上の懸念もあります。',
+  }),
+  Question.create({
+    id: 'q6-2-4',
+    text: '自然キー（Natural Key）の例として適切なのは？',
+    options: [
+      { id: 'a', text: 'UUID', isCorrect: false },
+      { id: 'b', text: 'メールアドレスや社員番号', isCorrect: true },
+      { id: 'c', text: 'ランダムな文字列', isCorrect: false },
+      { id: 'd', text: 'タイムスタンプ', isCorrect: false },
+    ],
+    explanation: '自然キーは、ビジネス上意味のある値をIDとして使います。メールアドレス、社員番号、注文番号などが例です。',
+  }),
+  Question.create({
+    id: 'q6-2-5',
+    text: '楽観的ロック（Optimistic Locking）で使用されるものは？',
+    options: [
+      { id: 'a', text: 'パスワード', isCorrect: false },
+      { id: 'b', text: 'バージョン番号やタイムスタンプ', isCorrect: true },
+      { id: 'c', text: 'IPアドレス', isCorrect: false },
+      { id: 'd', text: 'セッションID', isCorrect: false },
+    ],
+    explanation: '楽観的ロックでは、バージョン番号を持ち、更新時にバージョンをチェックすることで競合を検出します。競合時はエラーを返します。',
+  }),
+];
+
+// Lesson 6-3: エンティティと値オブジェクトの違い（5問）
+const lesson6_3Questions: Question[] = [
+  Question.create({
+    id: 'q6-3-1',
+    text: 'エンティティの可変性について正しい説明はどれですか？',
+    options: [
+      { id: 'a', text: 'エンティティは常に不変である', isCorrect: false },
+      { id: 'b', text: 'エンティティは変更可能（Mutable）で、状態が変化しうる', isCorrect: true },
+      { id: 'c', text: 'エンティティの全属性が常に変更可能', isCorrect: false },
+      { id: 'd', text: 'エンティティは一度作成したら削除できない', isCorrect: false },
+    ],
+    explanation: 'エンティティは変更可能で、状態が時間とともに変化します。ただし、IDは通常不変です。',
+  }),
+  Question.create({
+    id: 'q6-3-2',
+    text: '値オブジェクトの比較方法として正しいのは？',
+    options: [
+      { id: 'a', text: 'IDで比較する', isCorrect: false },
+      { id: 'b', text: '全属性の値で比較する', isCorrect: true },
+      { id: 'c', text: 'メモリアドレスで比較する', isCorrect: false },
+      { id: 'd', text: '作成日時で比較する', isCorrect: false },
+    ],
+    explanation: '値オブジェクトは全属性の値が等しければ等価とみなされます。Money(1000, "JPY")とMoney(1000, "JPY")は同じです。',
+  }),
+  Question.create({
+    id: 'q6-3-3',
+    text: '「追跡する必要があるか？」という判断基準で、エンティティとして扱うべきものは？',
+    options: [
+      { id: 'a', text: '住所', isCorrect: false },
+      { id: 'b', text: '顧客（契約状態や購入履歴を追跡）', isCorrect: true },
+      { id: 'c', text: '金額', isCorrect: false },
+      { id: 'd', text: '色', isCorrect: false },
+    ],
+    explanation: '顧客は契約状態や購入履歴を追跡する必要があるため、エンティティとして扱います。住所や金額は追跡不要なので値オブジェクトです。',
+  }),
+  Question.create({
+    id: 'q6-3-4',
+    text: 'エンティティと値オブジェクトの判断で誤っているものは？',
+    options: [
+      { id: 'a', text: '時間とともに変化するならエンティティの可能性が高い', isCorrect: false },
+      { id: 'b', text: '交換可能なら値オブジェクトの可能性が高い', isCorrect: false },
+      { id: 'c', text: 'データベースに保存するものは必ずエンティティ', isCorrect: true },
+      { id: 'd', text: '同一性が重要ならエンティティの可能性が高い', isCorrect: false },
+    ],
+    explanation: 'データベースへの保存有無は判断基準ではありません。値オブジェクトもエンティティの一部として保存されることがあります。',
+  }),
+  Question.create({
+    id: 'q6-3-5',
+    text: 'エンティティが持つライフサイクルとして正しいのは？',
+    options: [
+      { id: 'a', text: '生成のみ', isCorrect: false },
+      { id: 'b', text: '作成→変更→削除の一連の流れを持つ', isCorrect: true },
+      { id: 'c', text: '削除できない', isCorrect: false },
+      { id: 'd', text: '常に読み取り専用', isCorrect: false },
+    ],
+    explanation: 'エンティティは作成、取得、変更、削除のライフサイクルを持ちます。値オブジェクトは生成のみです。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -947,6 +1128,28 @@ export const sampleQuizzes: Quiz[] = [
     title: '自己検証と不変条件 - 理解度チェック',
     description: '自己検証と不変条件についての理解度を確認するクイズです。',
     questions: lesson5_3Questions,
+  }),
+  // Chapter 6: エンティティ
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-6-1'),
+    lessonId: LessonId.create('lesson-6-1'),
+    title: 'エンティティとは - 理解度チェック',
+    description: 'エンティティの定義と特徴についての理解度を確認するクイズです。',
+    questions: lesson6_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-6-2'),
+    lessonId: LessonId.create('lesson-6-2'),
+    title: 'ライフサイクルと同一性 - 理解度チェック',
+    description: 'エンティティのライフサイクルとID生成戦略についての理解度を確認するクイズです。',
+    questions: lesson6_2Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-6-3'),
+    lessonId: LessonId.create('lesson-6-3'),
+    title: 'エンティティと値オブジェクトの違い - 理解度チェック',
+    description: 'エンティティと値オブジェクトの違いと判断基準についての理解度を確認するクイズです。',
+    questions: lesson6_3Questions,
   }),
 ];
 
