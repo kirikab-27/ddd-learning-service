@@ -1025,6 +1025,187 @@ const lesson6_3Questions: Question[] = [
   }),
 ];
 
+
+// =============================================================================
+// Chapter 7: ドメインサービス
+// =============================================================================
+
+// Lesson 7-1: ドメインサービスとは（5問）
+const lesson7_1Questions: Question[] = [
+  Question.create({
+    id: 'q7-1-1',
+    text: 'ドメインサービスの最も重要な特徴は何ですか？',
+    options: [
+      { id: 'a', text: '状態を持つ', isCorrect: false },
+      { id: 'b', text: 'ステートレス（状態を持たない）', isCorrect: true },
+      { id: 'c', text: 'データベースに永続化される', isCorrect: false },
+      { id: 'd', text: '必ずシングルトンである', isCorrect: false },
+    ],
+    explanation: 'ドメインサービスはステートレスで、必要な情報はすべて引数で受け取ります。状態を持たないため、複数の操作で再利用しやすい設計です。',
+  }),
+  Question.create({
+    id: 'q7-1-2',
+    text: 'ドメインサービスを使うべき場面として適切なものはどれですか？',
+    options: [
+      { id: 'a', text: '単一エンティティの状態変更', isCorrect: false },
+      { id: 'b', text: '複数オブジェクトをまたぐ操作', isCorrect: true },
+      { id: 'c', text: 'メール送信などの技術的処理', isCorrect: false },
+      { id: 'd', text: '値オブジェクトの計算', isCorrect: false },
+    ],
+    explanation: 'ドメインサービスは、送金のように複数のエンティティをまたぐ操作や、どのオブジェクトにも自然に属さないドメインロジックを表現するために使います。',
+  }),
+  Question.create({
+    id: 'q7-1-3',
+    text: 'ドメインサービスとインフラストラクチャサービスの違いは？',
+    options: [
+      { id: 'a', text: 'ドメインサービスは技術的処理、インフラはビジネスルール', isCorrect: false },
+      { id: 'b', text: 'ドメインサービスはビジネスルール、インフラは技術的処理', isCorrect: true },
+      { id: 'c', text: '両方とも技術的処理', isCorrect: false },
+      { id: 'd', text: '違いはない', isCorrect: false },
+    ],
+    explanation: 'ドメインサービスはビジネスルールを表現し、インフラストラクチャサービスはメール送信やファイルI/Oなどの技術的処理を担当します。',
+  }),
+  Question.create({
+    id: 'q7-1-4',
+    text: 'ドメインサービスの命名として適切なものはどれですか？',
+    options: [
+      { id: 'a', text: 'AccountManager', isCorrect: false },
+      { id: 'b', text: 'MoneyTransferService', isCorrect: true },
+      { id: 'c', text: 'OrderHelper', isCorrect: false },
+      { id: 'd', text: 'ProductUtil', isCorrect: false },
+    ],
+    explanation: 'ドメインサービスは操作を表す名前（TransferService、PricingServiceなど）にします。Manager、Helper、Utilなどの技術的な名前は避けます。',
+  }),
+  Question.create({
+    id: 'q7-1-5',
+    text: 'ドメインサービスが必要になる典型的なケースは？',
+    options: [
+      { id: 'a', text: '送金：送金元と送金先の両方のAccountを操作', isCorrect: true },
+      { id: 'b', text: '注文の確定：注文自身の状態変更', isCorrect: false },
+      { id: 'c', text: '金額の加算：Moneyの計算', isCorrect: false },
+      { id: 'd', text: 'データベース接続', isCorrect: false },
+    ],
+    explanation: '送金のように、どちらのAccountのメソッドにすべきか判断できない操作は、ドメインサービスが適しています。単一オブジェクトの操作はエンティティのメソッドにします。',
+  }),
+];
+
+// Lesson 7-2: ドメインサービスの実装（5問）
+const lesson7_2Questions: Question[] = [
+  Question.create({
+    id: 'q7-2-1',
+    text: 'ドメインサービスの実装として正しいのはどれですか？',
+    options: [
+      { id: 'a', text: 'フィールドで状態を保持する', isCorrect: false },
+      { id: 'b', text: 'すべての情報を引数で受け取る', isCorrect: true },
+      { id: 'c', text: 'グローバル変数を使う', isCorrect: false },
+      { id: 'd', text: 'シングルトンパターンを必ず使う', isCorrect: false },
+    ],
+    explanation: 'ドメインサービスはステートレスなので、必要な情報はすべてメソッドの引数で受け取ります。フィールドで状態を保持しません。',
+  }),
+  Question.create({
+    id: 'q7-2-2',
+    text: 'ドメインサービスが他のサービスに依存する場合、どうすべきですか？',
+    options: [
+      { id: 'a', text: 'グローバル変数で参照する', isCorrect: false },
+      { id: 'b', text: 'コンストラクタで注入する', isCorrect: true },
+      { id: 'c', text: 'staticメソッドで取得する', isCorrect: false },
+      { id: 'd', text: '依存してはいけない', isCorrect: false },
+    ],
+    explanation: 'ドメインサービスが他のサービスやリポジトリに依存する場合、コンストラクタで依存性を注入します。これにより、テストしやすく保守性の高い設計になります。',
+  }),
+  Question.create({
+    id: 'q7-2-3',
+    text: 'ドメインサービスの命名で避けるべきパターンは？',
+    options: [
+      { id: 'a', text: 'PricingService', isCorrect: false },
+      { id: 'b', text: 'MoneyTransferService', isCorrect: false },
+      { id: 'c', text: 'OrderHelper', isCorrect: true },
+      { id: 'd', text: 'InventoryAllocationService', isCorrect: false },
+    ],
+    explanation: 'Helper、Manager、Utilなどの技術的な名前は避けます。操作を明確に表す名前（〜Service、〜Calculator）を使います。',
+  }),
+  Question.create({
+    id: 'q7-2-4',
+    text: 'ドメインサービスがリポジトリに依存する場合、どこに配置すべきですか？',
+    options: [
+      { id: 'a', text: 'インフラストラクチャ層', isCorrect: false },
+      { id: 'b', text: 'ドメイン層（リポジトリのインターフェースはドメイン層）', isCorrect: true },
+      { id: 'c', text: 'プレゼンテーション層', isCorrect: false },
+      { id: 'd', text: 'データベース層', isCorrect: false },
+    ],
+    explanation: 'ドメインサービスはドメイン層に配置します。リポジトリのインターフェースもドメイン層で定義され、実装のみがインフラストラクチャ層にあります。',
+  }),
+  Question.create({
+    id: 'q7-2-5',
+    text: 'ドメインサービスのテストで重要なことは？',
+    options: [
+      { id: 'a', text: 'データベースに接続してテストする', isCorrect: false },
+      { id: 'b', text: 'ステートレスなのでテストしやすい', isCorrect: true },
+      { id: 'c', text: 'テストは不要', isCorrect: false },
+      { id: 'd', text: '必ずモックを使う', isCorrect: false },
+    ],
+    explanation: 'ドメインサービスはステートレスで副作用がないため、テストしやすい設計です。必要に応じて依存をモック化できます。',
+  }),
+];
+
+// Lesson 7-3: エンティティ・値オブジェクトとの使い分け（5問）
+const lesson7_3Questions: Question[] = [
+  Question.create({
+    id: 'q7-3-1',
+    text: 'ロジックを配置する優先順位として正しいのは？',
+    options: [
+      { id: 'a', text: 'ドメインサービス → エンティティ → 値オブジェクト', isCorrect: false },
+      { id: 'b', text: 'エンティティ/値オブジェクト → ドメインサービス', isCorrect: true },
+      { id: 'c', text: 'すべてドメインサービス', isCorrect: false },
+      { id: 'd', text: 'すべてエンティティ', isCorrect: false },
+    ],
+    explanation: 'まずエンティティや値オブジェクトに配置できるか検討し、どうしても属さないロジックのみドメインサービスにします。ドメインサービスは最後の手段です。',
+  }),
+  Question.create({
+    id: 'q7-3-2',
+    text: '貧血ドメインモデル（Anemic Domain Model）とは何ですか？',
+    options: [
+      { id: 'a', text: 'エンティティが適切にロジックを持つ状態', isCorrect: false },
+      { id: 'b', text: 'エンティティがデータのみで、ロジックがすべてサービスにある状態', isCorrect: true },
+      { id: 'c', text: 'ドメインサービスを使わない状態', isCorrect: false },
+      { id: 'd', text: '値オブジェクトを使わない状態', isCorrect: false },
+    ],
+    explanation: '貧血ドメインモデルは、エンティティがデータの入れ物になり、すべてのロジックがサービスに配置されている悪いパターンです。',
+  }),
+  Question.create({
+    id: 'q7-3-3',
+    text: 'Order.confirm()メソッドはどこに配置すべきですか？',
+    options: [
+      { id: 'a', text: 'OrderServiceクラス', isCorrect: false },
+      { id: 'b', text: 'Orderエンティティ', isCorrect: true },
+      { id: 'c', text: 'OrderRepositoryクラス', isCorrect: false },
+      { id: 'd', text: 'ConfirmationServiceクラス', isCorrect: false },
+    ],
+    explanation: '注文の確定は注文自身の状態変更なので、Orderエンティティのメソッドとして実装すべきです。単一オブジェクトの責務はそのオブジェクト自身に配置します。',
+  }),
+  Question.create({
+    id: 'q7-3-4',
+    text: 'Money.add()メソッドはどこに配置すべきですか？',
+    options: [
+      { id: 'a', text: 'MoneyCalculationServiceクラス', isCorrect: false },
+      { id: 'b', text: 'Money値オブジェクト', isCorrect: true },
+      { id: 'c', text: 'Accountエンティティ', isCorrect: false },
+      { id: 'd', text: 'MathUtilクラス', isCorrect: false },
+    ],
+    explanation: '金額の計算はMoney値オブジェクト自身の責務です。値の操作はその値オブジェクトのメソッドとして実装します。',
+  }),
+  Question.create({
+    id: 'q7-3-5',
+    text: 'リッチドメインモデル（Rich Domain Model）の特徴は？',
+    options: [
+      { id: 'a', text: 'すべてのロジックがサービスにある', isCorrect: false },
+      { id: 'b', text: 'エンティティがデータと振る舞いをともに持つ', isCorrect: true },
+      { id: 'c', text: 'ドメインサービスを使わない', isCorrect: false },
+      { id: 'd', text: 'エンティティはデータのみを持つ', isCorrect: false },
+    ],
+    explanation: 'リッチドメインモデルでは、エンティティがデータと振る舞いをともに持ちます。ドメインサービスは本当に必要な場合のみ使用します。',
+  }),
+];
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -1150,6 +1331,28 @@ export const sampleQuizzes: Quiz[] = [
     title: 'エンティティと値オブジェクトの違い - 理解度チェック',
     description: 'エンティティと値オブジェクトの違いと判断基準についての理解度を確認するクイズです。',
     questions: lesson6_3Questions,
+  }),
+  // Chapter 7: ドメインサービス
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-7-1'),
+    lessonId: LessonId.create('lesson-7-1'),
+    title: 'ドメインサービスとは - 理解度チェック',
+    description: 'ドメインサービスの定義と特徴についての理解度を確認するクイズです。',
+    questions: lesson7_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-7-2'),
+    lessonId: LessonId.create('lesson-7-2'),
+    title: 'ドメインサービスの実装 - 理解度チェック',
+    description: 'ドメインサービスの実装パターンについての理解度を確認するクイズです。',
+    questions: lesson7_2Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-7-3'),
+    lessonId: LessonId.create('lesson-7-3'),
+    title: 'エンティティ・値オブジェクトとの使い分け - 理解度チェック',
+    description: 'ロジック配置の判断基準についての理解度を確認するクイズです。',
+    questions: lesson7_3Questions,
   }),
 ];
 

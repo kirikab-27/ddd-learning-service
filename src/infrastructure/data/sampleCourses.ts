@@ -1,6 +1,6 @@
 import { Course, Chapter, Lesson, LessonTitle, MarkdownContent } from '@/domain/content/models';
 import { CourseId, ChapterId, LessonId } from '@/domain/shared';
-import { chapter1Lessons, chapter2Lessons, chapter3Lessons, chapter4Lessons, chapter5Lessons, chapter6Lessons } from './sampleLessons';
+import { chapter1Lessons, chapter2Lessons, chapter3Lessons, chapter4Lessons, chapter5Lessons, chapter6Lessons, chapter7Lessons } from './sampleLessons';
 
 // =============================================================================
 // 第1部: DDDの基礎概念
@@ -58,7 +58,13 @@ const chapter6 = Chapter.create({
   lessons: chapter6Lessons,
 });
 
-// Chapter 7: ドメインサービス（後続チケットで追加予定）
+// Chapter 7: ドメインサービス
+const chapter7 = Chapter.create({
+  id: ChapterId.create('chapter-7'),
+  title: 'Chapter 7: ドメインサービス',
+  order: 7,
+  lessons: chapter7Lessons,
+});
 
 // Chapter 8: 集約
 const lesson8_1 = Lesson.create({
@@ -123,7 +129,7 @@ const ddsCourse = Course.create({
   id: CourseId.create('ddd-practice'),
   title: 'DDD基礎コース',
   description: 'ドメイン駆動設計の基礎を学ぶコースです。',
-  chapters: [chapter1, chapter2, chapter3, chapter4, chapter5, chapter6, chapter8],
+  chapters: [chapter1, chapter2, chapter3, chapter4, chapter5, chapter6, chapter7, chapter8],
 });
 
 export const sampleCourses: Course[] = [ddsCourse];

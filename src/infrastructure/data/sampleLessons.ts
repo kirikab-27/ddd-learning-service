@@ -3199,3 +3199,336 @@ Q: 交換可能か？
 });
 
 export const chapter6Lessons = [lesson6_1, lesson6_2, lesson6_3];
+
+// =============================================================================
+// Chapter 7: ドメインサービス
+// =============================================================================
+
+// Lesson 7-1: ドメインサービスとは
+export const lesson7_1 = Lesson.create({
+  id: LessonId.create('lesson-7-1'),
+  title: LessonTitle.create('ドメインサービスとは'),
+  content: MarkdownContent.create(`
+# ドメインサービスとは
+
+**ドメインサービス（Domain Service）** は、エンティティや値オブジェクトに自然に属さないドメインロジックを表現するオブジェクトです。
+
+## ドメインサービスが必要な理由
+
+### エンティティや値オブジェクトに収まらないロジック
+
+\\\`\\\`\\\`typescript
+// ❌ どのエンティティに属するべき？
+class Account {
+  transfer(to: Account, amount: Money): void {
+    // 送金ロジック...でも送金元と送金先、両方のAccountを変更する
+    // どちらのAccountのメソッドとして実装すべき？
+  }
+}
+\\\`\\\`\\\`
+
+このような**複数のオブジェクトをまたぐ操作**や**オブジェクトに属さない計算**は、ドメインサービスが適しています。
+
+## ドメインサービスの特徴
+
+### 1. ステートレス（状態を持たない）
+
+ドメインサービスは状態を持ちません。必要な情報はすべて引数で受け取ります。
+
+\\\`\\\`\\\`typescript
+// ✅ 状態を持たないドメインサービス
+class TransferService {
+  transfer(from: Account, to: Account, amount: Money): void {
+    // すべて引数で受け取る
+  }
+}
+\\\`\\\`\\\`
+
+### 2. ドメイン知識を表現する
+
+技術的な処理ではなく、**ビジネスルール**を表現します。
+
+\\\`\\\`\\\`typescript
+// ✅ ドメイン知識を表現
+class InventoryAllocationService {
+  canAllocate(product: Product, quantity: Quantity): boolean {
+    // 在庫割り当て可否のビジネスルール
+  }
+}
+
+// ❌ 技術的な処理（インフラストラクチャサービス）
+class EmailService {
+  sendEmail(to: string, subject: string): void {
+    // メール送信は技術的な処理
+  }
+}
+\\\`\\\`\\\`
+
+### 3. 操作（動詞）で表現される
+
+ドメインサービスは**操作**を表すため、名前は動詞またはサービスを示す名詞になります。
+
+- 良い例: \\\`TransferService\\\`, \\\`PricingService\\\`, \\\`AuthenticationService\\\`
+- 避けるべき: \\\`AccountManager\\\`, \\\`OrderHelper\\\`, \\\`ProductUtil\\\`
+
+## エンティティ・値オブジェクトとの違い
+
+| 観点 | エンティティ | 値オブジェクト | ドメインサービス |
+|------|------------|--------------|----------------|
+| **同一性** | IDで識別 | 値で識別 | 状態を持たない |
+| **状態** | 持つ（可変） | 持つ（不変） | 持たない |
+| **責務** | 自身のライフサイクル管理 | 値の表現と検証 | 複数オブジェクトの協調 |
+| **名前** | 名詞 | 名詞 | 動詞/サービス名詞 |
+
+## まとめ
+
+- **ドメインサービス**は、エンティティや値オブジェクトに属さないドメインロジックを表現
+- **ステートレス**で、必要な情報は引数で受け取る
+- **ビジネスルール**を表現し、技術的な処理ではない
+- 名前は**操作（動詞）**または**サービス名詞**
+- エンティティ・値オブジェクトで表現できるなら、そちらを優先する
+`),
+  order: 1,
+});
+
+
+// Lesson 7-2: ドメインサービスの実装
+export const lesson7_2 = Lesson.create({
+  id: LessonId.create('lesson-7-2'),
+  title: LessonTitle.create('ドメインサービスの実装'),
+  content: MarkdownContent.create(`
+# ドメインサービスの実装
+
+ドメインサービスを実装する際のパターンとベストプラクティスを学びます。
+
+## 基本的な実装パターン
+
+### ステートレスなクラスとして実装
+
+\\\`\\\`\\\`typescript
+export class MoneyTransferService {
+  // 状態（フィールド）を持たない
+
+  transfer(from: Account, to: Account, amount: Money): TransferResult {
+    // バリデーション
+    if (!this.canTransfer(from, to, amount)) {
+      return TransferResult.failure('Transfer not allowed');
+    }
+
+    // ドメインロジック実行
+    from.withdraw(amount);
+    to.deposit(amount);
+
+    return TransferResult.success();
+  }
+
+  private canTransfer(from: Account, to: Account, amount: Money): boolean {
+    return from.balance.isGreaterThanOrEqual(amount) &&
+           !from.isFrozen() &&
+           !to.isFrozen();
+  }
+}
+\\\`\\\`\\\`
+
+## 命名規則
+
+### 良い命名
+
+✅ **操作を明確に表す**:
+- \\\`MoneyTransferService\\\` - 送金サービス
+- \\\`PricingService\\\` - 価格計算サービス
+- \\\`AuthenticationService\\\` - 認証サービス
+- \\\`InventoryAllocationService\\\` - 在庫割り当てサービス
+
+### 避けるべき命名
+
+❌ **曖昧な名前**:
+- \\\`AccountManager\\\` - 何をするのか不明
+- \\\`OrderHelper\\\` - ヘルパーは技術的
+- \\\`ProductUtil\\\` - ユーティリティは技術的
+
+## まとめ
+
+- ドメインサービスは**ステートレス**なクラスとして実装
+- 名前は**操作やビジネス用語**を使う
+- **テストしやすい**設計を心がける
+`),
+  order: 2,
+});
+
+// Lesson 7-3: エンティティ・値オブジェクトとの使い分け
+export const lesson7_3 = Lesson.create({
+  id: LessonId.create('lesson-7-3'),
+  title: LessonTitle.create('エンティティ・値オブジェクトとの使い分け'),
+  content: MarkdownContent.create(`
+# エンティティ・値オブジェクトとの使い分け
+
+ドメインロジックをどこに配置すべきか、判断基準とパターンを学びます。
+
+## ロジック配置の判断フローチャート
+
+\\\`\\\`\\\`
+Q: そのロジックは単一のオブジェクトの責務か？
+  YES → エンティティまたは値オブジェクトに配置
+    ↓
+    Q: 状態を持つか？ライフサイクルがあるか？
+      YES → エンティティのメソッドとして実装
+      NO  → 値オブジェクトのメソッドとして実装
+
+  NO → ↓
+
+Q: 複数のオブジェクトをまたぐ操作か？
+  YES → ドメインサービスとして実装
+
+Q: どのオブジェクトにも自然に属さない計算か？
+  YES → ドメインサービスとして実装
+
+  NO → もう一度エンティティ・値オブジェクトを検討
+\\\`\\\`\\\`
+
+## パターン1: エンティティに配置すべきロジック
+
+### ✅ 良い例: 自身の状態を変更するロジック
+
+\\\`\\\`\\\`typescript
+class Order {
+  private _status: OrderStatus;
+  private _items: OrderItem[];
+
+  // ✅ 注文自身の状態変更はOrderのメソッド
+  confirm(): void {
+    if (this._items.length === 0) {
+      throw new Error('Cannot confirm empty order');
+    }
+    if (this._status !== OrderStatus.Draft) {
+      throw new Error('Order already confirmed');
+    }
+    this._status = OrderStatus.Confirmed;
+  }
+}
+\\\`\\\`\\\`
+
+### ❌ 悪い例: エンティティのロジックをサービスに移動
+
+\\\`\\\`\\\`typescript
+// ❌ 単一オブジェクトの責務なのにサービスにしている
+class OrderService {
+  confirmOrder(order: Order): void {
+    // Orderのカプセル化を破壊
+    order.status = OrderStatus.Confirmed;
+  }
+}
+
+// ✅ Orderエンティティに配置すべき
+class Order {
+  confirm(): void {
+    this._status = OrderStatus.Confirmed;
+  }
+}
+\\\`\\\`\\\`
+
+## パターン2: 値オブジェクトに配置すべきロジック
+
+### ✅ 良い例: 値の計算や変換
+
+\\\`\\\`\\\`typescript
+class Money {
+  // ✅ 金額計算は Money のメソッド
+  add(other: Money): Money {
+    this.assertSameCurrency(other);
+    return new Money(this.amount + other.amount, this.currency);
+  }
+
+  multiply(multiplier: number): Money {
+    return new Money(this.amount * multiplier, this.currency);
+  }
+}
+\\\`\\\`\\\`
+
+## パターン3: ドメインサービスに配置すべきロジック
+
+### ✅ 良い例: 複数オブジェクトをまたぐ操作
+
+\\\`\\\`\\\`typescript
+// ✅ 送金は送金元と送金先、両方のAccountに影響
+class MoneyTransferService {
+  transfer(from: Account, to: Account, amount: Money): void {
+    // どちらのAccountメソッドにすべきか判断できない
+    // → ドメインサービスが適切
+
+    if (!from.canWithdraw(amount)) {
+      throw new InsufficientBalanceError();
+    }
+
+    from.withdraw(amount);
+    to.deposit(amount);
+  }
+}
+\\\`\\\`\\\`
+
+## アンチパターン: ドメインサービスの過剰使用
+
+### ❌ 貧血ドメインモデル（Anemic Domain Model）
+
+すべてのロジックをサービスに配置し、エンティティがデータの入れ物になっている状態。
+
+\\\`\\\`\\\`typescript
+// ❌ データのみのエンティティ（貧血）
+class Order {
+  id: OrderId;
+  items: OrderItem[];
+  status: OrderStatus;
+  // メソッドがない！
+}
+
+// ❌ すべてのロジックがサービスに
+class OrderService {
+  addItem(order: Order, item: OrderItem): void {
+    order.items.push(item);
+  }
+}
+\\\`\\\`\\\`
+
+### ✅ リッチドメインモデル（Rich Domain Model）
+
+エンティティが適切にロジックを持ち、ドメインサービスは本当に必要な場合のみ使用。
+
+\\\`\\\`\\\`typescript
+// ✅ ロジックを持つエンティティ
+class Order {
+  private _items: OrderItem[];
+
+  addItem(item: OrderItem): void {
+    if (this._status !== OrderStatus.Draft) {
+      throw new Error('Cannot modify confirmed order');
+    }
+    this._items.push(item);
+  }
+}
+\\\`\\\`\\\`
+
+## まとめ
+
+### ロジック配置の優先順位
+
+1. **エンティティ or 値オブジェクト** （最優先）
+   - 単一オブジェクトの責務
+   - 自身の状態の管理・変更・計算
+
+2. **ドメインサービス** （必要な場合のみ）
+   - 複数オブジェクトをまたぐ操作
+   - どこにも自然に属さない計算
+
+### 判断のポイント
+
+- ✅ "このロジックは誰の責務か？" を常に問う
+- ✅ エンティティ・値オブジェクトに配置できるか、まず検討
+- ✅ ドメインサービスは最後の手段
+- ❌ 安易にサービスに配置しない（貧血ドメインモデルを避ける）
+
+**原則**: オブジェクトはデータ**と**振る舞いをともに持つべき（リッチドメインモデル）
+`),
+  order: 3,
+});
+
+export const chapter7Lessons = [lesson7_1, lesson7_2, lesson7_3];
