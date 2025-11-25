@@ -1,6 +1,6 @@
 import { Course, Chapter, Lesson, LessonTitle, MarkdownContent } from '@/domain/content/models';
 import { CourseId, ChapterId, LessonId } from '@/domain/shared';
-import { chapter1Lessons, chapter2Lessons, chapter3Lessons, chapter4Lessons, chapter5Lessons } from './sampleLessons';
+import { chapter1Lessons, chapter2Lessons, chapter3Lessons, chapter4Lessons, chapter5Lessons, chapter6Lessons } from './sampleLessons';
 
 // =============================================================================
 // 第1部: DDDの基礎概念
@@ -51,68 +51,11 @@ const chapter5 = Chapter.create({
 });
 
 // Chapter 6: エンティティ
-const lesson6_1 = Lesson.create({
-  id: LessonId.create('lesson-6-1'),
-  title: LessonTitle.create('エンティティ'),
-  content: MarkdownContent.create(`
-# エンティティ
-
-**エンティティ（Entity）** は、ライフサイクルを通じて一貫した同一性を持つオブジェクトです。
-
-## エンティティの特徴
-
-1. **同一性**: 一意の識別子によって区別される
-2. **変更可能性**: 状態が時間とともに変化する可能性がある
-3. **ライフサイクル**: 作成、更新、削除のライフサイクルを持つ
-
-## 値オブジェクトとの違い
-
-| 特徴 | エンティティ | 値オブジェクト |
-|------|------------|--------------|
-| 同一性 | IDで識別 | 値で識別 |
-| 可変性 | 変更可能 | 不変 |
-| 比較 | IDで比較 | 全属性で比較 |
-
-## 実装例
-
-\`\`\`typescript
-export class User {
-  private constructor(
-    private readonly _id: UserId,
-    private _name: UserName,
-    private _email: Email
-  ) {}
-
-  static create(params: CreateUserParams): User {
-    return new User(
-      UserId.generate(),
-      UserName.create(params.name),
-      Email.create(params.email)
-    );
-  }
-
-  get id(): UserId { return this._id; }
-  get name(): UserName { return this._name; }
-  get email(): Email { return this._email; }
-
-  changeName(newName: UserName): void {
-    this._name = newName;
-  }
-
-  equals(other: User): boolean {
-    return this._id.equals(other._id);
-  }
-}
-\`\`\`
-`),
-  order: 1,
-});
-
 const chapter6 = Chapter.create({
   id: ChapterId.create('chapter-6'),
   title: 'Chapter 6: エンティティ',
   order: 6,
-  lessons: [lesson6_1],
+  lessons: chapter6Lessons,
 });
 
 // Chapter 7: ドメインサービス（後続チケットで追加予定）

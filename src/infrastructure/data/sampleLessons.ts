@@ -2266,3 +2266,936 @@ class AgeOutOfRangeError extends Error {
 });
 
 export const chapter5Lessons = [lesson5_1, lesson5_2, lesson5_3];
+
+// =============================================================================
+// Chapter 6: エンティティ
+// =============================================================================
+
+// Lesson 6-1: エンティティとは
+export const lesson6_1 = Lesson.create({
+  id: LessonId.create('lesson-6-1'),
+  title: LessonTitle.create('エンティティとは'),
+  content: MarkdownContent.create(`
+# エンティティとは
+
+## 概要
+
+このレッスンでは、DDDの戦術的設計パターンの中核となる「エンティティ」について学びます。
+エンティティとは何か、なぜ重要なのか、値オブジェクトとの違いを理解しましょう。
+
+## エンティティの定義
+
+**エンティティ（Entity）** は、ライフサイクルを通じて一貫した同一性を持ち、
+その状態が時間とともに変化するオブジェクトです。
+
+### 日常の例
+
+\`\`\`
+エンティティの例:
+- 銀行口座 → 口座番号で識別、残高は変わる
+- 人物 → 社員番号やIDで識別、住所や役職は変わる
+- 注文 → 注文番号で識別、状態（下書き→確定→配送中）が変わる
+- 車 → 車両番号で識別、走行距離やオーナーは変わる
+\`\`\`
+
+### 値オブジェクトとの対比
+
+\`\`\`
+値オブジェクトの例（参考）:
+- 1000円札 → どの1000円札でも同じ価値
+- 住所「東京都渋谷区...」→ 同じ住所なら同一
+- 色RGB(255, 0, 0) → 同じ値なら同じ赤
+\`\`\`
+
+## エンティティの3つの特徴
+
+### 1. 同一性（Identity）
+
+エンティティは一意の識別子（ID）によって区別されます。
+
+\`\`\`typescript
+class User {
+  private constructor(
+    private readonly _id: UserId,  // 一意の識別子
+    private _name: UserName,
+    private _email: Email
+  ) {}
+
+  get id(): UserId {
+    return this._id;
+  }
+
+  equals(other: User): boolean {
+    // IDで比較（名前やメールが変わっても同一人物）
+    return this._id.equals(other._id);
+  }
+}
+
+// 使用例
+const user1 = User.reconstruct(UserId.create('user-123'), ...);
+const user2 = User.reconstruct(UserId.create('user-123'), ...);
+
+user1.equals(user2); // true - 同じIDなので同一エンティティ
+\`\`\`
+
+### 2. 変更可能性（Mutability）
+
+エンティティの状態は時間とともに変化することがあります。
+
+\`\`\`typescript
+class Order {
+  private constructor(
+    private readonly _id: OrderId,
+    private _items: OrderItem[],
+    private _status: OrderStatus  // 状態が変化
+  ) {}
+
+  // 状態を変更するメソッド
+  addItem(item: OrderItem): void {
+    if (this._status !== OrderStatus.Draft) {
+      throw new CannotModifyConfirmedOrderError();
+    }
+    this._items.push(item);
+  }
+
+  confirm(): void {
+    if (this._items.length === 0) {
+      throw new EmptyOrderCannotBeConfirmedError();
+    }
+    this._status = OrderStatus.Confirmed;
+  }
+
+  ship(): void {
+    if (this._status !== OrderStatus.Confirmed) {
+      throw new CannotShipUnconfirmedOrderError();
+    }
+    this._status = OrderStatus.Shipped;
+  }
+}
+\`\`\`
+
+### 3. ライフサイクル（Lifecycle）
+
+エンティティは作成、変更、削除のライフサイクルを持ちます。
+
+\`\`\`
+┌─────────┐     ┌─────────┐     ┌──────────┐     ┌─────────┐
+│ 作成    │ ──→ │ 更新    │ ──→ │ 保存     │ ──→ │ 削除    │
+│ create  │     │ update  │     │ persist  │     │ delete  │
+└─────────┘     └─────────┘     └──────────┘     └─────────┘
+
+注文の例:
+作成（Draft） → 確定（Confirmed） → 配送（Shipped） → 完了（Completed）
+\`\`\`
+
+## エンティティと値オブジェクトの違い
+
+| 特徴 | エンティティ | 値オブジェクト |
+|------|------------|--------------|
+| **同一性** | IDで識別 | 全属性の値で識別 |
+| **可変性** | 状態が変化しうる | 不変 |
+| **比較方法** | ID で比較 | 全属性の値で比較 |
+| **ライフサイクル** | 作成→更新→削除 | 生成のみ（変更は新規生成） |
+| **例** | User, Order, Product | Money, Email, Address |
+
+### 同じ「商品」でも違う
+
+\`\`\`typescript
+// エンティティとしての商品（カタログ管理）
+class Product {
+  // 商品マスタ - IDで識別、価格や説明が変わる
+  private constructor(
+    private readonly _id: ProductId,  // SKU-12345
+    private _name: ProductName,
+    private _price: Money,
+    private _description: string
+  ) {}
+
+  changePrice(newPrice: Money): void {
+    this._price = newPrice;  // 価格が変わる
+  }
+}
+
+// 値オブジェクトとしての商品（注文明細）
+class OrderItem {
+  // 注文時点の情報のスナップショット - 不変
+  private constructor(
+    private readonly productId: ProductId,
+    private readonly productName: string,
+    private readonly unitPrice: Money,
+    private readonly quantity: number
+  ) {}
+
+  // 変更メソッドはなし - 不変
+}
+\`\`\`
+
+## なぜエンティティが重要か
+
+### 1. 現実世界のモデリング
+
+ビジネスの中心となる概念は通常エンティティです：
+
+\`\`\`
+ECサイト:
+- 顧客（Customer） → 購入履歴が増える、住所が変わる
+- 注文（Order） → 状態が変化する
+- 在庫（Inventory） → 数量が変動する
+
+銀行システム:
+- 口座（Account） → 残高が変動する
+- 取引（Transaction） → 作成後は不変だがログとして追跡
+\`\`\`
+
+### 2. 状態管理の中心
+
+エンティティはアプリケーションの状態を管理します：
+
+\`\`\`typescript
+class User {
+  private _status: UserStatus;
+  private _lastLoginAt: Date | null;
+
+  login(): void {
+    this._status = UserStatus.Active;
+    this._lastLoginAt = new Date();
+  }
+
+  suspend(reason: SuspensionReason): void {
+    this._status = UserStatus.Suspended;
+    // 監査ログなども記録
+  }
+}
+\`\`\`
+
+### 3. 永続化の単位
+
+エンティティはデータベースに保存される単位です：
+
+\`\`\`typescript
+interface UserRepository {
+  save(user: User): Promise<void>;
+  findById(id: UserId): Promise<User | null>;
+  delete(id: UserId): Promise<void>;
+}
+\`\`\`
+
+## いつエンティティを使うか
+
+| 判断基準 | エンティティ | 値オブジェクト |
+|---------|------------|--------------|
+| 識別が必要か | ✓ | × |
+| 状態が変化するか | ✓ | × |
+| ライフサイクルがあるか | ✓ | × |
+| 永続化が必要か | ✓ | 単独では× |
+| トラッキングが必要か | ✓ | × |
+
+## まとめ
+
+- **エンティティ**は一意のIDで識別され、ライフサイクルを通じて同一性を保つ
+- **3つの特徴**: 同一性（Identity）、変更可能性（Mutability）、ライフサイクル（Lifecycle）
+- **値オブジェクト**との違いは、IDによる識別と状態の可変性
+- エンティティは**現実世界のモデリング**、**状態管理**、**永続化の単位**として重要
+`),
+  order: 1,
+});
+
+// Lesson 6-2: ライフサイクルと同一性
+export const lesson6_2 = Lesson.create({
+  id: LessonId.create('lesson-6-2'),
+  title: LessonTitle.create('ライフサイクルと同一性'),
+  content: MarkdownContent.create(`
+# ライフサイクルと同一性
+
+## 概要
+
+このレッスンでは、エンティティの2つの重要な側面である「ライフサイクル」と「同一性」について深く学びます。
+エンティティがどのように生成、変更、削除されるか、そして同一性をどう管理するかを理解しましょう。
+
+## エンティティのライフサイクル
+
+### 4つのフェーズ
+
+\`\`\`
+┌──────────┐
+│ 1. 生成  │  create, register
+└────┬─────┘
+     │
+┌────▼─────┐
+│ 2. 取得  │  findById, search
+└────┬─────┘
+     │
+┌────▼─────┐
+│ 3. 変更  │  update, modify
+└────┬─────┘
+     │
+┌────▼─────┐
+│ 4. 削除  │  delete, archive
+└──────────┘
+\`\`\`
+
+### 1. エンティティの生成
+
+エンティティは通常、ファクトリメソッドまたはコンストラクタで生成されます。
+
+\`\`\`typescript
+class User {
+  private constructor(
+    private readonly _id: UserId,
+    private _name: UserName,
+    private _email: Email,
+    private _createdAt: Date
+  ) {}
+
+  // 新規作成（IDは自動生成）
+  static create(params: CreateUserParams): User {
+    return new User(
+      UserId.generate(),  // UUIDなどで生成
+      UserName.create(params.name),
+      Email.create(params.email),
+      new Date()
+    );
+  }
+
+  // 再構築（DBから取得時）
+  static reconstruct(
+    id: UserId,
+    name: UserName,
+    email: Email,
+    createdAt: Date
+  ): User {
+    return new User(id, name, email, createdAt);
+  }
+}
+
+// 使用例
+const newUser = User.create({ name: '田中太郎', email: 'tanaka@example.com' });
+\`\`\`
+
+### 2. エンティティの取得
+
+リポジトリを通じてエンティティを取得します。
+
+\`\`\`typescript
+interface UserRepository {
+  findById(id: UserId): Promise<User | null>;
+  findByEmail(email: Email): Promise<User | null>;
+  findAll(): Promise<User[]>;
+}
+
+// 使用例
+const user = await userRepository.findById(userId);
+if (user === null) {
+  throw new UserNotFoundError(userId);
+}
+\`\`\`
+
+### 3. エンティティの変更
+
+エンティティは状態を変更するメソッドを持ちます。
+
+\`\`\`typescript
+class Order {
+  private _status: OrderStatus;
+  private _items: OrderItem[];
+
+  addItem(item: OrderItem): void {
+    this.ensureModifiable();
+    this._items.push(item);
+  }
+
+  confirm(): void {
+    this.ensureHasItems();
+    this.ensureDraft();
+    this._status = OrderStatus.Confirmed;
+  }
+
+  cancel(): void {
+    this.ensureCancellable();
+    this._status = OrderStatus.Cancelled;
+  }
+
+  private ensureModifiable(): void {
+    if (this._status !== OrderStatus.Draft) {
+      throw new OrderNotModifiableError(this._status);
+    }
+  }
+}
+
+// 使用例
+order.addItem(item);
+order.confirm();
+await orderRepository.save(order);
+\`\`\`
+
+### 4. エンティティの削除
+
+\`\`\`typescript
+// 物理削除
+interface UserRepository {
+  delete(id: UserId): Promise<void>;
+}
+
+// 論理削除（推奨）
+class User {
+  private _deletedAt: Date | null;
+
+  delete(): void {
+    if (this._deletedAt !== null) {
+      throw new UserAlreadyDeletedError();
+    }
+    this._deletedAt = new Date();
+  }
+
+  get isDeleted(): boolean {
+    return this._deletedAt !== null;
+  }
+}
+\`\`\`
+
+## 同一性（Identity）の管理
+
+### IDの生成戦略
+
+#### 1. UUID/GUID
+
+\`\`\`typescript
+class UserId {
+  private constructor(private readonly value: string) {}
+
+  static generate(): UserId {
+    const uuid = crypto.randomUUID(); // 'a1b2c3d4-...'
+    return new UserId(uuid);
+  }
+
+  static create(value: string): UserId {
+    if (!this.isValidUUID(value)) {
+      throw new InvalidUserIdError(value);
+    }
+    return new UserId(value);
+  }
+}
+\`\`\`
+
+**メリット**: 衝突の心配がない、分散システムに適している
+**デメリット**: 見た目が分かりにくい
+
+#### 2. 連番（Auto Increment）
+
+\`\`\`typescript
+class ProductId {
+  private constructor(private readonly value: number) {}
+
+  // DBのAUTO_INCREMENTで生成
+  static create(value: number): ProductId {
+    if (value <= 0) {
+      throw new InvalidProductIdError(value);
+    }
+    return new ProductId(value);
+  }
+}
+\`\`\`
+
+**メリット**: シンプル、URLに使いやすい（/products/123）
+**デメリット**: 分散システムには不向き、推測可能
+
+#### 3. 自然キー
+
+\`\`\`typescript
+class Email {
+  // メールアドレス自体が識別子
+  private constructor(private readonly value: string) {}
+}
+
+class User {
+  // メールアドレスで識別
+  private constructor(
+    private readonly _email: Email,  // 自然キー
+    private _name: UserName
+  ) {}
+
+  get email(): Email {
+    return this._email;
+  }
+
+  equals(other: User): boolean {
+    return this._email.equals(other._email);
+  }
+}
+\`\`\`
+
+**メリット**: 意味がある、ビジネス上自然
+**デメリット**: 変更される可能性がある（メールアドレス変更など）
+
+### 同一性の比較
+
+#### equalsメソッドの実装
+
+\`\`\`typescript
+class Order {
+  private constructor(
+    private readonly _id: OrderId,
+    private _items: OrderItem[],
+    private _status: OrderStatus
+  ) {}
+
+  equals(other: Order): boolean {
+    if (other === null || other === undefined) {
+      return false;
+    }
+    // IDのみで比較（その他の属性は無視）
+    return this._id.equals(other._id);
+  }
+}
+
+// 使用例
+const order1 = await repository.findById(orderId);
+const order2 = await repository.findById(orderId);
+
+order1 === order2;         // false（異なるインスタンス）
+order1.equals(order2);     // true（同じID = 同一エンティティ）
+\`\`\`
+
+## ライフサイクルと状態遷移
+
+### 状態遷移の管理
+
+\`\`\`typescript
+enum OrderStatus {
+  Draft = 'DRAFT',
+  Confirmed = 'CONFIRMED',
+  Shipped = 'SHIPPED',
+  Delivered = 'DELIVERED',
+  Cancelled = 'CANCELLED'
+}
+
+class Order {
+  private _status: OrderStatus;
+
+  confirm(): void {
+    if (this._status !== OrderStatus.Draft) {
+      throw new InvalidStatusTransitionError(this._status, OrderStatus.Confirmed);
+    }
+    this._status = OrderStatus.Confirmed;
+  }
+
+  ship(): void {
+    if (this._status !== OrderStatus.Confirmed) {
+      throw new InvalidStatusTransitionError(this._status, OrderStatus.Shipped);
+    }
+    this._status = OrderStatus.Shipped;
+  }
+
+  cancel(): void {
+    // キャンセルできる状態を制限
+    if (this._status === OrderStatus.Shipped ||
+        this._status === OrderStatus.Delivered) {
+      throw new CannotCancelShippedOrderError();
+    }
+    this._status = OrderStatus.Cancelled;
+  }
+}
+\`\`\`
+
+### 状態遷移図
+
+\`\`\`
+     ┌──────────┐
+     │  Draft   │ 下書き
+     └────┬─────┘
+          │ confirm()
+     ┌────▼─────┐
+     │Confirmed │ 確定
+     └────┬─────┘
+          │ ship()
+     ┌────▼─────┐
+     │ Shipped  │ 配送中
+     └────┬─────┘
+          │ deliver()
+     ┌────▼─────┐
+     │Delivered │ 配送完了
+     └──────────┘
+
+     cancel()でキャンセル状態へ（Draft/Confirmedから）
+\`\`\`
+
+## 楽観的ロックと悲観的ロック
+
+### 楽観的ロック（バージョン管理）
+
+\`\`\`typescript
+class User {
+  private constructor(
+    private readonly _id: UserId,
+    private _name: UserName,
+    private _version: number  // バージョン番号
+  ) {}
+
+  changeName(newName: UserName): void {
+    this._name = newName;
+    this._version++;  // 変更時にバージョンを上げる
+  }
+
+  get version(): number {
+    return this._version;
+  }
+}
+
+// リポジトリでの保存時チェック
+class UserRepositoryImpl implements UserRepository {
+  async save(user: User): Promise<void> {
+    const result = await db.execute(
+      'UPDATE users SET name = ?, version = ? WHERE id = ? AND version = ?',
+      [user.name, user.version, user.id, user.version - 1]
+    );
+
+    if (result.affectedRows === 0) {
+      throw new OptimisticLockError();
+    }
+  }
+}
+\`\`\`
+
+## まとめ
+
+- エンティティのライフサイクルは**生成→取得→変更→削除**の4フェーズ
+- **ID生成戦略**: UUID（分散向き）、連番（シンプル）、自然キー（意味あり）
+- **同一性**はIDで判断し、equalsメソッドで実装
+- **状態遷移**は明示的に管理し、不正な遷移を防ぐ
+- **楽観的ロック**でバージョン管理し、同時更新の競合を検出
+`),
+  order: 2,
+});
+
+// Lesson 6-3: エンティティと値オブジェクトの違い
+export const lesson6_3 = Lesson.create({
+  id: LessonId.create('lesson-6-3'),
+  title: LessonTitle.create('エンティティと値オブジェクトの違い'),
+  content: MarkdownContent.create(`
+# エンティティと値オブジェクトの違い
+
+## 概要
+
+このレッスンでは、エンティティと値オブジェクトの違いを詳しく学び、
+どのような場合にどちらを使うべきかの判断基準を理解しましょう。
+
+## 比較表
+
+| 観点 | エンティティ | 値オブジェクト |
+|-----|------------|--------------|
+| **同一性** | IDで識別 | 全属性の値で識別 |
+| **可変性** | 変更可能（Mutable） | 不変（Immutable） |
+| **比較方法** | ID の equals | 全属性の equals |
+| **ライフサイクル** | 作成→変更→削除 | 生成のみ（変更=新規生成） |
+| **永続化** | 単独でDB保存 | エンティティの一部として保存 |
+| **トラッキング** | 履歴を追跡できる | 追跡不要 |
+| **メモリ** | 参照で共有 | 値で複製 |
+
+## 同一性の違い
+
+### エンティティ: IDで識別
+
+\`\`\`typescript
+class User {
+  private constructor(
+    private readonly _id: UserId,
+    private _name: UserName,
+    private _email: Email
+  ) {}
+
+  equals(other: User): boolean {
+    return this._id.equals(other._id);
+  }
+}
+
+// 例
+const user1 = User.reconstruct(
+  UserId.create('user-123'),
+  UserName.create('田中'),
+  Email.create('tanaka@example.com')
+);
+
+const user2 = User.reconstruct(
+  UserId.create('user-123'),
+  UserName.create('田中太郎'),  // 名前が違う
+  Email.create('newtanaka@example.com')  // メールも違う
+);
+
+user1.equals(user2); // true - 同じIDなので同一人物
+\`\`\`
+
+### 値オブジェクト: 全属性で識別
+
+\`\`\`typescript
+class Money {
+  private constructor(
+    private readonly amount: number,
+    private readonly currency: Currency
+  ) {}
+
+  equals(other: Money): boolean {
+    return this.amount === other.amount &&
+           this.currency.equals(other.currency);
+  }
+}
+
+// 例
+const money1 = Money.create(1000, Currency.JPY);
+const money2 = Money.create(1000, Currency.JPY);
+const money3 = Money.create(2000, Currency.JPY);
+
+money1.equals(money2); // true - 全属性が同じ
+money1.equals(money3); // false - 金額が違う
+\`\`\`
+
+## 可変性の違い
+
+### エンティティ: 状態が変化する
+
+\`\`\`typescript
+class Order {
+  private _items: OrderItem[];
+  private _status: OrderStatus;
+
+  // 状態を変更するメソッド
+  addItem(item: OrderItem): void {
+    this._items.push(item);
+  }
+
+  confirm(): void {
+    this._status = OrderStatus.Confirmed;
+  }
+}
+
+// 使用例
+const order = Order.create();
+order.addItem(item1);  // 状態が変わる
+order.addItem(item2);  // 状態が変わる
+order.confirm();       // 状態が変わる
+\`\`\`
+
+### 値オブジェクト: 不変
+
+\`\`\`typescript
+class Money {
+  // 変更メソッドはない
+  add(other: Money): Money {
+    // 自身を変更せず、新しいインスタンスを返す
+    return Money.create(this.amount + other.amount, this.currency);
+  }
+}
+
+// 使用例
+const price = Money.create(1000, Currency.JPY);
+const tax = Money.create(100, Currency.JPY);
+const total = price.add(tax);  // 新しいインスタンス
+
+console.log(price.amount);  // 1000 (元の値は変わらない)
+console.log(total.amount);  // 1100
+\`\`\`
+
+## 判断基準
+
+### エンティティを選ぶべき場合
+
+\`\`\`typescript
+// ✓ 識別が必要
+class User {
+  private readonly _id: UserId;  // ユーザーはIDで識別
+}
+
+// ✓ 状態が変化する
+class Account {
+  private _balance: Money;  // 残高が変動
+  deposit(amount: Money): void { ... }
+}
+
+// ✓ ライフサイクルがある
+class Order {
+  // 作成 → 確定 → 配送 → 完了
+  private _status: OrderStatus;
+}
+
+// ✓ トラッキングが必要
+class Transaction {
+  private readonly _createdAt: Date;
+  private _processedAt: Date | null;
+}
+\`\`\`
+
+### 値オブジェクトを選ぶべき場合
+
+\`\`\`typescript
+// ✓ 計測・定量化
+class Money { ... }
+class Distance { ... }
+class Duration { ... }
+
+// ✓ 複数属性の組み合わせ
+class Address {
+  constructor(
+    private readonly prefecture: string,
+    private readonly city: string,
+    private readonly street: string
+  ) {}
+}
+
+// ✓ 概念的な値
+class DateRange {
+  constructor(
+    private readonly start: Date,
+    private readonly end: Date
+  ) {}
+}
+
+// ✓ 交換可能
+class Color { ... }  // RGB(255,0,0) は別の RGB(255,0,0) と交換可能
+\`\`\`
+
+## 混在の例: 注文システム
+
+\`\`\`typescript
+// エンティティ: Order
+class Order {
+  private constructor(
+    private readonly _id: OrderId,        // エンティティ
+    private readonly _customerId: CustomerId,  // 他エンティティへの参照
+    private _items: OrderItem[],          // 値オブジェクトのコレクション
+    private _shippingAddress: Address,    // 値オブジェクト
+    private _status: OrderStatus,
+    private readonly _orderedAt: Date
+  ) {}
+
+  addItem(
+    productId: ProductId,  // エンティティへの参照
+    quantity: Quantity,    // 値オブジェクト
+    unitPrice: Money       // 値オブジェクト
+  ): void {
+    const item = OrderItem.create(productId, quantity, unitPrice);
+    this._items.push(item);
+  }
+
+  changeShippingAddress(newAddress: Address): void {
+    // 値オブジェクトは丸ごと交換
+    this._shippingAddress = newAddress;
+  }
+}
+
+// 値オブジェクト: OrderItem
+class OrderItem {
+  private constructor(
+    private readonly productId: ProductId,  // エンティティへの参照（IDのみ）
+    private readonly productName: string,
+    private readonly quantity: Quantity,
+    private readonly unitPrice: Money
+  ) {}
+
+  // 値オブジェクトなので変更メソッドはない
+  // 不変のスナップショット
+}
+
+// 値オブジェクト: Address
+class Address {
+  private constructor(
+    private readonly prefecture: Prefecture,
+    private readonly city: City,
+    private readonly street: Street
+  ) {}
+
+  // 変更は新しいインスタンスを生成
+  withBuilding(building: Building): Address {
+    return new Address(this.prefecture, this.city, this.street, building);
+  }
+}
+\`\`\`
+
+## よくある間違い
+
+### 間違い1: 値オブジェクトをエンティティにする
+
+\`\`\`typescript
+// ❌ 悪い例: Moneyをエンティティにしてしまう
+class Money {
+  private readonly _id: MoneyId;  // 不要なID
+  private _amount: number;         // 可変にしてしまう
+
+  setAmount(amount: number): void {
+    this._amount = amount;
+  }
+}
+
+// ✓ 良い例: Moneyは値オブジェクト
+class Money {
+  private constructor(
+    private readonly amount: number,
+    private readonly currency: Currency
+  ) {}
+
+  add(other: Money): Money {
+    return Money.create(this.amount + other.amount, this.currency);
+  }
+}
+\`\`\`
+
+### 間違い2: エンティティを値オブジェクトにする
+
+\`\`\`typescript
+// ❌ 悪い例: Userを値オブジェクトにしてしまう
+class User {
+  constructor(
+    public readonly name: string,
+    public readonly email: string
+  ) {}
+
+  equals(other: User): boolean {
+    // 全属性で比較してしまう
+    return this.name === other.name && this.email === other.email;
+  }
+}
+
+// 問題: 名前が同じ別の人を同一人物と判断してしまう
+
+// ✓ 良い例: Userはエンティティ
+class User {
+  private constructor(
+    private readonly _id: UserId,  // IDで識別
+    private _name: UserName,
+    private _email: Email
+  ) {}
+
+  equals(other: User): boolean {
+    return this._id.equals(other._id);
+  }
+}
+\`\`\`
+
+## 判断のフローチャート
+
+\`\`\`
+開始
+  ↓
+Q: 追跡する必要があるか？
+  YES → エンティティ
+  NO  → ↓
+Q: 時間とともに変化するか？
+  YES → エンティティ
+  NO  → ↓
+Q: 交換可能か？
+  YES → 値オブジェクト
+  NO  → エンティティ
+\`\`\`
+
+## まとめ
+
+- **エンティティ**: IDで識別、可変、ライフサイクルあり
+  - 例: User, Order, Account
+- **値オブジェクト**: 値で識別、不変、スナップショット
+  - 例: Money, Address, Email
+- **判断基準**: 追跡・識別が必要 → エンティティ、交換可能 → 値オブジェクト
+- 同じ概念（商品、顧客など）でも**コンテキストによって異なる**場合がある
+- 迷ったら**値オブジェクトから始める**（不変性の方が安全）
+`),
+  order: 3,
+});
+
+export const chapter6Lessons = [lesson6_1, lesson6_2, lesson6_3];
