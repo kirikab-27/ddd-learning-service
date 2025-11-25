@@ -100,7 +100,7 @@ describe('Progress Flow Integration', () => {
     });
     expect(beforeNav.completionRate).toBe(0);
 
-    // Complete first lesson (1 of 16 = 6%)
+    // Complete first lesson (1 of 18 = 6%)
     await completeUseCase.execute({
       courseId: 'ddd-practice',
       lessonId: 'lesson-1-1',
@@ -112,7 +112,7 @@ describe('Progress Flow Integration', () => {
     });
     expect(afterOneLesson.completionRate).toBe(6);
 
-    // Complete second lesson (2 of 16 = 13%)
+    // Complete second lesson (2 of 18 = 11%)
     await completeUseCase.execute({
       courseId: 'ddd-practice',
       lessonId: 'lesson-1-2',
@@ -122,7 +122,7 @@ describe('Progress Flow Integration', () => {
       courseId: 'ddd-practice',
       currentLessonId: 'lesson-1-3',
     });
-    expect(afterTwoLessons.completionRate).toBe(13);
+    expect(afterTwoLessons.completionRate).toBe(11);
   });
 
   it('should mark completed lessons in sidebar navigation', async () => {
