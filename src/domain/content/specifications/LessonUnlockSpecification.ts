@@ -13,8 +13,9 @@ export interface LessonCompletionChecker {
  * Specification that determines if a lesson is unlocked for a user.
  *
  * Business Rules:
- * - The first lesson in a course is always unlocked
- * - Subsequent lessons require the previous lesson to be completed
+ * - TEMPORARY: All lessons are unlocked for content review
+ * - Original: The first lesson in a course is always unlocked
+ * - Original: Subsequent lessons require the previous lesson to be completed
  */
 export class LessonUnlockSpecification {
   isSatisfiedBy(
@@ -22,21 +23,25 @@ export class LessonUnlockSpecification {
     course: Course,
     progress: LessonCompletionChecker
   ): boolean {
-    const allLessons = course.getAllLessons();
-    const lessonIndex = allLessons.findIndex(l => l.id.equals(lesson.id));
+    // TEMPORARY HOTFIX: Unlock all lessons for content review
+    return true;
 
-    // Lesson not found in course
-    if (lessonIndex === -1) {
-      return false;
-    }
+    // Original logic (commented out temporarily):
+    // const allLessons = course.getAllLessons();
+    // const lessonIndex = allLessons.findIndex(l => l.id.equals(lesson.id));
 
-    // First lesson is always unlocked
-    if (lessonIndex === 0) {
-      return true;
-    }
+    // // Lesson not found in course
+    // if (lessonIndex === -1) {
+    //   return false;
+    // }
 
-    // Check if previous lesson is completed
-    const previousLesson = allLessons[lessonIndex - 1];
-    return progress.hasCompletedLesson(previousLesson.id);
+    // // First lesson is always unlocked
+    // if (lessonIndex === 0) {
+    //   return true;
+    // }
+
+    // // Check if previous lesson is completed
+    // const previousLesson = allLessons[lessonIndex - 1];
+    // return progress.hasCompletedLesson(previousLesson.id);
   }
 }
