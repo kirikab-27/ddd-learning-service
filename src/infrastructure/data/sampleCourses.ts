@@ -1,6 +1,6 @@
 import { Course, Chapter, Lesson, LessonTitle, MarkdownContent } from '@/domain/content/models';
 import { CourseId, ChapterId, LessonId } from '@/domain/shared';
-import { chapter1Lessons, chapter2Lessons, chapter3Lessons, chapter4Lessons, chapter5Lessons, chapter6Lessons, chapter7Lessons } from './sampleLessons';
+import { chapter1Lessons, chapter2Lessons, chapter3Lessons, chapter4Lessons, chapter5Lessons, chapter6Lessons, chapter7Lessons, chapter8Lessons } from './sampleLessons';
 
 // =============================================================================
 // 第1部: DDDの基礎概念
@@ -67,58 +67,11 @@ const chapter7 = Chapter.create({
 });
 
 // Chapter 8: 集約
-const lesson8_1 = Lesson.create({
-  id: LessonId.create('lesson-8-1'),
-  title: LessonTitle.create('集約とは'),
-  content: MarkdownContent.create(`
-# 集約（Aggregate）
-
-**集約** は、データ変更の一貫性を保つためにひとまとまりとして扱うオブジェクトの集まりです。
-
-## 集約の構成要素
-
-1. **集約ルート**: 外部からアクセスする唯一のエントリポイント
-2. **境界**: トランザクションの一貫性を保つ範囲
-3. **内部エンティティ/値オブジェクト**: 集約内部のオブジェクト
-
-## 集約の設計原則
-
-- 集約はできるだけ小さくする
-- 他の集約への参照はIDで保持する
-- 境界をまたいだ変更は結果整合性で対応する
-
-\`\`\`typescript
-export class Order {
-  private constructor(
-    private readonly _id: OrderId,
-    private _items: OrderItem[],
-    private _status: OrderStatus
-  ) {}
-
-  addItem(item: OrderItem): void {
-    if (this._status !== OrderStatus.Draft) {
-      throw new Error('Cannot modify confirmed order');
-    }
-    this._items.push(item);
-  }
-
-  confirm(): void {
-    if (this._items.length === 0) {
-      throw new Error('Cannot confirm empty order');
-    }
-    this._status = OrderStatus.Confirmed;
-  }
-}
-\`\`\`
-`),
-  order: 1,
-});
-
 const chapter8 = Chapter.create({
   id: ChapterId.create('chapter-8'),
   title: 'Chapter 8: 集約',
   order: 8,
-  lessons: [lesson8_1],
+  lessons: chapter8Lessons,
 });
 
 // =============================================================================
