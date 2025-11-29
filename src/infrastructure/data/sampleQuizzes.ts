@@ -1387,6 +1387,187 @@ const lesson8_3Questions: Question[] = [
   }),
 ];
 
+// =============================================================================
+// Chapter 9: リポジトリ
+// =============================================================================
+
+// Lesson 9-1: リポジトリとは（5問）
+const lesson9_1Questions: Question[] = [
+  Question.create({
+    id: 'q9-1-1',
+    text: 'リポジトリパターンの主な目的は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースのパフォーマンスを向上させる', isCorrect: false },
+      { id: 'b', text: 'ドメインオブジェクトの永続化と取得を抽象化する', isCorrect: true },
+      { id: 'c', text: 'UIコンポーネントを管理する', isCorrect: false },
+      { id: 'd', text: 'ネットワーク通信を最適化する', isCorrect: false },
+    ],
+    explanation: 'リポジトリパターンは、ドメインオブジェクトの永続化と取得を抽象化し、ドメイン層がインフラストラクチャの詳細から独立できるようにします。',
+  }),
+  Question.create({
+    id: 'q9-1-2',
+    text: 'リポジトリがコレクション指向と呼ばれる理由は？',
+    options: [
+      { id: 'a', text: 'データを配列で管理するから', isCorrect: false },
+      { id: 'b', text: 'メモリ上のコレクションのようなインターフェースを提供するから', isCorrect: true },
+      { id: 'c', text: 'List型を使用するから', isCorrect: false },
+      { id: 'd', text: 'キャッシュ機能を持つから', isCorrect: false },
+    ],
+    explanation: 'リポジトリは、あたかもメモリ上のコレクションのように、save/find/removeなどのシンプルなメソッドでドメインオブジェクトを操作できるインターフェースを提供します。',
+  }),
+  Question.create({
+    id: 'q9-1-3',
+    text: 'DAOとRepositoryの主な違いとして正しいものは？',
+    options: [
+      { id: 'a', text: 'DAOはテーブル中心、Repositoryは集約中心', isCorrect: true },
+      { id: 'b', text: 'DAOはJavaのみ、Repositoryはどの言語でも使える', isCorrect: false },
+      { id: 'c', text: 'DAOは読み取り専用、Repositoryは書き込みもできる', isCorrect: false },
+      { id: 'd', text: '違いはなく同じもの', isCorrect: false },
+    ],
+    explanation: 'DAOはデータベーステーブルごとに作成され、insert/update/deleteなどのメソッドを持ちます。一方、Repositoryは集約単位で作成され、save/find/removeなどドメイン用語を使ったメソッドを持ちます。',
+  }),
+  Question.create({
+    id: 'q9-1-4',
+    text: 'リポジトリと集約の関係について正しいものは？',
+    options: [
+      { id: 'a', text: '1つのテーブルに1つのリポジトリ', isCorrect: false },
+      { id: 'b', text: '1つの集約ルートに1つのリポジトリ', isCorrect: true },
+      { id: 'c', text: 'すべてのエンティティに1つずつリポジトリ', isCorrect: false },
+      { id: 'd', text: 'アプリケーション全体で1つのリポジトリ', isCorrect: false },
+    ],
+    explanation: 'リポジトリは集約ルート単位で作成します。集約内の内部エンティティ（例: OrderItem）専用のリポジトリは作りません。これにより集約の整合性が保たれます。',
+  }),
+  Question.create({
+    id: 'q9-1-5',
+    text: 'リポジトリによる抽象化のメリットとして適切でないものは？',
+    options: [
+      { id: 'a', text: 'ドメイン層がインフラストラクチャから独立する', isCorrect: false },
+      { id: 'b', text: 'モックを使ったテストが容易になる', isCorrect: false },
+      { id: 'c', text: 'SQLのパフォーマンスが必ず向上する', isCorrect: true },
+      { id: 'd', text: 'データベース変更の影響を局所化できる', isCorrect: false },
+    ],
+    explanation: 'リポジトリは抽象化によりテスト容易性や保守性を向上させますが、SQLのパフォーマンスが必ず向上するわけではありません。パフォーマンスは実装次第です。',
+  }),
+];
+
+// Lesson 9-2: リポジトリの実装パターン（5問）
+const lesson9_2Questions: Question[] = [
+  Question.create({
+    id: 'q9-2-1',
+    text: 'リポジトリのインターフェースはどの層に配置すべきですか？',
+    options: [
+      { id: 'a', text: 'Infrastructure層', isCorrect: false },
+      { id: 'b', text: 'Domain層', isCorrect: true },
+      { id: 'c', text: 'Presentation層', isCorrect: false },
+      { id: 'd', text: 'Application層', isCorrect: false },
+    ],
+    explanation: 'リポジトリのインターフェースはDomain層に配置し、具体的な実装はInfrastructure層に配置します。これにより依存性逆転の原則が実現されます。',
+  }),
+  Question.create({
+    id: 'q9-2-2',
+    text: 'コレクション指向リポジトリの特徴として正しいものは？',
+    options: [
+      { id: 'a', text: '変更を自動的にトラッキングする', isCorrect: false },
+      { id: 'b', text: '明示的にsaveメソッドを呼び出す必要がある', isCorrect: true },
+      { id: 'c', text: 'findメソッドだけを持つ', isCorrect: false },
+      { id: 'd', text: 'ORMの機能に依存する', isCorrect: false },
+    ],
+    explanation: 'コレクション指向リポジトリでは、オブジェクトを変更した後、明示的にsave()メソッドを呼び出して永続化します。変更の自動追跡は永続化指向の特徴です。',
+  }),
+  Question.create({
+    id: 'q9-2-3',
+    text: 'リポジトリのsaveメソッドで集約を保存する際の重要な原則は？',
+    options: [
+      { id: 'a', text: '集約ルートのみ保存し、内部エンティティは別途保存', isCorrect: false },
+      { id: 'b', text: '集約全体を1つのトランザクションで保存', isCorrect: true },
+      { id: 'c', text: '変更された部分だけを保存', isCorrect: false },
+      { id: 'd', text: '非同期で保存', isCorrect: false },
+    ],
+    explanation: 'リポジトリは集約全体を1つのトランザクション内で保存します。これにより集約の不変条件が常に保たれます。トランザクション境界=集約境界という原則です。',
+  }),
+  Question.create({
+    id: 'q9-2-4',
+    text: '永続化指向リポジトリの問題点として正しいものは？',
+    options: [
+      { id: 'a', text: 'メモリ使用量が多い', isCorrect: false },
+      { id: 'b', text: '変更が保存されるタイミングが不明確', isCorrect: true },
+      { id: 'c', text: 'コードが長くなる', isCorrect: false },
+      { id: 'd', text: 'データベース接続が不安定', isCorrect: false },
+    ],
+    explanation: '永続化指向リポジトリでは、ORMが変更を自動追跡するため、いつ保存されるかが不明確になり、トランザクション境界も曖昧になります。これはテストも困難にします。',
+  }),
+  Question.create({
+    id: 'q9-2-5',
+    text: '依存性注入を使ってリポジトリを注入する利点として適切でないものは？',
+    options: [
+      { id: 'a', text: 'テスト時にモック実装に差し替えられる', isCorrect: false },
+      { id: 'b', text: 'インターフェースと実装を分離できる', isCorrect: false },
+      { id: 'c', text: 'データベース接続が高速化される', isCorrect: true },
+      { id: 'd', text: '実装の切り替えが容易になる', isCorrect: false },
+    ],
+    explanation: '依存性注入の利点は、テスト容易性、疎結合、実装の切り替えやすさです。データベース接続の速度には直接影響しません。',
+  }),
+];
+
+// Lesson 9-3: リポジトリ設計のベストプラクティス（5問）
+const lesson9_3Questions: Question[] = [
+  Question.create({
+    id: 'q9-3-1',
+    text: 'リポジトリのクエリメソッド命名として推奨されるものは？',
+    options: [
+      { id: 'a', text: 'findBySql(sql: string)', isCorrect: false },
+      { id: 'b', text: 'findByCondition(condition: object)', isCorrect: false },
+      { id: 'c', text: 'findByCustomerId(customerId: CustomerId)', isCorrect: true },
+      { id: 'd', text: 'query(params: any)', isCorrect: false },
+    ],
+    explanation: 'リポジトリのメソッド名はドメイン用語を使い、意図を明確にすべきです。findByCustomerIdは検索条件が明確で、ドメイン知識を表現しています。',
+  }),
+  Question.create({
+    id: 'q9-3-2',
+    text: '仕様パターン（Specification Pattern）の主な目的は？',
+    options: [
+      { id: 'a', text: 'データベーススキーマを定義する', isCorrect: false },
+      { id: 'b', text: '複雑な検索条件をオブジェクトで表現する', isCorrect: true },
+      { id: 'c', text: 'パフォーマンスを最適化する', isCorrect: false },
+      { id: 'd', text: 'セキュリティを強化する', isCorrect: false },
+    ],
+    explanation: '仕様パターンは、複雑な検索条件をオブジェクトとして表現し、and/or/notで組み合わせられるようにします。これによりドメインロジックとして検索条件を扱えます。',
+  }),
+  Question.create({
+    id: 'q9-3-3',
+    text: 'リポジトリのアンチパターンとして正しいものは？',
+    options: [
+      { id: 'a', text: 'findByIdメソッドを持つ', isCorrect: false },
+      { id: 'b', text: 'リポジトリ内でビジネスロジックを実装する', isCorrect: true },
+      { id: 'c', text: 'Promiseを返す', isCorrect: false },
+      { id: 'd', text: 'トランザクションを使う', isCorrect: false },
+    ],
+    explanation: 'リポジトリは永続化のみを担当すべきです。ビジネスロジックはドメインモデルまたはドメインサービスに配置します。リポジトリにビジネスルールを入れると責務が混在します。',
+  }),
+  Question.create({
+    id: 'q9-3-4',
+    text: 'N+1問題を回避するための適切な方法は？',
+    options: [
+      { id: 'a', text: '集約内のエンティティを別々のクエリで取得する', isCorrect: false },
+      { id: 'b', text: '集約全体を1クエリで取得する（eager loading）', isCorrect: true },
+      { id: 'c', text: 'キャッシュを使う', isCorrect: false },
+      { id: 'd', text: 'クエリを非同期実行する', isCorrect: false },
+    ],
+    explanation: 'N+1問題を回避するには、集約全体を1つのクエリで取得します（eager loading）。例えばPrismaのincludeオプションを使って、OrderとOrderItemsを同時に取得します。',
+  }),
+  Question.create({
+    id: 'q9-3-5',
+    text: 'リポジトリのテスト容易性を高める方法として最も適切なものは？',
+    options: [
+      { id: 'a', text: 'すべてのテストで実際のデータベースを使う', isCorrect: false },
+      { id: 'b', text: 'InMemory実装を作成してテストで使う', isCorrect: true },
+      { id: 'c', text: 'リポジトリをテストしない', isCorrect: false },
+      { id: 'd', text: 'モックライブラリを使わない', isCorrect: false },
+    ],
+    explanation: 'リポジトリインターフェースのInMemory実装を作成すれば、データベースなしで高速にテストできます。IOrderRepositoryを実装したInMemoryOrderRepositoryを用意します。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -1556,6 +1737,28 @@ export const sampleQuizzes: Quiz[] = [
     title: '集約の設計ガイドライン - 理解度チェック',
     description: '集約の設計原則と判断基準についての理解度を確認するクイズです。',
     questions: lesson8_3Questions,
+  }),
+  // Chapter 9: リポジトリ
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-9-1'),
+    lessonId: LessonId.create('lesson-9-1'),
+    title: 'リポジトリとは - 理解度チェック',
+    description: 'リポジトリパターンの目的、責務、DAOとの違いについての理解度を確認するクイズです。',
+    questions: lesson9_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-9-2'),
+    lessonId: LessonId.create('lesson-9-2'),
+    title: 'リポジトリの実装パターン - 理解度チェック',
+    description: 'リポジトリの実装方法、層の分離、トランザクション管理についての理解度を確認するクイズです。',
+    questions: lesson9_2Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-9-3'),
+    lessonId: LessonId.create('lesson-9-3'),
+    title: 'リポジトリ設計のベストプラクティス - 理解度チェック',
+    description: 'クエリメソッド設計、仕様パターン、アンチパターンについての理解度を確認するクイズです。',
+    questions: lesson9_3Questions,
   }),
 ];
 
