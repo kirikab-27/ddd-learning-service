@@ -131,13 +131,25 @@ src/infrastructure/data/
 ## Git履歴
 
 ```
-[PR #32 merged] feat: add Chapter 8 - Aggregates (3 lessons + 15 quizzes)
-- Lesson 8-1: 集約とは
-- Lesson 8-2: 集約ルート
-- Lesson 8-3: 集約の設計ガイドライン
-- 15問のクイズ
-- 14個のMermaid図解
+16b5dac Merge remote-tracking branch 'origin/agent/016/frontend1' (HOTFIX)
+49b54f1 hotfix: fix backtick escaping in Chapter 8 lessons
+5098b17 Merge pull request #32 from kirikab-27/agent/016/frontend1
+9700008 Merge origin/main into agent/016/frontend1: Resolve conflicts
+7bbcd63 feat: add Chapter 8 - 集約 (Aggregate) with comprehensive lessons and quizzes
 ```
+
+### HOTFIX: バッククォートエスケープ修正
+
+**問題**: Chapter 8でMermaid図解とコードブロックが文字列として表示される問題が発見されました。
+
+**原因**: Chapter 1-7とは異なる過剰なバッククォートエスケープ（`\\\`\\\`\\\`` instead of `\`\`\``）が使用されていました。
+
+**修正内容**:
+- Frontend1が約74個のコードブロックを修正（commit 49b54f1）
+- すべてのMermaidブロックとTypeScriptコードブロックをChapter 1-7と同じ形式に統一
+- Quality がHOTFIXをmainにマージ（commit 16b5dac）
+
+**結果**: Chapter 8の全レッスンでMermaid図解とコードブロックが正常に表示されるようになりました。
 
 ## PR情報
 
