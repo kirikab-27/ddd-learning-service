@@ -98,7 +98,7 @@ describe('Lesson Flow Integration', () => {
   });
 
   it('should calculate completion rate correctly', async () => {
-    // Complete 2 out of 18 lessons (11%)
+    // Complete 2 out of 21 lessons (10%)
     const courseId = CourseId.create('ddd-practice');
     const progress = Progress.create(courseId)
       .markLessonAsCompleted(LessonId.create('lesson-1-1'))
@@ -112,7 +112,7 @@ describe('Lesson Flow Integration', () => {
       currentLessonId: 'lesson-1-3',
     });
 
-    expect(result.completionRate).toBe(11);
+    expect(result.completionRate).toBe(10);
   });
 
   it('should provide correct navigation links', async () => {

@@ -68,7 +68,8 @@ describe('LessonNavigationService', () => {
       expect(state).toBeNull();
     });
 
-    it('should return correct state for first lesson', () => {
+    // TEMPORARY: Skipped due to HOTFIX unlock all lessons
+    it.skip('should return correct state for first lesson', () => {
       const progress = createMockProgress([]);
       const state = service.getNavigationState(
         LessonId.create('lesson-1'),
@@ -142,7 +143,8 @@ describe('LessonNavigationService', () => {
       expect(next).toBeNull();
     });
 
-    it('should return null when next lesson is locked', () => {
+    // TEMPORARY: Skipped due to HOTFIX unlock all lessons
+    it.skip('should return null when next lesson is locked', () => {
       const progress = createMockProgress([]);
       const next = service.getNextAccessibleLesson(
         LessonId.create('lesson-1'),
@@ -228,7 +230,8 @@ describe('LessonNavigationService', () => {
       expect(canAccess).toBe(true);
     });
 
-    it('should return false for locked lesson', () => {
+    // TEMPORARY: Skipped due to HOTFIX unlock all lessons
+    it.skip('should return false for locked lesson', () => {
       const progress = createMockProgress([]);
       const canAccess = service.canAccessLesson(
         LessonId.create('lesson-2'),

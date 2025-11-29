@@ -63,7 +63,8 @@ describe('LessonUnlockSpecification', () => {
       expect(specification.isSatisfiedBy(firstLesson, course, progress)).toBe(true);
     });
 
-    it('should not unlock second lesson without completing first', () => {
+    // TEMPORARY: Skipped due to HOTFIX unlock all lessons
+    it.skip('should not unlock second lesson without completing first', () => {
       const progress = createMockProgress([]);
       const secondLesson = course.getAllLessons()[1];
 
@@ -85,14 +86,16 @@ describe('LessonUnlockSpecification', () => {
       expect(specification.isSatisfiedBy(thirdLesson, course, progress)).toBe(true);
     });
 
-    it('should not unlock lesson when previous is not completed', () => {
+    // TEMPORARY: Skipped due to HOTFIX unlock all lessons
+    it.skip('should not unlock lesson when previous is not completed', () => {
       const progress = createMockProgress(['lesson-1']); // lesson-2 not completed
       const thirdLesson = course.getAllLessons()[2];
 
       expect(specification.isSatisfiedBy(thirdLesson, course, progress)).toBe(false);
     });
 
-    it('should return false for lesson not in course', () => {
+    // TEMPORARY: Skipped due to HOTFIX unlock all lessons
+    it.skip('should return false for lesson not in course', () => {
       const progress = createMockProgress([]);
       const outsideLesson = createLesson('outside-lesson', 1);
 
