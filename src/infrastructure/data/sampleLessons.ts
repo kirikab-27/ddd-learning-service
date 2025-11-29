@@ -306,10 +306,16 @@ export const lesson2_1 = Lesson.create({
 
 ### ドメインエキスパートと開発者の橋渡し
 
-\`\`\`
-ドメインエキスパート ←→ ユビキタス言語 ←→ 開発者
-       ↓                    ↓                ↓
-    業務知識              共通理解            コード
+\`\`\`mermaid
+graph LR
+    Expert[ドメインエキスパート] <--> Language[ユビキタス言語]
+    Language <--> Dev[開発者]
+    
+    Expert -->|業務知識| Language
+    Language -->|共通理解| Expert
+    
+    Dev -->|コード| Language
+    Language -->|共通理解| Dev
 \`\`\`
 
 ## 言語の不一致による問題
@@ -465,40 +471,46 @@ export const lesson2_2 = Lesson.create({
 2. **関係の明確化**: 概念間の関係を矢印で結ぶ
 3. **境界の発見**: 異なるコンテキストを色分けで表現
 
-\`\`\`
-┌─────────────┐      ┌─────────────┐
-│    顧客     │──────│    注文     │
-│  Customer   │ 作成 │   Order     │
-└─────────────┘      └──────┬──────┘
-                            │ 含む
-                     ┌──────┴──────┐
-                     │   注文明細   │
-                     │  OrderItem  │
-                     └─────────────┘
+\`\`\`mermaid
+classDiagram
+    class Customer {
+        +作成()
+    }
+    class Order {
+        +含む
+    }
+    class OrderItem {
+    }
+
+    Customer --> Order : 作成
+    Order *-- OrderItem : 含む
 \`\`\`
 
 ## 言語の洗練プロセス
 
 ### 曖昧さの排除
 
-\`\`\`
-曖昧な表現:「商品」
-  ↓ 質問：「商品」は何を指しますか？
-洗練後:
-  - Product: カタログに載っている商品マスタ
-  - OrderItem: 注文に含まれる商品（数量付き）
-  - InventoryItem: 倉庫にある在庫
+\`\`\`mermaid
+graph TD
+    A[曖昧な表現:「商品」] -->|質問:「商品」は何を指しますか？| B{洗練後}
+    B --> C[Product: カタログに載っている商品マスタ]
+    B --> D[OrderItem: 注文に含まれる商品 数量付き]
+    B --> E[InventoryItem: 倉庫にある在庫]
 \`\`\`
 
 ### コンテキストの明確化
 
 同じ言葉でも、コンテキストによって意味が異なることがあります：
 
-\`\`\`
-「顧客」という言葉の意味:
-- 営業コンテキスト: 見込み客から既存顧客まで
-- 配送コンテキスト: 届け先の住所を持つ人
-- 請求コンテキスト: 支払い責任者
+\`\`\`mermaid
+mindmap
+  root((「顧客」の意味))
+    営業コンテキスト
+      見込み客から既存顧客まで
+    配送コンテキスト
+      届け先の住所を持つ人
+    請求コンテキスト
+      支払い責任者
 \`\`\`
 
 それぞれのコンテキストで適切な名前を定義します：
@@ -751,20 +763,21 @@ export const lesson3_1 = Lesson.create({
 
 ### モデルが適用される範囲
 
-\`\`\`
-┌─────────────────────────────────────────┐
-│       境界づけられたコンテキスト          │
-│  ┌─────────────────────────────────┐   │
-│  │      ドメインモデル              │   │
-│  │  ・エンティティ                  │   │
-│  │  ・値オブジェクト                │   │
-│  │  ・ドメインサービス              │   │
-│  └─────────────────────────────────┘   │
-│  ┌─────────────────────────────────┐   │
-│  │      ユビキタス言語              │   │
-│  │  用語A, 用語B, 用語C...          │   │
-│  └─────────────────────────────────┘   │
-└─────────────────────────────────────────┘
+\`\`\`mermaid
+graph TB
+    subgraph BC[境界づけられたコンテキスト]
+        direction TB
+        subgraph DM[ドメインモデル]
+            direction TB
+            E[エンティティ]
+            VO[値オブジェクト]
+            DS[ドメインサービス]
+        end
+        subgraph UL[ユビキタス言語]
+            direction TB
+            T[用語A, 用語B, 用語C...]
+        end
+    end
 \`\`\`
 
 ### 言語の一貫性が保たれる領域
@@ -790,19 +803,9 @@ class Product {
 
 ### 境界がないとどうなるか
 
-\`\`\`
-境界がない場合:
-
-「商品」という言葉が曖昧に
-     ↓
-┌──────────────────────────────────────────┐
-│  Product クラスが肥大化                   │
-│  - カタログ情報                           │
-│  - 在庫情報                               │
-│  - 配送情報                               │
-│  - 価格情報                               │
-│  → 責務が不明確、変更が困難               │
-└──────────────────────────────────────────┘
+\`\`\`mermaid
+graph TD
+    A[「商品」という言葉が曖昧に] --> B("Product クラスが肥大化<br/>- カタログ情報<br/>- 在庫情報<br/>- 配送情報<br/>- 価格情報<br/>→ 責務が不明確、変更が困難")
 \`\`\`
 
 ## コンテキストの例
@@ -874,44 +877,64 @@ export const lesson3_2 = Lesson.create({
 
 同じ言葉が異なる意味で使われている場所を探します：
 
-\`\`\`
-「顧客」という言葉の使われ方:
-
-営業チーム: 「顧客の連絡先を更新して」
-  → 会社名、担当者名、電話番号
-
-経理チーム: 「顧客の与信限度額を確認して」
-  → 支払い履歴、与信情報
-
-配送チーム: 「顧客の届け先を確認して」
-  → 住所、配送時間帯
-
-→ 3つの異なるコンテキストが存在する可能性
+\`\`\`mermaid
+mindmap
+  root((「顧客」の使われ方))
+    営業チーム
+      会社名
+      担当者名
+      電話番号
+    経理チーム
+      支払い履歴
+      与信情報
+    配送チーム
+      住所
+      配送時間帯
 \`\`\`
 
 ### ビジネスプロセスの境界
 
 ビジネスプロセスの切れ目を探します：
 
-\`\`\`
-ECサイトの注文プロセス:
+\`\`\`mermaid
+graph LR
+    subgraph Process [ECサイトの注文プロセス]
+        direction LR
+        C[カタログ閲覧] --> Cart[カートに追加]
+        Cart --> O[注文確定]
+        O --> P[決済]
+        P --> I[在庫引当]
+        I --> D[配送]
+    end
 
-[カタログ閲覧] → [カートに追加] → [注文確定] → [決済] → [在庫引当] → [配送]
-     ↑              ↑              ↑         ↑         ↑          ↑
-   カタログ        カート         注文       決済      在庫        配送
-  コンテキスト   コンテキスト   コンテキスト コンテキスト コンテキスト コンテキスト
+    subgraph Contexts [対応するコンテキスト]
+        direction LR
+        CC[カタログ]
+        CartC[カート]
+        OC[注文]
+        PC[決済]
+        IC[在庫]
+        DC[配送]
+    end
+
+    C -.-> CC
+    Cart -.-> CartC
+    O -.-> OC
+    P -.-> PC
+    I -.-> IC
+    D -.-> DC
 \`\`\`
 
 ### チーム構造との関連
 
 **コンウェイの法則**: 組織構造がシステム構造に影響を与える
 
-\`\`\`
-チーム構造:
-├── フロントエンドチーム → カタログコンテキスト
-├── 注文処理チーム → 注文・決済コンテキスト
-├── 物流チーム → 在庫・配送コンテキスト
-└── 顧客管理チーム → 顧客コンテキスト
+\`\`\`mermaid
+graph TD
+    FE[フロントエンドチーム] --> CC[カタログコンテキスト]
+    OP[注文処理チーム] --> OC[注文・決済コンテキスト]
+    LG[物流チーム] --> IC[在庫・配送コンテキスト]
+    CS[顧客管理チーム] --> CUS[顧客コンテキスト]
 \`\`\`
 
 チームの責任範囲がコンテキストの境界のヒントになります。
@@ -920,36 +943,41 @@ ECサイトの注文プロセス:
 
 ### 大きすぎず、小さすぎず
 
-\`\`\`
-❌ 大きすぎる:
-┌─────────────────────────────────────────┐
-│           EC システム全体               │
-│  カタログ + 在庫 + 注文 + 決済 + 配送    │
-│  → 複雑すぎて管理困難                   │
-└─────────────────────────────────────────┘
+\`\`\`mermaid
+graph TD
+    subgraph TooBig [❌ 大きすぎる]
+        Big[EC システム全体<br/>カタログ + 在庫 + 注文 + 決済 + 配送]
+        Big --> ResultBig[複雑すぎて管理困難]
+    end
 
-❌ 小さすぎる:
-┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
-│商品名  │ │商品価格│ │在庫数  │ │カテゴリ│
-└────────┘ └────────┘ └────────┘ └────────┘
-→ 過度に分割され、連携コストが増大
+    subgraph TooSmall [❌ 小さすぎる]
+        N[商品名]
+        P[商品価格]
+        S[在庫数]
+        C[カテゴリ]
+        N & P & S & C --> ResultSmall[過度に分割され、連携コストが増大]
+    end
 
-✅ 適切なサイズ:
-┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-│  カタログ    │ │    在庫     │ │    注文     │
-│ コンテキスト │ │ コンテキスト │ │ コンテキスト │
-└─────────────┘ └─────────────┘ └─────────────┘
-→ 独立して開発・デプロイ可能な単位
+    subgraph Appropriate [✅ 適切なサイズ]
+        CC[カタログ<br/>コンテキスト]
+        IC[在庫<br/>コンテキスト]
+        OC[注文<br/>コンテキスト]
+        CC & IC & OC --> ResultApp[独立して開発・デプロイ可能な単位]
+    end
 \`\`\`
 
 ### 変更の頻度
 
 頻繁に一緒に変更されるものは同じコンテキストに：
 
-\`\`\`
-変更の分析:
-- 価格変更 → カタログの価格表示も変更 → 同じコンテキスト
-- 在庫ロジック変更 → 配送は影響なし → 別のコンテキスト
+\`\`\`mermaid
+graph LR
+    subgraph Case1 [同じコンテキスト]
+        P1[価格変更] --> C1[カタログの価格表示も変更]
+    end
+    subgraph Case2 [別のコンテキスト]
+        I1[在庫ロジック変更] -.->|影響なし| D1[配送]
+    end
 \`\`\`
 
 ### チームの責任範囲
@@ -979,10 +1007,11 @@ class Shipping { }
 3. **集約**を特定する
 4. **境界**を引く
 
-\`\`\`
-[注文が作成された] [支払いが完了した] [商品が出荷された]
-        ↓                  ↓                  ↓
-    注文コンテキスト    決済コンテキスト    配送コンテキスト
+\`\`\`mermaid
+graph LR
+    E1[注文が作成された] --> C1[注文コンテキスト]
+    E2[支払いが完了した] --> C2[決済コンテキスト]
+    E3[商品が出荷された] --> C3[配送コンテキスト]
 \`\`\`
 
 ## まとめ
@@ -1011,16 +1040,18 @@ export const lesson3_3 = Lesson.create({
 
 ### 上流コンテキストが下流に影響
 
+\`\`\`mermaid
+graph LR
+    subgraph Upstream [上流 Upstream]
+        O[注文<br/>コンテキスト]
+    end
+    subgraph Downstream [下流 Downstream]
+        S[配送<br/>コンテキスト]
+    end
+    O -->|注文情報| S
 \`\`\`
-上流（Upstream）             下流（Downstream）
-┌─────────────┐              ┌─────────────┐
-│   注文      │ ──────────→ │   配送      │
-│ コンテキスト │   注文情報   │ コンテキスト │
-└─────────────┘              └─────────────┘
-
 上流の変更 → 下流に影響
 下流の変更 → 上流に影響なし
-\`\`\`
 
 ### 依存関係の方向
 
@@ -1041,16 +1072,20 @@ class ShippingService {
 
 2つのコンテキストが共通のモデルを共有するパターン：
 
-\`\`\`
-┌─────────────┐  共有部分  ┌─────────────┐
-│ コンテキストA │◀────────▶│ コンテキストB │
-└─────────────┘           └─────────────┘
-         ↓
-   ┌─────────────┐
-   │ 共有カーネル │
-   │ - Money     │
-   │ - Address   │
-   └─────────────┘
+\`\`\`mermaid
+graph LR
+    subgraph ContextA [コンテキストA]
+        A[モデルA]
+    end
+    subgraph ContextB [コンテキストB]
+        B[モデルB]
+    end
+    subgraph SharedKernel [共有カーネル]
+        SK[Money<br/>Address]
+    end
+
+    ContextA <--> SharedKernel
+    ContextB <--> SharedKernel
 \`\`\`
 
 **使用場面**: 密接に連携するチーム間で、共通の概念を共有したい場合
@@ -1074,13 +1109,10 @@ import { Money } from '@shared-kernel';
 
 外部システムやレガシーシステムとの統合時に、自分のモデルを守るパターン：
 
-\`\`\`
-┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-│ 外部/レガシー │ → │ 腐敗防止層  │ → │ 自コンテキスト│
-│  システム    │   │    (ACL)    │   │             │
-└─────────────┘   └─────────────┘   └─────────────┘
-                        ↓
-                  翻訳・変換
+\`\`\`mermaid
+graph LR
+    External[外部/レガシー<br/>システム] --> ACL[腐敗防止層<br/>ACL]
+    ACL -->|翻訳・変換| Own[自コンテキスト]
 \`\`\`
 
 \`\`\`typescript
@@ -1105,13 +1137,11 @@ class CustomerTranslator {
 
 他のコンテキストに対して、明確なAPIを公開するパターン：
 
-\`\`\`
-              公開API
-┌─────────────┐  REST/gRPC  ┌─────────────┐
-│ 提供者      │ ────────── │ 消費者A     │
-│ コンテキスト │ ────────── │ 消費者B     │
-│             │ ────────── │ 消費者C     │
-└─────────────┘             └─────────────┘
+\`\`\`mermaid
+graph LR
+    Provider[提供者<br/>コンテキスト] -->|公開API<br/>REST/gRPC| ConsumerA[消費者A]
+    Provider --> ConsumerB[消費者B]
+    Provider --> ConsumerC[消費者C]
 \`\`\`
 
 \`\`\`typescript
@@ -1142,18 +1172,12 @@ class OrderController {
 
 コンテキスト間の関係を図示したものが**コンテキストマップ**です：
 
-\`\`\`
-           ┌─────────┐
-           │ カタログ │
-           └────┬────┘
-                │ 公開API
-           ┌────▼────┐      ┌─────────┐
-           │  注文   │ ───→ │  配送   │
-           └────┬────┘ 上流  └─────────┘
-                │            下流
-           ┌────▼────┐
-           │  決済   │←─── 外部決済システム
-           └─────────┘ ACL
+\`\`\`mermaid
+graph TD
+    Catalog[カタログ] -->|公開API| Order[注文]
+    Order -->|上流| Shipping[配送]
+    External[外部決済システム] -->|ACL| Payment[決済]
+    Order --> Payment
 \`\`\`
 
 ## まとめ
@@ -1190,20 +1214,12 @@ export const lesson4_1 = Lesson.create({
 **コンテキストマップ**は、システム内のすべての境界づけられたコンテキストとその関係を
 図示した戦略的な設計ツールです。
 
-\`\`\`
-┌─────────────────────────────────────────────────────────┐
-│                  コンテキストマップ                      │
-│                                                         │
-│  ┌─────────┐      ┌─────────┐      ┌─────────┐        │
-│  │カタログ │ ───→ │  注文   │ ───→ │  配送   │        │
-│  │         │  API │         │ イベント│         │        │
-│  └─────────┘      └────┬────┘      └─────────┘        │
-│                        │                               │
-│                   ┌────▼────┐                          │
-│                   │  決済   │ ←── 外部決済             │
-│                   │         │  ACL                     │
-│                   └─────────┘                          │
-└─────────────────────────────────────────────────────────┘
+\`\`\`mermaid
+graph TD
+    Catalog[カタログ] -->|API| Order[注文]
+    Order -->|イベント| Shipping[配送]
+    External[外部決済] -->|ACL| Payment[決済]
+    Order --> Payment
 \`\`\`
 
 ## コンテキストマップの目的
@@ -1238,15 +1254,9 @@ export const lesson4_1 = Lesson.create({
 
 ### 関係の方向
 
-\`\`\`
-上流（Upstream）    →    下流（Downstream）
-┌──────────┐             ┌──────────┐
-│ 提供する │  ────────→  │ 利用する │
-│ コンテキスト │             │ コンテキスト │
-└──────────┘             └──────────┘
-
-U: Upstream（上流）
-D: Downstream（下流）
+\`\`\`mermaid
+graph LR
+    Upstream["提供する<br/>コンテキスト<br/>(上流 Upstream)"] --> Downstream["利用する<br/>コンテキスト<br/>(下流 Downstream)"]
 \`\`\`
 
 ### 統合パターンの記号
@@ -1263,35 +1273,37 @@ PL: Published Language（公開言語）
 
 ### Step 1: コンテキストの洗い出し
 
-\`\`\`
-ECシステムのコンテキスト:
-□ カタログ管理
-□ 在庫管理
-□ 注文処理
-□ 決済処理
-□ 配送管理
-□ 顧客管理
+\`\`\`mermaid
+graph TD
+    C1[カタログ管理]
+    C2[在庫管理]
+    C3[注文処理]
+    C4[決済処理]
+    C5[配送管理]
+    C6[顧客管理]
 \`\`\`
 
 ### Step 2: 関係の特定
 
 各コンテキスト間でデータや機能のやり取りがあるかを確認：
 
-\`\`\`
-カタログ → 注文: 商品情報を参照
-注文 → 在庫: 在庫を引き当て
-注文 → 決済: 支払いを処理
-注文 → 配送: 出荷を依頼
+\`\`\`mermaid
+graph TD
+    Catalog[カタログ] -->|商品情報を参照| Order[注文]
+    Order -->|在庫を引き当て| Inventory[在庫]
+    Order -->|支払いを処理| Payment[決済]
+    Order -->|出荷を依頼| Shipping[配送]
 \`\`\`
 
 ### Step 3: 統合パターンの決定
 
 各関係に適切なパターンを選択：
 
-\`\`\`
-カタログ ──[OHS]──→ 注文
-注文 ──[イベント]──→ 在庫
-注文 ──[ACL]──→ 外部決済
+\`\`\`mermaid
+graph TD
+    Catalog[カタログ] -->|OHS| Order[注文]
+    Order -->|イベント| Inventory[在庫]
+    Order -->|ACL| Payment[外部決済]
 \`\`\`
 
 ### Step 4: 図の作成
@@ -1324,17 +1336,15 @@ export const lesson4_2 = Lesson.create({
 
 2つのチームが対等な関係で協力するパターンです。
 
-\`\`\`
-┌─────────────┐    協力    ┌─────────────┐
-│ コンテキストA │◀────────▶│ コンテキストB │
-│  チームA     │    調整    │  チームB     │
-└─────────────┘           └─────────────┘
+\`\`\`mermaid
+graph LR
+    ContextA[コンテキストA<br/>チームA] <-->|協力/調整| ContextB[コンテキストB<br/>チームB]
 \`\`\`
 
 **特徴:**
-- 対等な関係
-- 変更時は相互に調整
-- 密なコミュニケーションが必要
+-   対等な関係
+-   変更時は相互に調整
+-   密なコミュニケーションが必要
 
 **適用場面:** 同じ組織内の密接に連携するチーム
 
@@ -1371,20 +1381,22 @@ import { Money } from '@shared-kernel';
 
 下流（顧客）のニーズに上流（供給者）が応える関係です。
 
-\`\`\`
-上流（Supplier）          下流（Customer）
-┌─────────────┐          ┌─────────────┐
-│  注文       │ ───────→ │  配送       │
-│  サービス   │   要件    │  サービス   │
-└─────────────┘   提示    └─────────────┘
-                ←───────
-                 対応
+\`\`\`mermaid
+graph LR
+    subgraph Supplier [上流 Supplier]
+        Order[注文<br/>サービス]
+    end
+    subgraph Customer [下流 Customer]
+        Delivery[配送<br/>サービス]
+    end
+    Delivery -->|要件提示| Order
+    Order -->|対応| Delivery
 \`\`\`
 
 **特徴:**
-- 下流が要件を提示
-- 上流が対応する責任を持つ
-- 計画的な変更管理
+-   下流が要件を提示
+-   上流が対応する責任を持つ
+-   計画的な変更管理
 
 ## 順応者（Conformist）
 
@@ -1463,9 +1475,9 @@ class OrderController {
 \`\`\`
 
 **特徴:**
-- バージョン管理（v1, v2...）
-- ドキュメント化（OpenAPI/Swagger）
-- 公開言語（Published Language）と組み合わせることが多い
+-   バージョン管理（v1, v2...）
+-   ドキュメント化（OpenAPI/Swagger）
+-   公開言語（Published Language）と組み合わせることが多い
 
 ## パターン選択の指針
 
@@ -1480,26 +1492,23 @@ class OrderController {
 
 ## 実装例：ECシステム
 
-\`\`\`
-┌───────────────────────────────────────────────────┐
-│                   ECシステム                       │
-│                                                   │
-│  ┌─────────┐                    ┌─────────┐      │
-│  │カタログ │───[OHS/PL]──────→ │  注文   │      │
-│  │         │    REST API       │         │      │
-│  └─────────┘                    └────┬────┘      │
-│                                      │           │
-│            ┌─────────────────────────┼───┐       │
-│            │                         │   │       │
-│            ▼                         ▼   ▼       │
-│  ┌─────────────┐          ┌─────────┐ ┌───────┐ │
-│  │    在庫     │          │  決済   │ │ 配送  │ │
-│  │             │          │  [ACL]  │ │       │ │
-│  └─────────────┘          └────┬────┘ └───────┘ │
-│                                │                 │
-│                           外部決済API            │
-└───────────────────────────────────────────────────┘
-\`\`\`
+\`\`\`mermaid
+graph TD
+    subgraph EC_System [ECシステム]
+        Catalog[カタログ]
+        Order[注文]
+        Inventory[在庫]
+        Payment[決済<br/>ACL]
+        Delivery[配送]
+    end
+    
+    Catalog -->|OHS/PL<br/>REST API| Order
+    Order --> Inventory
+    Order --> Payment
+    Order --> Delivery
+    
+    ExternalPayment[外部決済API] --> Payment
+\`\`\`      
 
 ## まとめ
 
@@ -2290,12 +2299,14 @@ export const lesson6_1 = Lesson.create({
 
 ### 日常の例
 
-\`\`\`
-エンティティの例:
-- 銀行口座 → 口座番号で識別、残高は変わる
-- 人物 → 社員番号やIDで識別、住所や役職は変わる
-- 注文 → 注文番号で識別、状態（下書き→確定→配送中）が変わる
-- 車 → 車両番号で識別、走行距離やオーナーは変わる
+\`\`\`mermaid
+graph LR
+    subgraph Examples [エンティティの例]
+        Account[銀行口座] -->|ID: 口座番号| AccountAttr[残高は変わる]
+        Person[人物] -->|ID: 社員番号| PersonAttr[住所/役職は変わる]
+        Order[注文] -->|ID: 注文番号| OrderAttr[状態は変わる]
+        Car[車] -->|ID: 車両番号| CarAttr[走行距離/オーナーは変わる]
+    end
 \`\`\`
 
 ### 値オブジェクトとの対比
@@ -2378,14 +2389,16 @@ class Order {
 
 エンティティは作成、変更、削除のライフサイクルを持ちます。
 
-\`\`\`
-┌─────────┐     ┌─────────┐     ┌──────────┐     ┌─────────┐
-│ 作成    │ ──→ │ 更新    │ ──→ │ 保存     │ ──→ │ 削除    │
-│ create  │     │ update  │     │ persist  │     │ delete  │
-└─────────┘     └─────────┘     └──────────┘     └─────────┘
-
-注文の例:
-作成（Draft） → 確定（Confirmed） → 配送（Shipped） → 完了（Completed）
+\`\`\`mermaid
+stateDiagram-v2
+    [*] --> 作成(Draft)
+    作成(Draft) --> 確定(Confirmed): confirm()
+    確定(Confirmed) --> 配送(Shipped): ship()
+    配送(Shipped) --> 完了(Completed): complete()
+    完了(Completed) --> [*]
+    
+    作成(Draft) --> 削除(Deleted): delete()
+    削除(Deleted) --> [*]
 \`\`\`
 
 ## エンティティと値オブジェクトの違い
@@ -2436,15 +2449,18 @@ class OrderItem {
 
 ビジネスの中心となる概念は通常エンティティです：
 
-\`\`\`
-ECサイト:
-- 顧客（Customer） → 購入履歴が増える、住所が変わる
-- 注文（Order） → 状態が変化する
-- 在庫（Inventory） → 数量が変動する
+\`\`\`mermaid
+graph TD
+    subgraph EC_Site [ECサイト]
+        Customer["顧客<br/>(Customer)"] -->|購入履歴/住所| CustomerChange[変化する]
+        Order["注文<br/>(Order)"] -->|状態| OrderChange[変化する]
+        Inventory["在庫<br/>(Inventory)"] -->|数量| InventoryChange[変動する]
+    end
 
-銀行システム:
-- 口座（Account） → 残高が変動する
-- 取引（Transaction） → 作成後は不変だがログとして追跡
+    subgraph Bank_System [銀行システム]
+        Account["口座<br/>(Account)"] -->|残高| AccountChange[変動する]
+        Transaction["取引<br/>(Transaction)"] -->|ログ| TransactionImmutable["不変<br/>(追跡対象)"]
+    end
 \`\`\`
 
 ### 2. 状態管理の中心
@@ -2516,22 +2532,11 @@ export const lesson6_2 = Lesson.create({
 
 ### 4つのフェーズ
 
-\`\`\`
-┌──────────┐
-│ 1. 生成  │  create, register
-└────┬─────┘
-     │
-┌────▼─────┐
-│ 2. 取得  │  findById, search
-└────┬─────┘
-     │
-┌────▼─────┐
-│ 3. 変更  │  update, modify
-└────┬─────┘
-     │
-┌────▼─────┐
-│ 4. 削除  │  delete, archive
-└──────────┘
+\`\`\`mermaid
+graph TD
+    Create["1. 生成<br/>(create, register)"] --> Retrieve["2. 取得<br/>(findById, search)"]
+    Retrieve --> Update["3. 変更<br/>(update, modify)"]
+    Update --> Delete["4. 削除<br/>(delete, archive)"]
 \`\`\`
 
 ### 1. エンティティの生成
@@ -2799,24 +2804,17 @@ class Order {
 
 ### 状態遷移図
 
-\`\`\`
-     ┌──────────┐
-     │  Draft   │ 下書き
-     └────┬─────┘
-          │ confirm()
-     ┌────▼─────┐
-     │Confirmed │ 確定
-     └────┬─────┘
-          │ ship()
-     ┌────▼─────┐
-     │ Shipped  │ 配送中
-     └────┬─────┘
-          │ deliver()
-     ┌────▼─────┐
-     │Delivered │ 配送完了
-     └──────────┘
+\`\`\`mermaid
+stateDiagram-v2
+    [*] --> Draft: 作成
+    Draft --> Confirmed: confirm()
+    Confirmed --> Shipped: ship()
+    Shipped --> Delivered: deliver()
+    Delivered --> [*]
 
-     cancel()でキャンセル状態へ（Draft/Confirmedから）
+    Draft --> Cancelled: cancel()
+    Confirmed --> Cancelled: cancel()
+    Cancelled --> [*]
 \`\`\`
 
 ## 楽観的ロックと悲観的ロック
@@ -3171,18 +3169,18 @@ class User {
 
 ## 判断のフローチャート
 
-\`\`\`
-開始
-  ↓
-Q: 追跡する必要があるか？
-  YES → エンティティ
-  NO  → ↓
-Q: 時間とともに変化するか？
-  YES → エンティティ
-  NO  → ↓
-Q: 交換可能か？
-  YES → 値オブジェクト
-  NO  → エンティティ
+\`\`\`mermaid
+graph TD
+    Start([開始]) --> Q1{追跡が必要？}
+    Q1 -- YES --> Entity[エンティティ]
+    Q1 -- NO --> Q2{時間とともに変化？}
+    Q2 -- YES --> Entity
+    Q2 -- NO --> Q3{交換可能？}
+    Q3 -- YES --> VO[値オブジェクト]
+    Q3 -- NO --> Entity
+
+    style Entity fill:#f9f,stroke:#333,stroke-width:2px
+    style VO fill:#9ff,stroke:#333,stroke-width:2px
 \`\`\`
 
 ## まとめ
@@ -3217,7 +3215,7 @@ export const lesson7_1 = Lesson.create({
 
 ### エンティティや値オブジェクトに収まらないロジック
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // ❌ どのエンティティに属するべき？
 class Account {
   transfer(to: Account, amount: Money): void {
@@ -3225,7 +3223,7 @@ class Account {
     // どちらのAccountのメソッドとして実装すべき？
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 このような**複数のオブジェクトをまたぐ操作**や**オブジェクトに属さない計算**は、ドメインサービスが適しています。
 
@@ -3235,20 +3233,20 @@ class Account {
 
 ドメインサービスは状態を持ちません。必要な情報はすべて引数で受け取ります。
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // ✅ 状態を持たないドメインサービス
 class TransferService {
   transfer(from: Account, to: Account, amount: Money): void {
     // すべて引数で受け取る
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ### 2. ドメイン知識を表現する
 
 技術的な処理ではなく、**ビジネスルール**を表現します。
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // ✅ ドメイン知識を表現
 class InventoryAllocationService {
   canAllocate(product: Product, quantity: Quantity): boolean {
@@ -3262,14 +3260,14 @@ class EmailService {
     // メール送信は技術的な処理
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ### 3. 操作（動詞）で表現される
 
 ドメインサービスは**操作**を表すため、名前は動詞またはサービスを示す名詞になります。
 
-- 良い例: \\\`TransferService\\\`, \\\`PricingService\\\`, \\\`AuthenticationService\\\`
-- 避けるべき: \\\`AccountManager\\\`, \\\`OrderHelper\\\`, \\\`ProductUtil\\\`
+- 良い例: \`TransferService\`, \`PricingService\`, \`AuthenticationService\`
+- 避けるべき: \`AccountManager\`, \`OrderHelper\`, \`ProductUtil\`
 
 ## エンティティ・値オブジェクトとの違い
 
@@ -3305,7 +3303,7 @@ export const lesson7_2 = Lesson.create({
 
 ### ステートレスなクラスとして実装
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 export class MoneyTransferService {
   // 状態（フィールド）を持たない
 
@@ -3328,24 +3326,24 @@ export class MoneyTransferService {
            !to.isFrozen();
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ## 命名規則
 
 ### 良い命名
 
 ✅ **操作を明確に表す**:
-- \\\`MoneyTransferService\\\` - 送金サービス
-- \\\`PricingService\\\` - 価格計算サービス
-- \\\`AuthenticationService\\\` - 認証サービス
-- \\\`InventoryAllocationService\\\` - 在庫割り当てサービス
+- \`MoneyTransferService\` - 送金サービス
+- \`PricingService\` - 価格計算サービス
+- \`AuthenticationService\` - 認証サービス
+- \`InventoryAllocationService\` - 在庫割り当てサービス
 
 ### 避けるべき命名
 
 ❌ **曖昧な名前**:
-- \\\`AccountManager\\\` - 何をするのか不明
-- \\\`OrderHelper\\\` - ヘルパーは技術的
-- \\\`ProductUtil\\\` - ユーティリティは技術的
+- \`AccountManager\` - 何をするのか不明
+- \`OrderHelper\` - ヘルパーは技術的
+- \`ProductUtil\` - ユーティリティは技術的
 
 ## まとめ
 
@@ -3367,30 +3365,29 @@ export const lesson7_3 = Lesson.create({
 
 ## ロジック配置の判断フローチャート
 
-\\\`\\\`\\\`
-Q: そのロジックは単一のオブジェクトの責務か？
-  YES → エンティティまたは値オブジェクトに配置
-    ↓
-    Q: 状態を持つか？ライフサイクルがあるか？
-      YES → エンティティのメソッドとして実装
-      NO  → 値オブジェクトのメソッドとして実装
+\`\`\`mermaid
+graph TD
+    Start([開始]) --> Q1{単一オブジェクトの責務？}
+    Q1 -- YES --> Q2{状態/ライフサイクルあり？}
+    Q2 -- YES --> Entity[エンティティのメソッド]
+    Q2 -- NO --> VO[値オブジェクトのメソッド]
+    
+    Q1 -- NO --> Q3{複数オブジェクトをまたぐ？}
+    Q3 -- YES --> DomainService[ドメインサービス]
+    Q3 -- NO --> Q4{どのオブジェクトにも属さない？}
+    Q4 -- YES --> DomainService
+    Q4 -- NO --> Reconsider[エンティティ/VOを再検討]
 
-  NO → ↓
-
-Q: 複数のオブジェクトをまたぐ操作か？
-  YES → ドメインサービスとして実装
-
-Q: どのオブジェクトにも自然に属さない計算か？
-  YES → ドメインサービスとして実装
-
-  NO → もう一度エンティティ・値オブジェクトを検討
-\\\`\\\`\\\`
+    style Entity fill:#f9f,stroke:#333,stroke-width:2px
+    style VO fill:#9ff,stroke:#333,stroke-width:2px
+    style DomainService fill:#ff9,stroke:#333,stroke-width:2px
+\`\`\`
 
 ## パターン1: エンティティに配置すべきロジック
 
 ### ✅ 良い例: 自身の状態を変更するロジック
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 class Order {
   private _status: OrderStatus;
   private _items: OrderItem[];
@@ -3406,11 +3403,11 @@ class Order {
     this._status = OrderStatus.Confirmed;
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ### ❌ 悪い例: エンティティのロジックをサービスに移動
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // ❌ 単一オブジェクトの責務なのにサービスにしている
 class OrderService {
   confirmOrder(order: Order): void {
@@ -3425,13 +3422,13 @@ class Order {
     this._status = OrderStatus.Confirmed;
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ## パターン2: 値オブジェクトに配置すべきロジック
 
 ### ✅ 良い例: 値の計算や変換
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 class Money {
   // ✅ 金額計算は Money のメソッド
   add(other: Money): Money {
@@ -3443,13 +3440,13 @@ class Money {
     return new Money(this.amount * multiplier, this.currency);
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ## パターン3: ドメインサービスに配置すべきロジック
 
 ### ✅ 良い例: 複数オブジェクトをまたぐ操作
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // ✅ 送金は送金元と送金先、両方のAccountに影響
 class MoneyTransferService {
   transfer(from: Account, to: Account, amount: Money): void {
@@ -3464,7 +3461,7 @@ class MoneyTransferService {
     to.deposit(amount);
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ## アンチパターン: ドメインサービスの過剰使用
 
@@ -3472,7 +3469,7 @@ class MoneyTransferService {
 
 すべてのロジックをサービスに配置し、エンティティがデータの入れ物になっている状態。
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // ❌ データのみのエンティティ（貧血）
 class Order {
   id: OrderId;
@@ -3487,13 +3484,13 @@ class OrderService {
     order.items.push(item);
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ### ✅ リッチドメインモデル（Rich Domain Model）
 
 エンティティが適切にロジックを持ち、ドメインサービスは本当に必要な場合のみ使用。
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // ✅ ロジックを持つエンティティ
 class Order {
   private _items: OrderItem[];
@@ -3505,7 +3502,7 @@ class Order {
     this._items.push(item);
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ## まとめ
 

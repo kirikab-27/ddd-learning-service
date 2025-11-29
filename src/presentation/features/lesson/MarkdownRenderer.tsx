@@ -13,31 +13,61 @@ interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
-    <article className="prose prose-invert prose-slate max-w-none
-      prose-headings:font-bold prose-headings:tracking-tight
-      prose-h1:text-4xl prose-h1:mb-6 prose-h1:mt-8 prose-h1:pb-3 prose-h1:border-b prose-h1:border-slate-700 prose-h1:text-slate-100
-      prose-h2:text-3xl prose-h2:mb-5 prose-h2:mt-10 prose-h2:text-slate-200 prose-h2:border-l-4 prose-h2:border-blue-500 prose-h2:pl-4
-      prose-h3:text-2xl prose-h3:mb-4 prose-h3:mt-8 prose-h3:text-slate-300
-      prose-h4:text-xl prose-h4:mb-3 prose-h4:mt-6 prose-h4:text-slate-400 prose-h4:font-semibold
-      prose-p:text-base prose-p:leading-relaxed prose-p:text-slate-300 prose-p:mb-4
-      prose-a:text-blue-400 prose-a:no-underline prose-a:font-medium prose-a:transition-colors hover:prose-a:text-blue-300 hover:prose-a:underline
-      prose-strong:text-slate-200 prose-strong:font-bold
-      prose-em:text-slate-300 prose-em:italic
-      prose-code:bg-slate-800/80 prose-code:text-blue-300 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none prose-code:border prose-code:border-slate-700/50
-      prose-pre:bg-slate-900/50 prose-pre:border prose-pre:border-slate-700/50 prose-pre:rounded-lg prose-pre:p-0 prose-pre:my-6 prose-pre:shadow-xl
-      prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-slate-800/50 prose-blockquote:rounded-r-lg prose-blockquote:pl-6 prose-blockquote:pr-6 prose-blockquote:py-4 prose-blockquote:my-6 prose-blockquote:italic prose-blockquote:text-slate-300 prose-blockquote:shadow-lg
-      prose-ul:my-5 prose-ul:space-y-2 prose-ul:list-disc prose-ul:list-outside prose-ul:pl-6 prose-ul:text-slate-300
-      prose-ol:my-5 prose-ol:space-y-2 prose-ol:list-decimal prose-ol:list-outside prose-ol:pl-6 prose-ol:text-slate-300
-      prose-li:text-slate-300 prose-li:leading-relaxed prose-li:marker:text-blue-400
-      prose-table:w-full prose-table:my-6 prose-table:border-collapse prose-table:rounded-lg prose-table:overflow-hidden prose-table:shadow-lg
-      prose-thead:bg-slate-800 prose-thead:text-slate-200
-      prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:font-semibold prose-th:border-b-2 prose-th:border-slate-600 prose-th:text-sm prose-th:uppercase prose-th:tracking-wider
-      prose-td:px-4 prose-td:py-3 prose-td:border prose-td:border-slate-700 prose-td:text-slate-300
-      prose-tr:transition-colors prose-tbody:hover:prose-tr:bg-slate-800/30
-      prose-hr:border-slate-700 prose-hr:my-8">
+    <article className="prose prose-invert prose-slate max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          h1: () => null, // Hide H1 as it is displayed in the header
+          h2: ({ node, ...props }) => (
+            <h2 className="text-3xl font-bold mt-16 mb-6 pb-2 border-b border-slate-700 text-slate-200" {...props} />
+          ),
+          h3: ({ node, ...props }) => (
+            <h3 className="text-2xl font-bold mt-10 mb-4 text-slate-300" {...props} />
+          ),
+          h4: ({ node, ...props }) => (
+            <h4 className="text-xl font-semibold mt-8 mb-3 text-slate-400" {...props} />
+          ),
+          p: ({ node, ...props }) => (
+            <p className="text-base leading-loose text-slate-300 mb-6 tracking-wide" {...props} />
+          ),
+          ul: ({ node, ...props }) => (
+            <ul className="list-disc list-outside pl-6 mb-6 space-y-2 text-slate-300" {...props} />
+          ),
+          ol: ({ node, ...props }) => (
+            <ol className="list-decimal list-outside pl-6 mb-6 space-y-2 text-slate-300" {...props} />
+          ),
+          li: ({ node, ...props }) => (
+            <li className="leading-loose" {...props} />
+          ),
+          blockquote: ({ node, ...props }) => (
+            <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-6 italic text-slate-300 bg-slate-800/50 rounded-r" {...props} />
+          ),
+          table: ({ node, ...props }) => (
+            <div className="overflow-x-auto my-8 rounded-lg shadow-lg">
+              <table className="w-full border-collapse" {...props} />
+            </div>
+          ),
+          thead: ({ node, ...props }) => (
+            <thead className="bg-slate-800 text-slate-200" {...props} />
+          ),
+          th: ({ node, ...props }) => (
+            <th className="px-4 py-3 text-left font-semibold border-b-2 border-slate-600 text-sm uppercase tracking-wider" {...props} />
+          ),
+          td: ({ node, ...props }) => (
+            <td className="px-4 py-3 border border-slate-700 text-slate-300" {...props} />
+          ),
+          a: ({ node, ...props }) => (
+            <a className="text-blue-400 no-underline font-medium transition-colors hover:text-blue-300 hover:underline" {...props} />
+          ),
+          strong: ({ node, ...props }) => (
+            <strong className="text-slate-200 font-bold" {...props} />
+          ),
+          em: ({ node, ...props }) => (
+            <em className="text-slate-300 italic" {...props} />
+          ),
+          hr: ({ node, ...props }) => (
+            <hr className="border-slate-700 my-10" {...props} />
+          ),
           code({ node, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
             const isInline = !match;
@@ -76,7 +106,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
                 </div>
               </div>
             ) : (
-              <code className={className} {...props}>
+              <code className="bg-slate-800/80 text-blue-300 px-2 py-1 rounded text-sm font-mono border border-slate-700/50" {...props}>
                 {children}
               </code>
             );

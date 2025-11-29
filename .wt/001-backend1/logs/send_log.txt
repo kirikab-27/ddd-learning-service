@@ -1,0 +1,33 @@
+[2025-11-23T08:09:29+0900] from=kirikab session=agents-001 to=boss1 pane=1.0
+  [DONE] Backend1 Quiz集約完了
+
+作成ファイル:
+- src/domain/content/models/Question.ts
+- src/domain/content/models/Question.test.ts
+- src/domain/content/models/Quiz.ts
+- src/domain/content/models/Quiz.test.ts
+- src/domain/content/models/index.ts (エクスポート追加)
+
+テスト結果: 23 tests passed
+型チェック: パス
+ブランチ: agent/003/backend1
+------------------------------------------------------------
+[2025-11-23T23:47:27+0900] from=kirikab session=agents-001 to=boss1 pane=1.0
+  [Ticket 010完了報告]
+統合テスト修正が完了しました。
+
+■ 修正内容
+- lessonFlow.test.ts: lessonId不一致を修正（lesson-1→lesson-1-1等）、タイトル期待値修正
+- progressFlow.test.ts: lessonId不一致を修正、completionRate期待値修正（25%/50%→8%/17%）
+
+■ 確認結果
+- TypeScript型チェック: Pass
+- 統合テスト: lessonFlow.test.ts(6件)、progressFlow.test.ts(5件)全てPass
+- プレゼンテーション層テストは既存のReact hooks環境問題で失敗（変更とは無関係）
+
+■ コミット
+- 3e4660f: fix: correct lessonId mismatch in integration tests
+
+■ ブランチ
+- agent/010/backend1
+------------------------------------------------------------

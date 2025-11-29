@@ -1,0 +1,1 @@
+export { sampleCourses } from './sampleCourses';

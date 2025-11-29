@@ -1,0 +1,47 @@
+.header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #666);
+  margin-bottom: 0.5rem;
+}
+
+.chapter {
+  color: var(--primary-color, #0066cc);
+}
+
+.separator {
+  color: var(--text-muted, #999);
+}
+
+.lessonNumber {
+  color: var(--text-secondary, #666);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  margin: 0;
+}
+
+.completedBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--success-color, #28a745);
+  background-color: var(--success-bg, #d4edda);
+  border-radius: 1rem;
+}

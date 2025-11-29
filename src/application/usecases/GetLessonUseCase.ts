@@ -38,7 +38,7 @@ export class GetLessonUseCase {
   constructor(
     private readonly courseRepository: ICourseRepository,
     private readonly progressRepository: IProgressRepository
-  ) {}
+  ) { }
 
   async execute(input: GetLessonInput): Promise<GetLessonOutput> {
     const courseId = CourseId.create(input.courseId);
@@ -58,9 +58,13 @@ export class GetLessonUseCase {
 
     const progress = await this.progressRepository.findByCourseId(courseId);
     const unlockSpec = new LessonUnlockSpecification();
+    // Force unlock all lessons for development
+    const isUnlocked = true;
+    /*
     const isUnlocked = progress
       ? unlockSpec.isSatisfiedBy(lesson, course, progress)
       : lesson.order === 1;
+    */
 
     const adjacent = course.getAdjacentLessons(lessonId);
 
@@ -83,15 +87,15 @@ export class GetLessonUseCase {
       navigation: {
         previous: adjacent.previous
           ? {
-              chapterId: this.findChapterForLesson(course, adjacent.previous.id)!,
-              lessonId: adjacent.previous.id.toString(),
-            }
+            chapterId: this.findChapterForLesson(course, adjacent.previous.id)!,
+            lessonId: adjacent.previous.id.toString(),
+          }
           : null,
         next: adjacent.next
           ? {
-              chapterId: this.findChapterForLesson(course, adjacent.next.id)!,
-              lessonId: adjacent.next.id.toString(),
-            }
+            chapterId: this.findChapterForLesson(course, adjacent.next.id)!,
+            lessonId: adjacent.next.id.toString(),
+          }
           : null,
       },
       isCompleted: progress?.hasCompletedLesson(lessonId) ?? false,
