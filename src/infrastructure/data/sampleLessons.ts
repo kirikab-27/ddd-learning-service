@@ -306,16 +306,10 @@ export const lesson2_1 = Lesson.create({
 
 ### ドメインエキスパートと開発者の橋渡し
 
-\`\`\`mermaid
-graph LR
-    Expert[ドメインエキスパート] <--> Language[ユビキタス言語]
-    Language <--> Dev[開発者]
-    
-    Expert -->|業務知識| Language
-    Language -->|共通理解| Expert
-    
-    Dev -->|コード| Language
-    Language -->|共通理解| Dev
+\`\`\`
+ドメインエキスパート ←→ ユビキタス言語 ←→ 開発者
+       ↓                    ↓                ↓
+    業務知識              共通理解            コード
 \`\`\`
 
 ## 言語の不一致による問題
@@ -471,46 +465,40 @@ export const lesson2_2 = Lesson.create({
 2. **関係の明確化**: 概念間の関係を矢印で結ぶ
 3. **境界の発見**: 異なるコンテキストを色分けで表現
 
-\`\`\`mermaid
-classDiagram
-    class Customer {
-        +作成()
-    }
-    class Order {
-        +含む
-    }
-    class OrderItem {
-    }
-
-    Customer --> Order : 作成
-    Order *-- OrderItem : 含む
+\`\`\`
+┌─────────────┐      ┌─────────────┐
+│    顧客     │──────│    注文     │
+│  Customer   │ 作成 │   Order     │
+└─────────────┘      └──────┬──────┘
+                            │ 含む
+                     ┌──────┴──────┐
+                     │   注文明細   │
+                     │  OrderItem  │
+                     └─────────────┘
 \`\`\`
 
 ## 言語の洗練プロセス
 
 ### 曖昧さの排除
 
-\`\`\`mermaid
-graph TD
-    A[曖昧な表現:「商品」] -->|質問:「商品」は何を指しますか？| B{洗練後}
-    B --> C[Product: カタログに載っている商品マスタ]
-    B --> D[OrderItem: 注文に含まれる商品 数量付き]
-    B --> E[InventoryItem: 倉庫にある在庫]
+\`\`\`
+曖昧な表現:「商品」
+  ↓ 質問：「商品」は何を指しますか？
+洗練後:
+  - Product: カタログに載っている商品マスタ
+  - OrderItem: 注文に含まれる商品（数量付き）
+  - InventoryItem: 倉庫にある在庫
 \`\`\`
 
 ### コンテキストの明確化
 
 同じ言葉でも、コンテキストによって意味が異なることがあります：
 
-\`\`\`mermaid
-mindmap
-  root((「顧客」の意味))
-    営業コンテキスト
-      見込み客から既存顧客まで
-    配送コンテキスト
-      届け先の住所を持つ人
-    請求コンテキスト
-      支払い責任者
+\`\`\`
+「顧客」という言葉の意味:
+- 営業コンテキスト: 見込み客から既存顧客まで
+- 配送コンテキスト: 届け先の住所を持つ人
+- 請求コンテキスト: 支払い責任者
 \`\`\`
 
 それぞれのコンテキストで適切な名前を定義します：
@@ -763,21 +751,20 @@ export const lesson3_1 = Lesson.create({
 
 ### モデルが適用される範囲
 
-\`\`\`mermaid
-graph TB
-    subgraph BC[境界づけられたコンテキスト]
-        direction TB
-        subgraph DM[ドメインモデル]
-            direction TB
-            E[エンティティ]
-            VO[値オブジェクト]
-            DS[ドメインサービス]
-        end
-        subgraph UL[ユビキタス言語]
-            direction TB
-            T[用語A, 用語B, 用語C...]
-        end
-    end
+\`\`\`
+┌─────────────────────────────────────────┐
+│       境界づけられたコンテキスト          │
+│  ┌─────────────────────────────────┐   │
+│  │      ドメインモデル              │   │
+│  │  ・エンティティ                  │   │
+│  │  ・値オブジェクト                │   │
+│  │  ・ドメインサービス              │   │
+│  └─────────────────────────────────┘   │
+│  ┌─────────────────────────────────┐   │
+│  │      ユビキタス言語              │   │
+│  │  用語A, 用語B, 用語C...          │   │
+│  └─────────────────────────────────┘   │
+└─────────────────────────────────────────┘
 \`\`\`
 
 ### 言語の一貫性が保たれる領域
@@ -803,9 +790,19 @@ class Product {
 
 ### 境界がないとどうなるか
 
-\`\`\`mermaid
-graph TD
-    A[「商品」という言葉が曖昧に] --> B("Product クラスが肥大化<br/>- カタログ情報<br/>- 在庫情報<br/>- 配送情報<br/>- 価格情報<br/>→ 責務が不明確、変更が困難")
+\`\`\`
+境界がない場合:
+
+「商品」という言葉が曖昧に
+     ↓
+┌──────────────────────────────────────────┐
+│  Product クラスが肥大化                   │
+│  - カタログ情報                           │
+│  - 在庫情報                               │
+│  - 配送情報                               │
+│  - 価格情報                               │
+│  → 責務が不明確、変更が困難               │
+└──────────────────────────────────────────┘
 \`\`\`
 
 ## コンテキストの例
@@ -877,64 +874,44 @@ export const lesson3_2 = Lesson.create({
 
 同じ言葉が異なる意味で使われている場所を探します：
 
-\`\`\`mermaid
-mindmap
-  root((「顧客」の使われ方))
-    営業チーム
-      会社名
-      担当者名
-      電話番号
-    経理チーム
-      支払い履歴
-      与信情報
-    配送チーム
-      住所
-      配送時間帯
+\`\`\`
+「顧客」という言葉の使われ方:
+
+営業チーム: 「顧客の連絡先を更新して」
+  → 会社名、担当者名、電話番号
+
+経理チーム: 「顧客の与信限度額を確認して」
+  → 支払い履歴、与信情報
+
+配送チーム: 「顧客の届け先を確認して」
+  → 住所、配送時間帯
+
+→ 3つの異なるコンテキストが存在する可能性
 \`\`\`
 
 ### ビジネスプロセスの境界
 
 ビジネスプロセスの切れ目を探します：
 
-\`\`\`mermaid
-graph LR
-    subgraph Process [ECサイトの注文プロセス]
-        direction LR
-        C[カタログ閲覧] --> Cart[カートに追加]
-        Cart --> O[注文確定]
-        O --> P[決済]
-        P --> I[在庫引当]
-        I --> D[配送]
-    end
+\`\`\`
+ECサイトの注文プロセス:
 
-    subgraph Contexts [対応するコンテキスト]
-        direction LR
-        CC[カタログ]
-        CartC[カート]
-        OC[注文]
-        PC[決済]
-        IC[在庫]
-        DC[配送]
-    end
-
-    C -.-> CC
-    Cart -.-> CartC
-    O -.-> OC
-    P -.-> PC
-    I -.-> IC
-    D -.-> DC
+[カタログ閲覧] → [カートに追加] → [注文確定] → [決済] → [在庫引当] → [配送]
+     ↑              ↑              ↑         ↑         ↑          ↑
+   カタログ        カート         注文       決済      在庫        配送
+  コンテキスト   コンテキスト   コンテキスト コンテキスト コンテキスト コンテキスト
 \`\`\`
 
 ### チーム構造との関連
 
 **コンウェイの法則**: 組織構造がシステム構造に影響を与える
 
-\`\`\`mermaid
-graph TD
-    FE[フロントエンドチーム] --> CC[カタログコンテキスト]
-    OP[注文処理チーム] --> OC[注文・決済コンテキスト]
-    LG[物流チーム] --> IC[在庫・配送コンテキスト]
-    CS[顧客管理チーム] --> CUS[顧客コンテキスト]
+\`\`\`
+チーム構造:
+├── フロントエンドチーム → カタログコンテキスト
+├── 注文処理チーム → 注文・決済コンテキスト
+├── 物流チーム → 在庫・配送コンテキスト
+└── 顧客管理チーム → 顧客コンテキスト
 \`\`\`
 
 チームの責任範囲がコンテキストの境界のヒントになります。
@@ -943,41 +920,36 @@ graph TD
 
 ### 大きすぎず、小さすぎず
 
-\`\`\`mermaid
-graph TD
-    subgraph TooBig [❌ 大きすぎる]
-        Big[EC システム全体<br/>カタログ + 在庫 + 注文 + 決済 + 配送]
-        Big --> ResultBig[複雑すぎて管理困難]
-    end
+\`\`\`
+❌ 大きすぎる:
+┌─────────────────────────────────────────┐
+│           EC システム全体               │
+│  カタログ + 在庫 + 注文 + 決済 + 配送    │
+│  → 複雑すぎて管理困難                   │
+└─────────────────────────────────────────┘
 
-    subgraph TooSmall [❌ 小さすぎる]
-        N[商品名]
-        P[商品価格]
-        S[在庫数]
-        C[カテゴリ]
-        N & P & S & C --> ResultSmall[過度に分割され、連携コストが増大]
-    end
+❌ 小さすぎる:
+┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+│商品名  │ │商品価格│ │在庫数  │ │カテゴリ│
+└────────┘ └────────┘ └────────┘ └────────┘
+→ 過度に分割され、連携コストが増大
 
-    subgraph Appropriate [✅ 適切なサイズ]
-        CC[カタログ<br/>コンテキスト]
-        IC[在庫<br/>コンテキスト]
-        OC[注文<br/>コンテキスト]
-        CC & IC & OC --> ResultApp[独立して開発・デプロイ可能な単位]
-    end
+✅ 適切なサイズ:
+┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+│  カタログ    │ │    在庫     │ │    注文     │
+│ コンテキスト │ │ コンテキスト │ │ コンテキスト │
+└─────────────┘ └─────────────┘ └─────────────┘
+→ 独立して開発・デプロイ可能な単位
 \`\`\`
 
 ### 変更の頻度
 
 頻繁に一緒に変更されるものは同じコンテキストに：
 
-\`\`\`mermaid
-graph LR
-    subgraph Case1 [同じコンテキスト]
-        P1[価格変更] --> C1[カタログの価格表示も変更]
-    end
-    subgraph Case2 [別のコンテキスト]
-        I1[在庫ロジック変更] -.->|影響なし| D1[配送]
-    end
+\`\`\`
+変更の分析:
+- 価格変更 → カタログの価格表示も変更 → 同じコンテキスト
+- 在庫ロジック変更 → 配送は影響なし → 別のコンテキスト
 \`\`\`
 
 ### チームの責任範囲
@@ -1007,11 +979,10 @@ class Shipping { }
 3. **集約**を特定する
 4. **境界**を引く
 
-\`\`\`mermaid
-graph LR
-    E1[注文が作成された] --> C1[注文コンテキスト]
-    E2[支払いが完了した] --> C2[決済コンテキスト]
-    E3[商品が出荷された] --> C3[配送コンテキスト]
+\`\`\`
+[注文が作成された] [支払いが完了した] [商品が出荷された]
+        ↓                  ↓                  ↓
+    注文コンテキスト    決済コンテキスト    配送コンテキスト
 \`\`\`
 
 ## まとめ
@@ -1040,18 +1011,16 @@ export const lesson3_3 = Lesson.create({
 
 ### 上流コンテキストが下流に影響
 
-\`\`\`mermaid
-graph LR
-    subgraph Upstream [上流 Upstream]
-        O[注文<br/>コンテキスト]
-    end
-    subgraph Downstream [下流 Downstream]
-        S[配送<br/>コンテキスト]
-    end
-    O -->|注文情報| S
 \`\`\`
+上流（Upstream）             下流（Downstream）
+┌─────────────┐              ┌─────────────┐
+│   注文      │ ──────────→ │   配送      │
+│ コンテキスト │   注文情報   │ コンテキスト │
+└─────────────┘              └─────────────┘
+
 上流の変更 → 下流に影響
 下流の変更 → 上流に影響なし
+\`\`\`
 
 ### 依存関係の方向
 
@@ -1072,20 +1041,16 @@ class ShippingService {
 
 2つのコンテキストが共通のモデルを共有するパターン：
 
-\`\`\`mermaid
-graph LR
-    subgraph ContextA [コンテキストA]
-        A[モデルA]
-    end
-    subgraph ContextB [コンテキストB]
-        B[モデルB]
-    end
-    subgraph SharedKernel [共有カーネル]
-        SK[Money<br/>Address]
-    end
-
-    ContextA <--> SharedKernel
-    ContextB <--> SharedKernel
+\`\`\`
+┌─────────────┐  共有部分  ┌─────────────┐
+│ コンテキストA │◀────────▶│ コンテキストB │
+└─────────────┘           └─────────────┘
+         ↓
+   ┌─────────────┐
+   │ 共有カーネル │
+   │ - Money     │
+   │ - Address   │
+   └─────────────┘
 \`\`\`
 
 **使用場面**: 密接に連携するチーム間で、共通の概念を共有したい場合
@@ -1109,10 +1074,13 @@ import { Money } from '@shared-kernel';
 
 外部システムやレガシーシステムとの統合時に、自分のモデルを守るパターン：
 
-\`\`\`mermaid
-graph LR
-    External[外部/レガシー<br/>システム] --> ACL[腐敗防止層<br/>ACL]
-    ACL -->|翻訳・変換| Own[自コンテキスト]
+\`\`\`
+┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+│ 外部/レガシー │ → │ 腐敗防止層  │ → │ 自コンテキスト│
+│  システム    │   │    (ACL)    │   │             │
+└─────────────┘   └─────────────┘   └─────────────┘
+                        ↓
+                  翻訳・変換
 \`\`\`
 
 \`\`\`typescript
@@ -1137,11 +1105,13 @@ class CustomerTranslator {
 
 他のコンテキストに対して、明確なAPIを公開するパターン：
 
-\`\`\`mermaid
-graph LR
-    Provider[提供者<br/>コンテキスト] -->|公開API<br/>REST/gRPC| ConsumerA[消費者A]
-    Provider --> ConsumerB[消費者B]
-    Provider --> ConsumerC[消費者C]
+\`\`\`
+              公開API
+┌─────────────┐  REST/gRPC  ┌─────────────┐
+│ 提供者      │ ────────── │ 消費者A     │
+│ コンテキスト │ ────────── │ 消費者B     │
+│             │ ────────── │ 消費者C     │
+└─────────────┘             └─────────────┘
 \`\`\`
 
 \`\`\`typescript
@@ -1172,12 +1142,18 @@ class OrderController {
 
 コンテキスト間の関係を図示したものが**コンテキストマップ**です：
 
-\`\`\`mermaid
-graph TD
-    Catalog[カタログ] -->|公開API| Order[注文]
-    Order -->|上流| Shipping[配送]
-    External[外部決済システム] -->|ACL| Payment[決済]
-    Order --> Payment
+\`\`\`
+           ┌─────────┐
+           │ カタログ │
+           └────┬────┘
+                │ 公開API
+           ┌────▼────┐      ┌─────────┐
+           │  注文   │ ───→ │  配送   │
+           └────┬────┘ 上流  └─────────┘
+                │            下流
+           ┌────▼────┐
+           │  決済   │←─── 外部決済システム
+           └─────────┘ ACL
 \`\`\`
 
 ## まとめ
@@ -1214,12 +1190,20 @@ export const lesson4_1 = Lesson.create({
 **コンテキストマップ**は、システム内のすべての境界づけられたコンテキストとその関係を
 図示した戦略的な設計ツールです。
 
-\`\`\`mermaid
-graph TD
-    Catalog[カタログ] -->|API| Order[注文]
-    Order -->|イベント| Shipping[配送]
-    External[外部決済] -->|ACL| Payment[決済]
-    Order --> Payment
+\`\`\`
+┌─────────────────────────────────────────────────────────┐
+│                  コンテキストマップ                      │
+│                                                         │
+│  ┌─────────┐      ┌─────────┐      ┌─────────┐        │
+│  │カタログ │ ───→ │  注文   │ ───→ │  配送   │        │
+│  │         │  API │         │ イベント│         │        │
+│  └─────────┘      └────┬────┘      └─────────┘        │
+│                        │                               │
+│                   ┌────▼────┐                          │
+│                   │  決済   │ ←── 外部決済             │
+│                   │         │  ACL                     │
+│                   └─────────┘                          │
+└─────────────────────────────────────────────────────────┘
 \`\`\`
 
 ## コンテキストマップの目的
@@ -1254,9 +1238,15 @@ graph TD
 
 ### 関係の方向
 
-\`\`\`mermaid
-graph LR
-    Upstream["提供する<br/>コンテキスト<br/>(上流 Upstream)"] --> Downstream["利用する<br/>コンテキスト<br/>(下流 Downstream)"]
+\`\`\`
+上流（Upstream）    →    下流（Downstream）
+┌──────────┐             ┌──────────┐
+│ 提供する │  ────────→  │ 利用する │
+│ コンテキスト │             │ コンテキスト │
+└──────────┘             └──────────┘
+
+U: Upstream（上流）
+D: Downstream（下流）
 \`\`\`
 
 ### 統合パターンの記号
@@ -1273,37 +1263,35 @@ PL: Published Language（公開言語）
 
 ### Step 1: コンテキストの洗い出し
 
-\`\`\`mermaid
-graph TD
-    C1[カタログ管理]
-    C2[在庫管理]
-    C3[注文処理]
-    C4[決済処理]
-    C5[配送管理]
-    C6[顧客管理]
+\`\`\`
+ECシステムのコンテキスト:
+□ カタログ管理
+□ 在庫管理
+□ 注文処理
+□ 決済処理
+□ 配送管理
+□ 顧客管理
 \`\`\`
 
 ### Step 2: 関係の特定
 
 各コンテキスト間でデータや機能のやり取りがあるかを確認：
 
-\`\`\`mermaid
-graph TD
-    Catalog[カタログ] -->|商品情報を参照| Order[注文]
-    Order -->|在庫を引き当て| Inventory[在庫]
-    Order -->|支払いを処理| Payment[決済]
-    Order -->|出荷を依頼| Shipping[配送]
+\`\`\`
+カタログ → 注文: 商品情報を参照
+注文 → 在庫: 在庫を引き当て
+注文 → 決済: 支払いを処理
+注文 → 配送: 出荷を依頼
 \`\`\`
 
 ### Step 3: 統合パターンの決定
 
 各関係に適切なパターンを選択：
 
-\`\`\`mermaid
-graph TD
-    Catalog[カタログ] -->|OHS| Order[注文]
-    Order -->|イベント| Inventory[在庫]
-    Order -->|ACL| Payment[外部決済]
+\`\`\`
+カタログ ──[OHS]──→ 注文
+注文 ──[イベント]──→ 在庫
+注文 ──[ACL]──→ 外部決済
 \`\`\`
 
 ### Step 4: 図の作成
@@ -1336,15 +1324,17 @@ export const lesson4_2 = Lesson.create({
 
 2つのチームが対等な関係で協力するパターンです。
 
-\`\`\`mermaid
-graph LR
-    ContextA[コンテキストA<br/>チームA] <-->|協力/調整| ContextB[コンテキストB<br/>チームB]
+\`\`\`
+┌─────────────┐    協力    ┌─────────────┐
+│ コンテキストA │◀────────▶│ コンテキストB │
+│  チームA     │    調整    │  チームB     │
+└─────────────┘           └─────────────┘
 \`\`\`
 
 **特徴:**
--   対等な関係
--   変更時は相互に調整
--   密なコミュニケーションが必要
+- 対等な関係
+- 変更時は相互に調整
+- 密なコミュニケーションが必要
 
 **適用場面:** 同じ組織内の密接に連携するチーム
 
@@ -1381,22 +1371,20 @@ import { Money } from '@shared-kernel';
 
 下流（顧客）のニーズに上流（供給者）が応える関係です。
 
-\`\`\`mermaid
-graph LR
-    subgraph Supplier [上流 Supplier]
-        Order[注文<br/>サービス]
-    end
-    subgraph Customer [下流 Customer]
-        Delivery[配送<br/>サービス]
-    end
-    Delivery -->|要件提示| Order
-    Order -->|対応| Delivery
+\`\`\`
+上流（Supplier）          下流（Customer）
+┌─────────────┐          ┌─────────────┐
+│  注文       │ ───────→ │  配送       │
+│  サービス   │   要件    │  サービス   │
+└─────────────┘   提示    └─────────────┘
+                ←───────
+                 対応
 \`\`\`
 
 **特徴:**
--   下流が要件を提示
--   上流が対応する責任を持つ
--   計画的な変更管理
+- 下流が要件を提示
+- 上流が対応する責任を持つ
+- 計画的な変更管理
 
 ## 順応者（Conformist）
 
@@ -1475,9 +1463,9 @@ class OrderController {
 \`\`\`
 
 **特徴:**
--   バージョン管理（v1, v2...）
--   ドキュメント化（OpenAPI/Swagger）
--   公開言語（Published Language）と組み合わせることが多い
+- バージョン管理（v1, v2...）
+- ドキュメント化（OpenAPI/Swagger）
+- 公開言語（Published Language）と組み合わせることが多い
 
 ## パターン選択の指針
 
@@ -1492,23 +1480,26 @@ class OrderController {
 
 ## 実装例：ECシステム
 
-\`\`\`mermaid
-graph TD
-    subgraph EC_System [ECシステム]
-        Catalog[カタログ]
-        Order[注文]
-        Inventory[在庫]
-        Payment[決済<br/>ACL]
-        Delivery[配送]
-    end
-    
-    Catalog -->|OHS/PL<br/>REST API| Order
-    Order --> Inventory
-    Order --> Payment
-    Order --> Delivery
-    
-    ExternalPayment[外部決済API] --> Payment
-\`\`\`      
+\`\`\`
+┌───────────────────────────────────────────────────┐
+│                   ECシステム                       │
+│                                                   │
+│  ┌─────────┐                    ┌─────────┐      │
+│  │カタログ │───[OHS/PL]──────→ │  注文   │      │
+│  │         │    REST API       │         │      │
+│  └─────────┘                    └────┬────┘      │
+│                                      │           │
+│            ┌─────────────────────────┼───┐       │
+│            │                         │   │       │
+│            ▼                         ▼   ▼       │
+│  ┌─────────────┐          ┌─────────┐ ┌───────┐ │
+│  │    在庫     │          │  決済   │ │ 配送  │ │
+│  │             │          │  [ACL]  │ │       │ │
+│  └─────────────┘          └────┬────┘ └───────┘ │
+│                                │                 │
+│                           外部決済API            │
+└───────────────────────────────────────────────────┘
+\`\`\`
 
 ## まとめ
 
@@ -2299,14 +2290,12 @@ export const lesson6_1 = Lesson.create({
 
 ### 日常の例
 
-\`\`\`mermaid
-graph LR
-    subgraph Examples [エンティティの例]
-        Account[銀行口座] -->|ID: 口座番号| AccountAttr[残高は変わる]
-        Person[人物] -->|ID: 社員番号| PersonAttr[住所/役職は変わる]
-        Order[注文] -->|ID: 注文番号| OrderAttr[状態は変わる]
-        Car[車] -->|ID: 車両番号| CarAttr[走行距離/オーナーは変わる]
-    end
+\`\`\`
+エンティティの例:
+- 銀行口座 → 口座番号で識別、残高は変わる
+- 人物 → 社員番号やIDで識別、住所や役職は変わる
+- 注文 → 注文番号で識別、状態（下書き→確定→配送中）が変わる
+- 車 → 車両番号で識別、走行距離やオーナーは変わる
 \`\`\`
 
 ### 値オブジェクトとの対比
@@ -2389,16 +2378,14 @@ class Order {
 
 エンティティは作成、変更、削除のライフサイクルを持ちます。
 
-\`\`\`mermaid
-stateDiagram-v2
-    [*] --> 作成(Draft)
-    作成(Draft) --> 確定(Confirmed): confirm()
-    確定(Confirmed) --> 配送(Shipped): ship()
-    配送(Shipped) --> 完了(Completed): complete()
-    完了(Completed) --> [*]
-    
-    作成(Draft) --> 削除(Deleted): delete()
-    削除(Deleted) --> [*]
+\`\`\`
+┌─────────┐     ┌─────────┐     ┌──────────┐     ┌─────────┐
+│ 作成    │ ──→ │ 更新    │ ──→ │ 保存     │ ──→ │ 削除    │
+│ create  │     │ update  │     │ persist  │     │ delete  │
+└─────────┘     └─────────┘     └──────────┘     └─────────┘
+
+注文の例:
+作成（Draft） → 確定（Confirmed） → 配送（Shipped） → 完了（Completed）
 \`\`\`
 
 ## エンティティと値オブジェクトの違い
@@ -2449,18 +2436,15 @@ class OrderItem {
 
 ビジネスの中心となる概念は通常エンティティです：
 
-\`\`\`mermaid
-graph TD
-    subgraph EC_Site [ECサイト]
-        Customer["顧客<br/>(Customer)"] -->|購入履歴/住所| CustomerChange[変化する]
-        Order["注文<br/>(Order)"] -->|状態| OrderChange[変化する]
-        Inventory["在庫<br/>(Inventory)"] -->|数量| InventoryChange[変動する]
-    end
+\`\`\`
+ECサイト:
+- 顧客（Customer） → 購入履歴が増える、住所が変わる
+- 注文（Order） → 状態が変化する
+- 在庫（Inventory） → 数量が変動する
 
-    subgraph Bank_System [銀行システム]
-        Account["口座<br/>(Account)"] -->|残高| AccountChange[変動する]
-        Transaction["取引<br/>(Transaction)"] -->|ログ| TransactionImmutable["不変<br/>(追跡対象)"]
-    end
+銀行システム:
+- 口座（Account） → 残高が変動する
+- 取引（Transaction） → 作成後は不変だがログとして追跡
 \`\`\`
 
 ### 2. 状態管理の中心
@@ -2532,11 +2516,22 @@ export const lesson6_2 = Lesson.create({
 
 ### 4つのフェーズ
 
-\`\`\`mermaid
-graph TD
-    Create["1. 生成<br/>(create, register)"] --> Retrieve["2. 取得<br/>(findById, search)"]
-    Retrieve --> Update["3. 変更<br/>(update, modify)"]
-    Update --> Delete["4. 削除<br/>(delete, archive)"]
+\`\`\`
+┌──────────┐
+│ 1. 生成  │  create, register
+└────┬─────┘
+     │
+┌────▼─────┐
+│ 2. 取得  │  findById, search
+└────┬─────┘
+     │
+┌────▼─────┐
+│ 3. 変更  │  update, modify
+└────┬─────┘
+     │
+┌────▼─────┐
+│ 4. 削除  │  delete, archive
+└──────────┘
 \`\`\`
 
 ### 1. エンティティの生成
@@ -2804,17 +2799,24 @@ class Order {
 
 ### 状態遷移図
 
-\`\`\`mermaid
-stateDiagram-v2
-    [*] --> Draft: 作成
-    Draft --> Confirmed: confirm()
-    Confirmed --> Shipped: ship()
-    Shipped --> Delivered: deliver()
-    Delivered --> [*]
+\`\`\`
+     ┌──────────┐
+     │  Draft   │ 下書き
+     └────┬─────┘
+          │ confirm()
+     ┌────▼─────┐
+     │Confirmed │ 確定
+     └────┬─────┘
+          │ ship()
+     ┌────▼─────┐
+     │ Shipped  │ 配送中
+     └────┬─────┘
+          │ deliver()
+     ┌────▼─────┐
+     │Delivered │ 配送完了
+     └──────────┘
 
-    Draft --> Cancelled: cancel()
-    Confirmed --> Cancelled: cancel()
-    Cancelled --> [*]
+     cancel()でキャンセル状態へ（Draft/Confirmedから）
 \`\`\`
 
 ## 楽観的ロックと悲観的ロック
@@ -3169,18 +3171,18 @@ class User {
 
 ## 判断のフローチャート
 
-\`\`\`mermaid
-graph TD
-    Start([開始]) --> Q1{追跡が必要？}
-    Q1 -- YES --> Entity[エンティティ]
-    Q1 -- NO --> Q2{時間とともに変化？}
-    Q2 -- YES --> Entity
-    Q2 -- NO --> Q3{交換可能？}
-    Q3 -- YES --> VO[値オブジェクト]
-    Q3 -- NO --> Entity
-
-    style Entity fill:#f9f,stroke:#333,stroke-width:2px
-    style VO fill:#9ff,stroke:#333,stroke-width:2px
+\`\`\`
+開始
+  ↓
+Q: 追跡する必要があるか？
+  YES → エンティティ
+  NO  → ↓
+Q: 時間とともに変化するか？
+  YES → エンティティ
+  NO  → ↓
+Q: 交換可能か？
+  YES → 値オブジェクト
+  NO  → エンティティ
 \`\`\`
 
 ## まとめ
@@ -3215,7 +3217,7 @@ export const lesson7_1 = Lesson.create({
 
 ### エンティティや値オブジェクトに収まらないロジック
 
-\`\`\`typescript
+\\\`\\\`\\\`typescript
 // ❌ どのエンティティに属するべき？
 class Account {
   transfer(to: Account, amount: Money): void {
@@ -3223,7 +3225,7 @@ class Account {
     // どちらのAccountのメソッドとして実装すべき？
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
 このような**複数のオブジェクトをまたぐ操作**や**オブジェクトに属さない計算**は、ドメインサービスが適しています。
 
@@ -3233,20 +3235,20 @@ class Account {
 
 ドメインサービスは状態を持ちません。必要な情報はすべて引数で受け取ります。
 
-\`\`\`typescript
+\\\`\\\`\\\`typescript
 // ✅ 状態を持たないドメインサービス
 class TransferService {
   transfer(from: Account, to: Account, amount: Money): void {
     // すべて引数で受け取る
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
 ### 2. ドメイン知識を表現する
 
 技術的な処理ではなく、**ビジネスルール**を表現します。
 
-\`\`\`typescript
+\\\`\\\`\\\`typescript
 // ✅ ドメイン知識を表現
 class InventoryAllocationService {
   canAllocate(product: Product, quantity: Quantity): boolean {
@@ -3260,14 +3262,14 @@ class EmailService {
     // メール送信は技術的な処理
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
 ### 3. 操作（動詞）で表現される
 
 ドメインサービスは**操作**を表すため、名前は動詞またはサービスを示す名詞になります。
 
-- 良い例: \`TransferService\`, \`PricingService\`, \`AuthenticationService\`
-- 避けるべき: \`AccountManager\`, \`OrderHelper\`, \`ProductUtil\`
+- 良い例: \\\`TransferService\\\`, \\\`PricingService\\\`, \\\`AuthenticationService\\\`
+- 避けるべき: \\\`AccountManager\\\`, \\\`OrderHelper\\\`, \\\`ProductUtil\\\`
 
 ## エンティティ・値オブジェクトとの違い
 
@@ -3303,7 +3305,7 @@ export const lesson7_2 = Lesson.create({
 
 ### ステートレスなクラスとして実装
 
-\`\`\`typescript
+\\\`\\\`\\\`typescript
 export class MoneyTransferService {
   // 状態（フィールド）を持たない
 
@@ -3326,24 +3328,24 @@ export class MoneyTransferService {
            !to.isFrozen();
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
 ## 命名規則
 
 ### 良い命名
 
 ✅ **操作を明確に表す**:
-- \`MoneyTransferService\` - 送金サービス
-- \`PricingService\` - 価格計算サービス
-- \`AuthenticationService\` - 認証サービス
-- \`InventoryAllocationService\` - 在庫割り当てサービス
+- \\\`MoneyTransferService\\\` - 送金サービス
+- \\\`PricingService\\\` - 価格計算サービス
+- \\\`AuthenticationService\\\` - 認証サービス
+- \\\`InventoryAllocationService\\\` - 在庫割り当てサービス
 
 ### 避けるべき命名
 
 ❌ **曖昧な名前**:
-- \`AccountManager\` - 何をするのか不明
-- \`OrderHelper\` - ヘルパーは技術的
-- \`ProductUtil\` - ユーティリティは技術的
+- \\\`AccountManager\\\` - 何をするのか不明
+- \\\`OrderHelper\\\` - ヘルパーは技術的
+- \\\`ProductUtil\\\` - ユーティリティは技術的
 
 ## まとめ
 
@@ -3365,29 +3367,30 @@ export const lesson7_3 = Lesson.create({
 
 ## ロジック配置の判断フローチャート
 
-\`\`\`mermaid
-graph TD
-    Start([開始]) --> Q1{単一オブジェクトの責務？}
-    Q1 -- YES --> Q2{状態/ライフサイクルあり？}
-    Q2 -- YES --> Entity[エンティティのメソッド]
-    Q2 -- NO --> VO[値オブジェクトのメソッド]
-    
-    Q1 -- NO --> Q3{複数オブジェクトをまたぐ？}
-    Q3 -- YES --> DomainService[ドメインサービス]
-    Q3 -- NO --> Q4{どのオブジェクトにも属さない？}
-    Q4 -- YES --> DomainService
-    Q4 -- NO --> Reconsider[エンティティ/VOを再検討]
+\\\`\\\`\\\`
+Q: そのロジックは単一のオブジェクトの責務か？
+  YES → エンティティまたは値オブジェクトに配置
+    ↓
+    Q: 状態を持つか？ライフサイクルがあるか？
+      YES → エンティティのメソッドとして実装
+      NO  → 値オブジェクトのメソッドとして実装
 
-    style Entity fill:#f9f,stroke:#333,stroke-width:2px
-    style VO fill:#9ff,stroke:#333,stroke-width:2px
-    style DomainService fill:#ff9,stroke:#333,stroke-width:2px
-\`\`\`
+  NO → ↓
+
+Q: 複数のオブジェクトをまたぐ操作か？
+  YES → ドメインサービスとして実装
+
+Q: どのオブジェクトにも自然に属さない計算か？
+  YES → ドメインサービスとして実装
+
+  NO → もう一度エンティティ・値オブジェクトを検討
+\\\`\\\`\\\`
 
 ## パターン1: エンティティに配置すべきロジック
 
 ### ✅ 良い例: 自身の状態を変更するロジック
 
-\`\`\`typescript
+\\\`\\\`\\\`typescript
 class Order {
   private _status: OrderStatus;
   private _items: OrderItem[];
@@ -3403,11 +3406,11 @@ class Order {
     this._status = OrderStatus.Confirmed;
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
 ### ❌ 悪い例: エンティティのロジックをサービスに移動
 
-\`\`\`typescript
+\\\`\\\`\\\`typescript
 // ❌ 単一オブジェクトの責務なのにサービスにしている
 class OrderService {
   confirmOrder(order: Order): void {
@@ -3422,13 +3425,13 @@ class Order {
     this._status = OrderStatus.Confirmed;
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
 ## パターン2: 値オブジェクトに配置すべきロジック
 
 ### ✅ 良い例: 値の計算や変換
 
-\`\`\`typescript
+\\\`\\\`\\\`typescript
 class Money {
   // ✅ 金額計算は Money のメソッド
   add(other: Money): Money {
@@ -3440,13 +3443,13 @@ class Money {
     return new Money(this.amount * multiplier, this.currency);
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
 ## パターン3: ドメインサービスに配置すべきロジック
 
 ### ✅ 良い例: 複数オブジェクトをまたぐ操作
 
-\`\`\`typescript
+\\\`\\\`\\\`typescript
 // ✅ 送金は送金元と送金先、両方のAccountに影響
 class MoneyTransferService {
   transfer(from: Account, to: Account, amount: Money): void {
@@ -3461,7 +3464,7 @@ class MoneyTransferService {
     to.deposit(amount);
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
 ## アンチパターン: ドメインサービスの過剰使用
 
@@ -3469,7 +3472,7 @@ class MoneyTransferService {
 
 すべてのロジックをサービスに配置し、エンティティがデータの入れ物になっている状態。
 
-\`\`\`typescript
+\\\`\\\`\\\`typescript
 // ❌ データのみのエンティティ（貧血）
 class Order {
   id: OrderId;
@@ -3484,13 +3487,13 @@ class OrderService {
     order.items.push(item);
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
 ### ✅ リッチドメインモデル（Rich Domain Model）
 
 エンティティが適切にロジックを持ち、ドメインサービスは本当に必要な場合のみ使用。
 
-\`\`\`typescript
+\\\`\\\`\\\`typescript
 // ✅ ロジックを持つエンティティ
 class Order {
   private _items: OrderItem[];
@@ -3502,7 +3505,7 @@ class Order {
     this._items.push(item);
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
 ## まとめ
 
@@ -4475,3 +4478,1168 @@ graph TD
 });
 
 export const chapter8Lessons = [lesson8_1, lesson8_2, lesson8_3];
+// Lesson 9-1: リポジトリとは
+export const lesson9_1 = Lesson.create({
+  id: LessonId.create('lesson-9-1'),
+  title: LessonTitle.create('リポジトリとは'),
+  content: MarkdownContent.create(`## リポジトリとは
+
+**リポジトリ（Repository）** は、ドメインオブジェクトの永続化と取得を抽象化するパターンです。
+
+## リポジトリが解決する問題
+
+### ❌ 問題: ドメイン層がインフラストラクチャに依存
+
+\`\`\`mermaid
+graph TD
+    A[OrderService<br/>ドメイン層] -->|直接依存| B[SQL文]
+    A -->|直接依存| C[データベース接続]
+    A -->|直接依存| D[ORM]
+
+    style A fill:#f96,stroke:#333
+    style B fill:#f66,stroke:#333
+    style C fill:#f66,stroke:#333
+    style D fill:#f66,stroke:#333
+
+    Note[問題:<br/>・ドメインロジックとデータアクセスが混在<br/>・テストが困難<br/>・データベース変更の影響が大きい]
+\`\`\`
+
+**問題点**:
+- ドメインロジックにSQL文やデータベース接続コードが混在
+- ユニットテストが困難（データベースが必須）
+- データベース変更時の影響範囲が広い
+
+### ✅ 解決: リポジトリでデータアクセスを抽象化
+
+\`\`\`mermaid
+graph TB
+    subgraph "Domain Layer"
+        A[OrderService]
+        B[IOrderRepository<br/>インターフェース]
+    end
+
+    subgraph "Infrastructure Layer"
+        C[OrderRepositoryImpl]
+        D[SQL/ORM]
+        E[Database]
+    end
+
+    A -->|依存| B
+    B -.実装.-> C
+    C --> D
+    D --> E
+
+    style A fill:#6c6,stroke:#333
+    style B fill:#6c6,stroke:#333,stroke-width:3px
+    style C fill:#9cf,stroke:#333
+
+    Note[利点:<br/>・ドメイン層はインターフェースのみに依存<br/>・実装詳細から独立<br/>・テストが容易]
+\`\`\`
+
+**利点**:
+- ドメイン層はリポジトリインターフェースのみに依存
+- データアクセスの実装詳細から独立
+- モックを使ったテストが容易
+
+## リポジトリの責務
+
+### 1. コレクションのようなインターフェース
+
+リポジトリは、あたかも **メモリ上のコレクション** のように扱えるインターフェースを提供します。
+
+\`\`\`typescript
+// ✅ リポジトリ: コレクションのようなインターフェース
+export interface OrderRepository {
+  // 追加（永続化）
+  save(order: Order): Promise<void>;
+
+  // 削除
+  remove(order: Order): Promise<void>;
+
+  // IDで検索
+  findById(id: OrderId): Promise<Order | null>;
+
+  // 条件で検索
+  findByCustomerId(customerId: CustomerId): Promise<Order[]>;
+
+  // すべて取得
+  findAll(): Promise<Order[]>;
+}
+
+// ドメインサービスでの使用例
+export class OrderService {
+  constructor(private orderRepo: OrderRepository) {}
+
+  async confirmOrder(orderId: OrderId): Promise<void> {
+    // コレクションから取得するように見える
+    const order = await this.orderRepo.findById(orderId);
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    // ドメインロジック実行
+    order.confirm();
+
+    // コレクションに保存するように見える
+    await this.orderRepo.save(order);
+  }
+}
+\`\`\`
+
+### 2. 永続化メカニズムの隠蔽
+
+リポジトリは、SQL、NoSQL、ファイル、メモリなど、**どのように永続化されるかを隠蔽**します。
+
+\`\`\`mermaid
+graph LR
+    A[OrderRepository<br/>Interface] --> B[MySQL実装]
+    A --> C[PostgreSQL実装]
+    A --> D[MongoDB実装]
+    A --> E[InMemory実装]
+
+    B --> F[(MySQL)]
+    C --> G[(PostgreSQL)]
+    D --> H[(MongoDB)]
+    E --> I[Memory]
+
+    style A fill:#6c6,stroke:#333,stroke-width:3px
+    style B fill:#9cf,stroke:#333
+    style C fill:#9cf,stroke:#333
+    style D fill:#9cf,stroke:#333
+    style E fill:#fc9,stroke:#333
+\`\`\`
+
+\`\`\`typescript
+// インフラストラクチャ層: MySQL実装
+export class MySQLOrderRepository implements OrderRepository {
+  async save(order: Order): Promise<void> {
+    const sql = 'INSERT INTO orders ...';
+    // MySQL固有の実装
+  }
+
+  async findById(id: OrderId): Promise<Order | null> {
+    const sql = 'SELECT * FROM orders WHERE id = ?';
+    // MySQL固有の実装
+  }
+}
+
+// インフラストラクチャ層: InMemory実装（テスト用）
+export class InMemoryOrderRepository implements OrderRepository {
+  private orders: Map<string, Order> = new Map();
+
+  async save(order: Order): Promise<void> {
+    this.orders.set(order.id.value, order);
+  }
+
+  async findById(id: OrderId): Promise<Order | null> {
+    return this.orders.get(id.value) || null;
+  }
+}
+\`\`\`
+
+## リポジトリとDAOの違い
+
+\`\`\`mermaid
+graph TB
+    subgraph "DAO (Data Access Object)"
+        A1[OrderDAO]
+        A2["insert(order)<br/>update(order)<br/>delete(id)<br/>select(id)"]
+        A3[データベーステーブルに対応]
+    end
+
+    subgraph "Repository"
+        B1[OrderRepository]
+        B2["save(order)<br/>remove(order)<br/>findById(id)"]
+        B3[ドメインモデル/集約に対応]
+    end
+
+    A1 --> A2
+    A2 --> A3
+    B1 --> B2
+    B2 --> B3
+
+    style A1 fill:#fc9,stroke:#333
+    style B1 fill:#6c6,stroke:#333
+\`\`\`
+
+| 観点 | DAO | Repository |
+|------|-----|-----------|
+| **目的** | データベース操作の抽象化 | ドメインモデルの永続化抽象化 |
+| **対応単位** | テーブル | 集約 |
+| **メソッド名** | insert, update, delete, select | save, remove, find |
+| **層** | 主にインフラストラクチャ | ドメイン（Interface）+ インフラ（実装） |
+| **テーブル数** | 1テーブル = 1DAO | 1集約 = 1Repository（複数テーブル可） |
+
+### DAO（アンチパターン）
+
+\`\`\`typescript
+// ❌ DAO: テーブル中心
+export class OrderDAO {
+  insert(orderData: OrderRow): void {
+    // INSERT INTO orders ...
+  }
+
+  update(orderData: OrderRow): void {
+    // UPDATE orders SET ...
+  }
+
+  selectById(id: number): OrderRow | null {
+    // SELECT * FROM orders WHERE id = ?
+  }
+}
+
+export class OrderItemDAO {
+  insertItems(items: OrderItemRow[]): void {
+    // INSERT INTO order_items ...
+  }
+}
+
+// 問題: ドメインロジックでテーブル構造を意識
+async function confirmOrder(orderId: number): Promise<void> {
+  const orderRow = orderDAO.selectById(orderId);
+  orderRow.status = 'confirmed';
+  orderDAO.update(orderRow);
+
+  // 複数のDAOを操作する必要がある
+  orderItemDAO.updateStatus(orderId, 'confirmed');
+}
+\`\`\`
+
+### Repository（推奨）
+
+\`\`\`typescript
+// ✅ Repository: 集約中心
+export interface OrderRepository {
+  save(order: Order): Promise<void>;
+  findById(id: OrderId): Promise<Order | null>;
+}
+
+// ドメインロジックはモデルに集中
+async function confirmOrder(orderId: OrderId): Promise<void> {
+  const order = await orderRepo.findById(orderId);
+
+  // ドメインモデルのメソッドを使用
+  order.confirm();
+
+  // リポジトリは集約全体を永続化（ordersとorder_itemsテーブル両方）
+  await orderRepo.save(order);
+}
+\`\`\`
+
+## リポジトリと集約の関係
+
+\`\`\`mermaid
+classDiagram
+    class OrderRepository {
+        <<Interface>>
+        +save(order: Order)
+        +remove(order: Order)
+        +findById(id: OrderId)
+    }
+
+    class Order {
+        <<Aggregate Root>>
+        -id: OrderId
+        -items: OrderItem[]
+        +confirm()
+        +addItem(item)
+    }
+
+    class OrderItem {
+        <<Entity>>
+        -id: OrderItemId
+        -productId: ProductId
+        -quantity: number
+    }
+
+    OrderRepository --> Order : 永続化・取得
+    Order "1" *-- "many" OrderItem : 含む
+
+    note for OrderRepository "集約ルート単位で永続化"
+    note for Order "Order集約全体を<br/>1つのトランザクションで保存"
+\`\`\`
+
+**重要な原則**:
+- ✅ **1集約 = 1リポジトリ**
+- ✅ リポジトリは **集約ルート** のみを対象
+- ❌ 内部エンティティ（OrderItem）専用のリポジトリは作らない
+
+## まとめ
+
+### リポジトリの特徴
+
+| 特徴 | 説明 |
+|------|------|
+| **コレクション指向** | メモリ上のコレクションのように扱える |
+| **永続化の抽象化** | SQL/NoSQL/メモリなど実装を隠蔽 |
+| **集約単位** | 集約ルートごとに1つのリポジトリ |
+| **ドメイン層に配置** | インターフェースはドメイン層 |
+| **実装は分離** | 実装はインフラストラクチャ層 |
+
+### 利点
+
+- ✅ ドメイン層がインフラストラクチャから独立
+- ✅ テストが容易（モック可能）
+- ✅ データベース変更の影響を局所化
+- ✅ ドメインロジックがシンプルに
+- ✅ トランザクション境界が明確
+
+**原則**: リポジトリは **永続化の詳細を隠蔽** し、ドメインモデルをコレクションのように扱えるようにする
+`),
+  order: 1,
+});
+
+// Lesson 9-2: リポジトリの実装パターン
+export const lesson9_2 = Lesson.create({
+  id: LessonId.create('lesson-9-2'),
+  title: LessonTitle.create('リポジトリの実装パターン'),
+  content: MarkdownContent.create(`## リポジトリの実装パターン
+
+リポジトリの実装方法と、Domain層とInfrastructure層の適切な分離について学びます。
+
+## 層の分離: Interface と Implementation
+
+\`\`\`mermaid
+graph TB
+    subgraph "Domain Layer"
+        A[OrderService]
+        B[Order<br/>Aggregate]
+        C[IOrderRepository<br/>Interface]
+    end
+
+    subgraph "Infrastructure Layer"
+        D[OrderRepositoryImpl]
+        E[Prisma/TypeORM]
+        F[(Database)]
+    end
+
+    A --> C
+    A --> B
+    C -.実装.-> D
+    D --> E
+    E --> F
+
+    style C fill:#6c6,stroke:#333,stroke-width:3px
+    style D fill:#9cf,stroke:#333
+
+    Note[Domain層: インターフェース定義<br/>Infrastructure層: 具体的な実装]
+\`\`\`
+
+### Domain層: インターフェース定義
+
+\`\`\`typescript
+// domain/repositories/IOrderRepository.ts
+import { Order } from '../models/Order';
+import { OrderId } from '../value-objects/OrderId';
+import { CustomerId } from '../value-objects/CustomerId';
+
+export interface IOrderRepository {
+  // 永続化
+  save(order: Order): Promise<void>;
+
+  // 削除
+  remove(order: Order): Promise<void>;
+
+  // ID検索
+  findById(id: OrderId): Promise<Order | null>;
+
+  // 顧客ID検索
+  findByCustomerId(customerId: CustomerId): Promise<Order[]>;
+
+  // 次のID生成（シーケンス等）
+  nextId(): Promise<OrderId>;
+}
+\`\`\`
+
+### Infrastructure層: 具体的な実装
+
+\`\`\`typescript
+// infrastructure/repositories/OrderRepositoryImpl.ts
+import { IOrderRepository } from '@/domain/repositories/IOrderRepository';
+import { Order } from '@/domain/models/Order';
+import { PrismaClient } from '@prisma/client';
+
+export class OrderRepositoryImpl implements IOrderRepository {
+  constructor(private prisma: PrismaClient) {}
+
+  async save(order: Order): Promise<void> {
+    // Order集約全体を永続化
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Orderテーブルに保存
+      await tx.order.upsert({
+        where: { id: order.id.value },
+        create: {
+          id: order.id.value,
+          customerId: order.customerId.value,
+          status: order.status,
+          totalAmount: order.totalAmount.value,
+        },
+        update: {
+          status: order.status,
+          totalAmount: order.totalAmount.value,
+        },
+      });
+
+      // 2. OrderItemsテーブルに保存（集約内のエンティティ）
+      await tx.orderItem.deleteMany({
+        where: { orderId: order.id.value },
+      });
+
+      for (const item of order.items) {
+        await tx.orderItem.create({
+          data: {
+            id: item.id.value,
+            orderId: order.id.value,
+            productId: item.productId.value,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice.value,
+          },
+        });
+      }
+    });
+  }
+
+  async findById(id: OrderId): Promise<Order | null> {
+    const orderData = await this.prisma.order.findUnique({
+      where: { id: id.value },
+      include: { items: true }, // 集約全体を取得
+    });
+
+    if (!orderData) return null;
+
+    // ドメインモデルに再構築
+    return Order.reconstruct({
+      id: new OrderId(orderData.id),
+      customerId: new CustomerId(orderData.customerId),
+      items: orderData.items.map(item =>
+        OrderItem.reconstruct({
+          id: new OrderItemId(item.id),
+          productId: new ProductId(item.productId),
+          quantity: item.quantity,
+          unitPrice: new Money(item.unitPrice),
+        })
+      ),
+      status: orderData.status,
+      totalAmount: new Money(orderData.totalAmount),
+    });
+  }
+
+  async nextId(): Promise<OrderId> {
+    // UUID生成
+    return OrderId.generate();
+  }
+}
+\`\`\`
+
+## コレクション指向 vs 永続化指向
+
+### コレクション指向リポジトリ（推奨）
+
+\`\`\`mermaid
+graph LR
+    A[Application] -->|1. 取得| B[Repository]
+    B -->|2. Order返却| A
+    A -->|3. ドメインロジック実行| C[Order.confirm]
+    A -->|4. 保存| B
+
+    style B fill:#6c6,stroke:#333
+    style C fill:#fc9,stroke:#333
+
+    Note[変更をトラッキングせず<br/>明示的にsave呼び出し]
+\`\`\`
+
+\`\`\`typescript
+// ✅ コレクション指向: シンプルで明示的
+export interface IOrderRepository {
+  save(order: Order): Promise<void>;
+  findById(id: OrderId): Promise<Order | null>;
+}
+
+// 使用例
+async function confirmOrder(orderId: OrderId): Promise<void> {
+  const order = await orderRepo.findById(orderId);
+
+  order.confirm(); // ドメインロジック
+
+  await orderRepo.save(order); // 明示的に保存
+}
+\`\`\`
+
+### 永続化指向リポジトリ（ORMの影響）
+
+\`\`\`typescript
+// ❌ 永続化指向: 暗黙的で複雑
+export interface IOrderRepository {
+  findById(id: OrderId): Promise<Order | null>;
+  // saveメソッドなし - ORMが自動追跡
+}
+
+// 使用例（アンチパターン）
+async function confirmOrder(orderId: OrderId): Promise<void> {
+  const order = await orderRepo.findById(orderId);
+
+  order.confirm(); // 変更が自動的にDBに反映される？
+
+  // saveの呼び出し不要？ 不明確！
+}
+\`\`\`
+
+**問題点**:
+- 変更が保存されるタイミングが不明確
+- トランザクション境界が曖昧
+- テストが困難
+
+## 集約単位のリポジトリ設計
+
+\`\`\`mermaid
+classDiagram
+    class Order {
+        <<Aggregate Root>>
+        -id: OrderId
+        -items: OrderItem[]
+        +addItem(item)
+        +confirm()
+    }
+
+    class OrderItem {
+        <<Entity>>
+        -id: OrderItemId
+        -productId: ProductId
+    }
+
+    class OrderRepository {
+        <<Interface>>
+        +save(order: Order)
+        +findById(id: OrderId)
+    }
+
+    class ProductRepository {
+        <<Interface>>
+        +save(product: Product)
+        +findById(id: ProductId)
+    }
+
+    Order "1" *-- "many" OrderItem
+    OrderRepository --> Order
+    ProductRepository ..> Product
+
+    note for OrderRepository "Order集約全体を操作<br/>OrderItem単独の操作なし"
+    note for ProductRepository "別の集約には<br/>別のリポジトリ"
+\`\`\`
+
+### ✅ 良い例: 集約単位
+
+\`\`\`typescript
+// ✅ Order集約用のリポジトリ
+export interface IOrderRepository {
+  save(order: Order): Promise<void>; // Order集約全体を保存
+  remove(order: Order): Promise<void>; // Order集約全体を削除
+  findById(id: OrderId): Promise<Order | null>; // Order集約全体を取得
+}
+
+// ✅ Product集約用のリポジトリ
+export interface IProductRepository {
+  save(product: Product): Promise<void>;
+  findById(id: ProductId): Promise<Product | null>;
+}
+\`\`\`
+
+### ❌ 悪い例: エンティティごと
+
+\`\`\`typescript
+// ❌ OrderItem専用のリポジトリ（不要）
+export interface IOrderItemRepository {
+  save(item: OrderItem): Promise<void>;
+  findById(id: OrderItemId): Promise<OrderItem | null>;
+}
+
+// 問題: Order集約の整合性を破壊する可能性
+async function badExample(): Promise<void> {
+  const item = await orderItemRepo.findById(itemId);
+  item.changeQuantity(10); // Order集約を経由せずに変更！
+  await orderItemRepo.save(item); // 不変条件をバイパス！
+}
+\`\`\`
+
+## 依存性注入との組み合わせ
+
+\`\`\`mermaid
+sequenceDiagram
+    participant Main as main.ts
+    participant Container as DI Container
+    participant Service as OrderService
+    participant Repo as IOrderRepository
+    participant Impl as OrderRepositoryImpl
+
+    Main->>Container: setup()
+    Container->>Container: bind(IOrderRepository, OrderRepositoryImpl)
+
+    Main->>Container: get(OrderService)
+    Container->>Impl: new OrderRepositoryImpl(prisma)
+    Container->>Service: new OrderService(impl)
+    Container-->>Main: service
+
+    Main->>Service: confirmOrder(id)
+    Service->>Repo: findById(id)
+    Note over Repo,Impl: インターフェース越しに呼び出し
+\`\`\`
+
+\`\`\`typescript
+// main.ts または DI設定ファイル
+import { Container } from 'inversify';
+import { IOrderRepository } from '@/domain/repositories/IOrderRepository';
+import { OrderRepositoryImpl } from '@/infrastructure/repositories/OrderRepositoryImpl';
+
+const container = new Container();
+
+// インターフェースと実装をバインド
+container
+  .bind<IOrderRepository>('IOrderRepository')
+  .to(OrderRepositoryImpl);
+
+// OrderServiceは自動的にOrderRepositoryImplを受け取る
+container.bind(OrderService).toSelf();
+
+export { container };
+\`\`\`
+
+\`\`\`typescript
+// application/services/OrderService.ts
+import { injectable, inject } from 'inversify';
+import { IOrderRepository } from '@/domain/repositories/IOrderRepository';
+
+@injectable()
+export class OrderService {
+  constructor(
+    @inject('IOrderRepository')
+    private orderRepo: IOrderRepository // インターフェースに依存
+  ) {}
+
+  async confirmOrder(orderId: OrderId): Promise<void> {
+    const order = await this.orderRepo.findById(orderId);
+    order.confirm();
+    await this.orderRepo.save(order);
+  }
+}
+\`\`\`
+
+## トランザクション管理
+
+\`\`\`typescript
+// infrastructure/repositories/OrderRepositoryImpl.ts
+export class OrderRepositoryImpl implements IOrderRepository {
+  async save(order: Order): Promise<void> {
+    // ✅ トランザクションで集約全体を保存
+    await this.prisma.$transaction(async (tx) => {
+      // Orderテーブル
+      await tx.order.upsert({...});
+
+      // OrderItemsテーブル（集約内のエンティティ）
+      await tx.orderItem.deleteMany({...});
+      for (const item of order.items) {
+        await tx.orderItem.create({...});
+      }
+
+      // その他の集約内データも同じトランザクション内で
+    });
+    // トランザクション境界 = 集約境界
+  }
+}
+\`\`\`
+
+## まとめ
+
+### リポジトリ実装の原則
+
+| 原則 | 説明 |
+|------|------|
+| **Interface/Implementation分離** | Domain層: Interface、Infrastructure層: 実装 |
+| **コレクション指向** | 明示的なsave/findメソッド |
+| **集約単位** | 1集約 = 1リポジトリ |
+| **トランザクション境界** | 集約全体を1トランザクションで永続化 |
+| **DI活用** | インターフェースに依存、実装は注入 |
+
+### ベストプラクティス
+
+- ✅ インターフェースをDomain層に配置
+- ✅ 実装をInfrastructure層に配置
+- ✅ 集約ルートのみをリポジトリで扱う
+- ✅ トランザクションで集約全体を保存
+- ✅ ドメインモデルへの再構築を実装
+- ❌ ORMの自動追跡に依存しない
+- ❌ 内部エンティティ専用リポジトリを作らない
+
+**原則**: リポジトリは **集約全体を1単位** として扱い、**インターフェースと実装を分離** する
+`),
+  order: 2,
+});
+
+// Lesson 9-3: リポジトリ設計のベストプラクティス
+export const lesson9_3 = Lesson.create({
+  id: LessonId.create('lesson-9-3'),
+  title: LessonTitle.create('リポジトリ設計のベストプラクティス'),
+  content: MarkdownContent.create(`
+## リポジトリ設計のベストプラクティス
+
+効果的なリポジトリ設計のパターン、クエリメソッドの設計、そして避けるべきアンチパターンを学びます。
+
+## クエリメソッド設計
+
+### 意図を明確にする命名
+
+\`\`\`typescript
+// ✅ 良い例: 意図が明確
+export interface IOrderRepository {
+  // 単数取得
+  findById(id: OrderId): Promise<Order | null>;
+
+  // 複数取得（顧客の全注文）
+  findByCustomerId(customerId: CustomerId): Promise<Order[]>;
+
+  // 条件検索（未発送の注文）
+  findUnshippedOrders(): Promise<Order[]>;
+
+  // 条件検索（期間指定）
+  findByDateRange(start: Date, end: Date): Promise<Order[]>;
+
+  // 存在確認
+  exists(id: OrderId): Promise<boolean>;
+
+  // カウント
+  countByStatus(status: OrderStatus): Promise<number>;
+}
+
+// ❌ 悪い例: 曖昧な命名
+export interface IOrderRepository {
+  get(id: string): Promise<Order | null>; // get? find? fetch?
+  getOrders(customerId: string): Promise<Order[]>; // どの条件？
+  query(sql: string): Promise<Order[]>; // SQLを直接渡す？
+}
+\`\`\`
+
+### 汎用クエリメソッドのアンチパターン
+
+\`\`\`mermaid
+graph TD
+    A[❌ アンチパターン] -->|汎用的すぎる| B[findByCondition]
+    A -->|SQL漏洩| C[findBySql]
+    A -->|曖昧| D[search]
+
+    E[✅ 推奨] -->|意図明確| F[findByCustomerId]
+    E -->|ドメイン用語| G[findUnshippedOrders]
+    E -->|具体的| H[findByDateRange]
+
+    style A fill:#f66,stroke:#333
+    style E fill:#6c6,stroke:#333
+\`\`\`
+
+\`\`\`typescript
+// ❌ アンチパターン: 汎用的すぎるメソッド
+export interface IOrderRepository {
+  // 問題: どんな条件も受け入れる → ドメイン知識が失われる
+  findByCondition(condition: object): Promise<Order[]>;
+
+  // 問題: SQLが漏洩 → リポジトリの抽象化が破綻
+  findBySql(sql: string): Promise<Order[]>;
+
+  // 問題: 何を検索するのか不明確
+  search(query: string): Promise<Order[]>;
+}
+
+// ✅ 推奨: 意図が明確なメソッド
+export interface IOrderRepository {
+  // ドメイン用語を使用
+  findByCustomerId(customerId: CustomerId): Promise<Order[]>;
+  findUnshippedOrders(): Promise<Order[]>;
+  findOverdueOrders(today: Date): Promise<Order[]>;
+}
+\`\`\`
+
+## 仕様パターン（Specification Pattern）
+
+複雑な検索条件を表現する場合、仕様パターンを使います。
+
+\`\`\`mermaid
+classDiagram
+    class ISpecification~T~ {
+        <<Interface>>
+        +isSatisfiedBy(entity: T) boolean
+        +and(spec: ISpecification~T~) ISpecification~T~
+        +or(spec: ISpecification~T~) ISpecification~T~
+        +not() ISpecification~T~
+    }
+
+    class OverdueOrderSpec {
+        -today: Date
+        +isSatisfiedBy(order: Order) boolean
+    }
+
+    class HighValueOrderSpec {
+        -threshold: Money
+        +isSatisfiedBy(order: Order) boolean
+    }
+
+    class OrderRepository {
+        +findBySpecification(spec: ISpecification~Order~) Order[]
+    }
+
+    ISpecification <|.. OverdueOrderSpec
+    ISpecification <|.. HighValueOrderSpec
+    OrderRepository --> ISpecification
+
+    note for ISpecification "検索条件をオブジェクトで表現"
+    note for OrderRepository "仕様オブジェクトで検索"
+\`\`\`
+
+### 仕様パターンの実装
+
+\`\`\`typescript
+// domain/specifications/ISpecification.ts
+export interface ISpecification<T> {
+  isSatisfiedBy(entity: T): boolean;
+  and(spec: ISpecification<T>): ISpecification<T>;
+  or(spec: ISpecification<T>): ISpecification<T>;
+  not(): ISpecification<T>;
+}
+
+// domain/specifications/OverdueOrderSpecification.ts
+export class OverdueOrderSpecification implements ISpecification<Order> {
+  constructor(private today: Date) {}
+
+  isSatisfiedBy(order: Order): boolean {
+    return order.dueDate < this.today && !order.isShipped();
+  }
+
+  and(spec: ISpecification<Order>): ISpecification<Order> {
+    return new AndSpecification(this, spec);
+  }
+
+  // or, not も同様に実装
+}
+
+// domain/specifications/HighValueOrderSpecification.ts
+export class HighValueOrderSpecification implements ISpecification<Order> {
+  constructor(private threshold: Money) {}
+
+  isSatisfiedBy(order: Order): boolean {
+    return order.totalAmount.isGreaterThan(this.threshold);
+  }
+}
+
+// domain/repositories/IOrderRepository.ts
+export interface IOrderRepository {
+  // 仕様パターンを使った検索
+  findBySpecification(spec: ISpecification<Order>): Promise<Order[]>;
+}
+
+// 使用例
+async function findProblematicOrders(): Promise<Order[]> {
+  const overdueSpec = new OverdueOrderSpecification(new Date());
+  const highValueSpec = new HighValueOrderSpecification(new Money(100000));
+
+  // 仕様を組み合わせる
+  const combinedSpec = overdueSpec.and(highValueSpec);
+
+  // 期限切れかつ高額な注文を検索
+  return await orderRepo.findBySpecification(combinedSpec);
+}
+\`\`\`
+
+### 仕様パターンの実装（Infrastructure層）
+
+\`\`\`typescript
+// infrastructure/repositories/OrderRepositoryImpl.ts
+export class OrderRepositoryImpl implements IOrderRepository {
+  async findBySpecification(
+    spec: ISpecification<Order>
+  ): Promise<Order[]> {
+    // 1. すべての注文を取得（または効率的なクエリ）
+    const allOrders = await this.findAll();
+
+    // 2. メモリ上で仕様を適用
+    return allOrders.filter(order => spec.isSatisfiedBy(order));
+  }
+
+  // より効率的な実装: SQLに変換
+  async findBySpecification(
+    spec: ISpecification<Order>
+  ): Promise<Order[]> {
+    // 仕様オブジェクトをSQLに変換（高度な実装）
+    const sqlBuilder = new SpecificationToSqlConverter();
+    const sql = sqlBuilder.convert(spec);
+    return await this.query(sql);
+  }
+}
+\`\`\`
+
+## アンチパターンの回避
+
+### アンチパターン1: リポジトリでビジネスロジック
+
+\`\`\`typescript
+// ❌ 悪い例: リポジトリにビジネスロジック
+export class OrderRepositoryImpl implements IOrderRepository {
+  async confirmOrder(orderId: OrderId): Promise<void> {
+    const order = await this.findById(orderId);
+
+    // ❌ ビジネスロジックがリポジトリに！
+    if (order.items.length === 0) {
+      throw new Error('Cannot confirm empty order');
+    }
+    order.status = 'confirmed';
+
+    await this.save(order);
+  }
+}
+
+// ✅ 良い例: ビジネスロジックはドメインモデルまたはサービスに
+export class Order {
+  confirm(): void {
+    // ✅ ビジネスルールはドメインモデルに
+    if (this._items.length === 0) {
+      throw new Error('Cannot confirm empty order');
+    }
+    this._status = OrderStatus.Confirmed;
+  }
+}
+
+export class OrderRepositoryImpl implements IOrderRepository {
+  // リポジトリは永続化のみ
+  async save(order: Order): Promise<void> {
+    // 永続化処理のみ
+  }
+}
+\`\`\`
+
+### アンチパターン2: リーキー抽象化
+
+\`\`\`mermaid
+graph TD
+    A[❌ リーキー抽象化<br/>実装の詳細が漏洩] -->|SQL公開| B[findBySql]
+    A -->|テーブル構造| C[findByJoin]
+    A -->|ORM依存| D[findWithEagerLoading]
+
+    E[✅ 適切な抽象化<br/>実装を隠蔽] -->|ドメイン用語| F[findByCustomerId]
+    E -->|ビジネス条件| G[findUnshippedOrders]
+
+    style A fill:#f66,stroke:#333
+    style E fill:#6c6,stroke:#333
+\`\`\`
+
+\`\`\`typescript
+// ❌ 悪い例: 実装の詳細が漏洩
+export interface IOrderRepository {
+  // SQL文を直接渡す
+  findBySql(sql: string): Promise<Order[]>;
+
+  // ORMの機能が漏洩
+  findWithEagerLoading(id: OrderId, relations: string[]): Promise<Order | null>;
+
+  // テーブル構造が漏洩
+  findByJoin(table: string, condition: string): Promise<Order[]>;
+}
+
+// ✅ 良い例: 実装を完全に隠蔽
+export interface IOrderRepository {
+  // ドメイン用語のみ
+  findById(id: OrderId): Promise<Order | null>;
+  findByCustomerId(customerId: CustomerId): Promise<Order[]>;
+  findUnshippedOrders(): Promise<Order[]>;
+}
+\`\`\`
+
+### アンチパターン3: N+1問題の無視
+
+\`\`\`typescript
+// ❌ 悪い例: N+1問題
+export class OrderRepositoryImpl implements IOrderRepository {
+  async findById(id: OrderId): Promise<Order | null> {
+    // 1. Orderのみ取得
+    const orderData = await this.prisma.order.findUnique({
+      where: { id: id.value },
+      // include していない！
+    });
+
+    // 2. OrderItemsを別々に取得（N+1問題）
+    const items = [];
+    for (const itemId of orderData.itemIds) {
+      const item = await this.prisma.orderItem.findUnique({
+        where: { id: itemId },
+      }); // N回のクエリ！
+      items.push(item);
+    }
+
+    return Order.reconstruct({ ...orderData, items });
+  }
+}
+
+// ✅ 良い例: 集約全体を1クエリで取得
+export class OrderRepositoryImpl implements IOrderRepository {
+  async findById(id: OrderId): Promise<Order | null> {
+    const orderData = await this.prisma.order.findUnique({
+      where: { id: id.value },
+      include: { items: true }, // ✅ 1クエリで集約全体を取得
+    });
+
+    return Order.reconstruct({
+      id: new OrderId(orderData.id),
+      items: orderData.items.map(/* 変換 */),
+      // ...
+    });
+  }
+}
+\`\`\`
+
+## ページネーションとソート
+
+\`\`\`typescript
+// domain/repositories/IOrderRepository.ts
+export interface PageRequest {
+  page: number;
+  pageSize: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface Page<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface IOrderRepository {
+  // ページネーション対応
+  findByCustomerId(
+    customerId: CustomerId,
+    pageRequest: PageRequest
+  ): Promise<Page<Order>>;
+}
+
+// 使用例
+const orders = await orderRepo.findByCustomerId(
+  customerId,
+  {
+    page: 1,
+    pageSize: 20,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+  }
+);
+
+console.log(\`Total: \${orders.totalCount}, Page: \${orders.page}/\${orders.totalPages}\`);
+\`\`\`
+
+## テスト容易性
+
+\`\`\`mermaid
+graph TB
+    subgraph "Production"
+        A1[OrderService]
+        B1[IOrderRepository]
+        C1[OrderRepositoryImpl]
+        D1[(Database)]
+    end
+
+    subgraph "Test"
+        A2[OrderService]
+        B2[IOrderRepository]
+        C2[InMemoryOrderRepository]
+        D2[Memory]
+    end
+
+    A1 --> B1
+    B1 -.実装.-> C1
+    C1 --> D1
+
+    A2 --> B2
+    B2 -.実装.-> C2
+    C2 --> D2
+
+    style B1 fill:#6c6,stroke:#333,stroke-width:3px
+    style B2 fill:#6c6,stroke:#333,stroke-width:3px
+    style C2 fill:#fc9,stroke:#333
+\`\`\`
+
+\`\`\`typescript
+// test/repositories/InMemoryOrderRepository.ts
+export class InMemoryOrderRepository implements IOrderRepository {
+  private orders: Map<string, Order> = new Map();
+
+  async save(order: Order): Promise<void> {
+    this.orders.set(order.id.value, order);
+  }
+
+  async findById(id: OrderId): Promise<Order | null> {
+    return this.orders.get(id.value) || null;
+  }
+
+  async findByCustomerId(customerId: CustomerId): Promise<Order[]> {
+    return Array.from(this.orders.values()).filter(
+      order => order.customerId.equals(customerId)
+    );
+  }
+
+  // テスト用のヘルパーメソッド
+  clear(): void {
+    this.orders.clear();
+  }
+}
+
+// test/services/OrderService.test.ts
+describe('OrderService', () => {
+  let orderRepo: InMemoryOrderRepository;
+  let orderService: OrderService;
+
+  beforeEach(() => {
+    orderRepo = new InMemoryOrderRepository();
+    orderService = new OrderService(orderRepo);
+  });
+
+  it('should confirm order', async () => {
+    const order = Order.create(customerId);
+    await orderRepo.save(order);
+
+    await orderService.confirmOrder(order.id);
+
+    const updated = await orderRepo.findById(order.id);
+    expect(updated.status).toBe(OrderStatus.Confirmed);
+  });
+});
+\`\`\`
+
+## まとめ
+
+### リポジトリ設計のベストプラクティス
+
+| プラクティス | 説明 |
+|--------------|------|
+| **意図明確な命名** | findByCustomerId, findUnshippedOrders |
+| **仕様パターン** | 複雑な検索条件をオブジェクトで表現 |
+| **抽象化の徹底** | SQL/ORMの詳細を隠蔽 |
+| **N+1問題の回避** | 集約全体を1クエリで取得 |
+| **テスト容易性** | InMemory実装でテスト |
+
+### 避けるべきアンチパターン
+
+- ❌ リポジトリにビジネスロジック
+- ❌ SQL文の直接公開（findBySql）
+- ❌ ORM機能の漏洩
+- ❌ 汎用的すぎるメソッド（findByCondition）
+- ❌ N+1問題
+
+### 重要な原則
+
+- ✅ ドメイン用語で命名
+- ✅ 実装の詳細を完全に隠蔽
+- ✅ 集約単位で取得・保存
+- ✅ テスト可能な設計
+- ✅ パフォーマンスを考慮
+
+**原則**: リポジトリは **ドメイン知識を表現** し、**実装の詳細を隠蔽** し、**テスト容易性を確保** する
+`),
+  order: 3,
+});
+
+export const chapter9Lessons = [lesson9_1, lesson9_2, lesson9_3];
