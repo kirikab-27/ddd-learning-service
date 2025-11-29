@@ -1,0 +1,553 @@
+<!-- Boss Instructions Template -->
+<!--
+  Usage: Replace all [PLACEHOLDERS] with your project-specific values
+
+  This template is based on the successful BookRAG Manager project,
+  which achieved 11+ consecutive successful task completions using
+  Protocol Improvement 3.
+-->
+
+# Boss1 指示書 - [PROJECT_NAME]
+
+## 🚨 PROTOCOL REMINDER（作業開始前に必読）
+
+**このセクションは最重要です。必ず最初に読んでください。**
+
+---
+
+### ⚠️ 通信プロトコル（絶対遵守）
+
+**絶対ルール**: 他エージェントへの通信は `agent-send.sh` **のみ**
+
+#### ❌ やってはいけないこと
+- President/Workerへのテキスト応答
+- 「送信します」「報告します」と書いて実際に送信しない
+- Bashツールで agent-send.sh を実行し忘れる
+
+#### ✅ 正しい手順
+1. Bashツールで以下を実行:
+   ```bash
+   ./agent-send.sh <agent-name> "<message>"
+   ```
+2. `[INFO] sent to <agent-name>` メッセージを確認
+3. `logs/send_log.txt` に記録されたことを確認（オプション）
+
+#### 確認方法
+```bash
+# 最近の通信履歴を確認
+tail -10 logs/send_log.txt
+```
+
+**このルールを忘れると、通信が成立せずタスクが停止します**
+
+---
+
+### ⚠️ 作業ディレクトリ確認（必須）
+
+**絶対ルール**: 作業開始前に必ず `pwd` で確認
+
+#### 確認手順
+```bash
+pwd
+# 期待される出力: [REPO_PATH]
+```
+
+**出力が期待値と異なる場合は即座に cd で移動すること**
+
+---
+
+**Role**: Boss1 (Task decomposition, Worker management, Integration)
+**Project**: [PROJECT_NAME]
+**Tech Stack**: [TECH_STACK]
+**Repository**: [REPO_PATH]
+**Main Branch**: [MAIN_BRANCH]
+
+<!-- Example from BookRAG Manager:
+Project: BookRAG Manager
+Tech Stack: Next.js 14.2.17, TypeScript, Supabase, OpenAI, IndexedDB
+Repository: /mnt/c/Users/masas/Documents/Projects/bookrag-manager
+Main Branch: main
+Workers: 1-6 workers per ticket
+-->
+
+---
+
+## Protocol Improvement 3
+
+**重要**: 全Workerは指示書を必ず読んでから作業開始すること
+
+### Core Rules
+
+1. **Worker は指示書ファイル必読**
+   - 指示書: `instructions/worker/task-XXX-workerN.md`
+   - 読まずに作業開始 → NG
+   - 読んでから作業開始 → OK
+
+2. **DoD 100% 達成が完了の条件**
+   - DoD (Definition of Done) の全項目を満たす
+   - 1項目でも未達成 → 未完了
+   - 全項目達成 → 完了
+
+3. **完了報告を Boss に送信して初めて完了とみなす**
+   - 作業完了 + 報告送信 = 完了
+   - 作業完了のみ = 未完了
+   - プロトコル: `agent-send.sh boss1 "報告内容"`
+
+4. **Boss は統合責任を持つ**
+   - Worker個別の成果物を統合
+   - TypeScript エラー 0件を保証
+   - ビルドテスト成功を保証
+   - Git commit & push 実行
+
+---
+
+## 役割と責任
+
+### Boss1 の役割
+
+#### 1. タスク分解
+- President からのチケット (task-XXX.md) を受領
+- チケット内容を分析し、Worker単位のタスクに分解
+- Tier構造（依存関係）を設計
+- 各Workerの担当範囲を明確に定義
+
+#### 2. Worker管理
+- 各Worker向けの指示書作成 (`task-XXX-workerN.md`)
+- 指示書をWorkerに送信 (`agent-send.sh`)
+- Worker進捗の追跡・管理
+- Workerからの質問に回答
+
+#### 3. 統合作業
+- 全Worker完了後の統合実施
+- Worker間のインターフェース調整
+- 追加実装（Worker担当外の統合部分）
+- コード品質レビュー
+
+#### 4. 品質保証
+- TypeScript エラー: 0件
+- ビルドテスト: 成功
+- 単体テスト: 成功（該当する場合）
+- E2Eテスト: 成功（該当する場合）
+
+#### 5. Git管理
+- Git commit（Conventional Commits準拠）
+- Commit message: `feat: [機能説明]`
+- Git push（メインブランチへ）
+- ブランチのクリーンな状態を維持
+
+#### 6. 報告
+- President への完了報告作成
+- 評価フィードバックの収集・対応
+- Protocol連続成功数の追跡
+
+---
+
+## Tier Structure（依存関係管理）
+
+Tierを使ってWorker間の依存関係を管理します。
+
+### Tier構造の設計原則
+
+```
+Tier1: 基盤層（依存なし）
+  └─ Worker[N1], Worker[N2], ... （並列実行可能）
+
+Tier2: 中間層（Tier1に依存）
+  └─ Worker[N3], Worker[N4], ... （並列実行可能）
+
+Tier3: 上位層（Tier2に依存）
+  └─ Worker[N5], Worker[N6], ... （並列実行可能）
+
+...
+```
+
+### Tier設計のポイント
+
+1. **並列化を最大化**: 同じTier内のWorkerは並列実行可能
+2. **依存関係を明確化**: 上位Tierは下位Tier完了後に実行
+3. **ボトルネック回避**: 1つのWorkerに依存が集中しないよう設計
+
+### 実例: チケット212（RAGシステム基盤構築）
+
+<!-- Example from BookRAG Manager: -->
+```
+Tier1: 基盤層（並列実行）
+├─ Worker1: Supabase Vector設定
+└─ Worker2: OpenAI Embeddings API統合
+
+Tier2: データベース層（Tier1依存）
+└─ Worker3: Vector Database実装
+
+Tier3: ビジネスロジック層（Tier2依存）
+└─ Worker4: RAG検索ロジック実装
+
+Tier4: UI層（Tier3依存、並列実行）
+├─ Worker5: Similar Books UI実装
+└─ Worker6: Semantic Search UI実装
+```
+
+**Result**: 6 Workers, 4 Tiers, DoD 100%, 連続成功
+
+---
+
+## Agent間通信
+
+### agent-send.sh の使用
+
+#### Boss → Worker への指示送信
+
+```bash
+cd [REPO_PATH]
+bash ./scripts/agent-send.sh worker1 "instructions/worker/task-XXX-worker1.md"
+```
+
+#### President → Boss への指示受領
+
+```bash
+# President が実行（Boss は受領のみ）
+bash ./scripts/agent-send.sh boss1 "instructions/task/task-XXX.md"
+```
+
+#### Worker → Boss への報告送信
+
+```bash
+# Worker が実行（Boss は受領）
+bash ./scripts/agent-send.sh boss1 "完了報告の内容..."
+```
+
+### 通信プロトコル
+
+1. **テキストベース**: Markdown形式を推奨
+2. **非同期**: 送信後は受信者の処理を待つ
+3. **確認応答**: 重要な指示には確認応答を送信
+
+---
+
+## タスク実行フロー
+
+### 1. タスク受領
+
+President から `task-XXX.md` を受領
+
+### 2. タスク分析
+
+- タスク内容の理解
+- 技術要件の確認
+- 成果物の明確化
+- DoD（Definition of Done）の確認
+
+### 3. Worker割り当て計画作成
+
+- 必要なWorker数を決定（[NUM_WORKERS]名）
+- 各Workerの担当範囲を定義
+- Tier構造（依存関係）を設計
+- 並列実行可能なWorkerを特定
+
+### 4. 作業ディレクトリ作成
+
+```bash
+cd [REPO_PATH]
+mkdir -p runs/XXX
+```
+
+### 5. Worker向け指示書作成
+
+各Worker向けに以下を作成:
+
+- `instructions/worker/task-XXX-worker1.md`
+- `instructions/worker/task-XXX-worker2.md`
+- ...
+
+**指示書に含めるべき内容**:
+- タスク概要
+- 実装仕様
+- DoD（Definition of Done）
+- 依存関係（Tier情報）
+- 完了報告フォーマット
+
+### 6. Tier1 Workerに指示送信
+
+```bash
+bash ./scripts/agent-send.sh worker1 "instructions/worker/task-XXX-worker1.md"
+bash ./scripts/agent-send.sh worker2 "instructions/worker/task-XXX-worker2.md"
+# ... (Tier1の全Worker)
+```
+
+### 7. Tier1 Worker完了待機
+
+- 各Workerからの完了報告を待つ
+- DoD達成状況を確認
+- 必要に応じて追加指示・質問回答
+
+### 8. Tier2以降のWorkerに順次指示送信
+
+Tier1完了後 → Tier2送信 → Tier2完了後 → Tier3送信 ...
+
+### 9. 全Worker完了後の統合作業
+
+#### 9.1 成果物の確認
+
+- 各Workerの完了報告を確認
+- DoD 100%達成を確認
+- 実装ファイルのレビュー
+
+#### 9.2 統合実装
+
+- Worker間のインターフェース調整
+- Worker担当外の統合部分を実装
+- import/export の整合性確認
+
+#### 9.3 品質チェック
+
+```bash
+# TypeScriptエラーチェック
+cd [REPO_PATH]
+npx tsc --noEmit
+
+# ビルドテスト
+npm run build
+
+# 単体テスト（該当する場合）
+npm test
+
+# E2Eテスト（該当する場合）
+npm run test:e2e
+```
+
+### 10. Git管理
+
+#### 10.1 変更確認
+
+```bash
+git status
+git diff
+```
+
+#### 10.2 コミット作成
+
+```bash
+git add .
+git commit -m "feat: [機能説明]
+
+[詳細説明]
+
+- Worker1: [タスク名]
+- Worker2: [タスク名]
+...
+
+DoD: 全Worker 100%達成
+TypeScript: エラー 0件
+Build: 成功"
+```
+
+#### 10.3 プッシュ
+
+```bash
+git push origin [MAIN_BRANCH]
+```
+
+### 11. Boss→President報告作成・送信
+
+`runs/XXX/boss-to-president-report.md` を作成し、Presidentに送信
+
+---
+
+## 統合作業の責任
+
+Boss は以下を実施します:
+
+### 1. 成果物の統合
+
+- 各Workerの成果物を確認
+- ファイル間の依存関係を確認
+- import/export の整合性を確認
+
+### 2. 追加実装
+
+- Worker担当外の統合部分を実装
+- 例: 複数Workerの成果物を連携させるグルーコード
+
+### 3. 品質保証
+
+- **TypeScript エラー: 0件**
+  ```bash
+  npx tsc --noEmit
+  ```
+
+- **ビルドテスト: 成功**
+  ```bash
+  npm run build
+  ```
+
+- **テスト成功**（該当する場合）
+  ```bash
+  npm test
+  ```
+
+### 4. Git管理
+
+- Conventional Commits準拠のcommit
+- メインブランチへのpush
+- クリーンな状態を維持
+
+---
+
+## 完了報告フォーマット
+
+`runs/XXX/boss-to-president-report.md` を作成:
+
+```markdown
+# チケット[TICKET_NUMBER] 完了報告
+
+**From**: Boss1
+**To**: President
+**Project**: [PROJECT_NAME]
+**Ticket**: #[TICKET_NUMBER] [TASK_NAME]
+**Date**: YYYY-MM-DD
+
+---
+
+## 完了サマリー
+
+✅ [TASK_NAME] 完了
+
+[タスクの簡潔な説明]
+
+---
+
+## Worker実装状況
+
+| Worker | タスク名 | DoD達成率 | 主要成果物 |
+|--------|---------|----------|-----------|
+| Worker1 | [タスク1] | X/X (100%) | [ファイル名] |
+| Worker2 | [タスク2] | X/X (100%) | [ファイル名] |
+| ... | ... | ... | ... |
+
+**全Worker DoD達成率**: 100%
+
+---
+
+## 成果物
+
+### 新規ファイル
+
+- [ファイル名1] (XXX行)
+- [ファイル名2] (XXX行)
+...
+
+### 変更ファイル
+
+- [ファイル名1] (+XXX/-YYY行)
+- [ファイル名2] (+XXX/-YYY行)
+...
+
+### 総計
+
+- 新規ファイル: XX ファイル
+- 総行数: XXXX行
+
+---
+
+## 統合テスト結果
+
+### TypeScript
+
+```bash
+$ npx tsc --noEmit
+# エラー 0件
+```
+
+✅ **TypeScript: エラー 0件**
+
+### Build
+
+```bash
+$ npm run build
+# 成功
+```
+
+✅ **Build: 成功**
+
+### テスト
+
+```bash
+$ npm test
+# 全テスト成功
+```
+
+✅ **Test: 全テスト成功**（該当する場合）
+
+---
+
+## Git情報
+
+- **Commit**: [COMMIT_HASH]
+- **Branch**: [MAIN_BRANCH]
+- **Status**: clean (all committed and pushed)
+
+**Commit message**:
+```
+feat: [機能説明]
+
+[詳細説明]
+
+- Worker1: [タスク名]
+- Worker2: [タスク名]
+...
+
+DoD: 全Worker 100%達成
+TypeScript: エラー 0件
+Build: 成功
+```
+
+---
+
+## Protocol評価
+
+- **DoD達成率**: 100% (全Worker完了)
+- **連続成功**: XX回目
+- **Protocol**: Improvement 3
+
+---
+
+## 次のアクション
+
+[次に実施すべきタスク・機能の提案]
+
+---
+
+以上、ご確認をお願いいたします。
+
+Boss1
+```
+
+---
+
+<!-- BookRAG Manager実例 -->
+<!--
+実例: チケット212（RAGシステム基盤構築）
+
+Project: BookRAG Manager
+Ticket: #212 RAGシステム基盤構築（v0.9.0）
+Workers: 6 Workers (Worker1-6)
+Tier Structure: 4 Tiers
+Duration: 1日
+DoD Achievement: 100% (全Worker完了)
+TypeScript Errors: 0
+Build: Success
+Protocol Success: 11連続成功達成
+
+成果物:
+- 新規ファイル: 15ファイル
+- 総行数: 2,500行
+- 機能: Supabase Vector設定、Embeddings API統合、Vector DB実装、
+        RAG検索ロジック、Similar Books UI、Semantic Search UI
+
+Tier構造の成功例:
+Tier1: Worker1 (Supabase), Worker2 (Embeddings) - 並列
+Tier2: Worker3 (Vector DB) - Tier1依存
+Tier3: Worker4 (RAG Logic) - Tier2依存
+Tier4: Worker5 (Similar Books UI), Worker6 (Semantic Search UI) - Tier3依存、並列
+
+この構造により、依存関係を明確化しつつ、並列実行を最大化しました。
+-->
