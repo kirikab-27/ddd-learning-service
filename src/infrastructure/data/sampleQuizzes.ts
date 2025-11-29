@@ -1025,7 +1025,6 @@ const lesson6_3Questions: Question[] = [
   }),
 ];
 
-
 // =============================================================================
 // Chapter 7: ドメインサービス
 // =============================================================================
@@ -1206,6 +1205,188 @@ const lesson7_3Questions: Question[] = [
     explanation: 'リッチドメインモデルでは、エンティティがデータと振る舞いをともに持ちます。ドメインサービスは本当に必要な場合のみ使用します。',
   }),
 ];
+
+// =============================================================================
+// Chapter 8: 集約
+// =============================================================================
+
+// Lesson 8-1: 集約とは（5問）
+const lesson8_1Questions: Question[] = [
+  Question.create({
+    id: 'q8-1-1',
+    text: '集約が定義する最も重要な境界は何ですか？',
+    options: [
+      { id: 'a', text: 'クラスの境界', isCorrect: false },
+      { id: 'b', text: 'トランザクション整合性の境界', isCorrect: true },
+      { id: 'c', text: 'データベーステーブルの境界', isCorrect: false },
+      { id: 'd', text: 'プログラミング言語の境界', isCorrect: false },
+    ],
+    explanation: '集約は、トランザクションで一貫性を保証する境界を定義します。集約内のオブジェクトは1つのトランザクションで変更され、常に整合性が保たれます。',
+  }),
+  Question.create({
+    id: 'q8-1-2',
+    text: '不変条件（Invariants）とは何ですか？',
+    options: [
+      { id: 'a', text: '変更されないフィールド', isCorrect: false },
+      { id: 'b', text: '常に満たすべきビジネスルール', isCorrect: true },
+      { id: 'c', text: 'データベースの制約', isCorrect: false },
+      { id: 'd', text: 'final修飾子のついた変数', isCorrect: false },
+    ],
+    explanation: '不変条件は、集約が常に満たすべきビジネスルールです。例: 「注文の合計金額は明細の合計と一致する」。集約ルートがこれを保護します。',
+  }),
+  Question.create({
+    id: 'q8-1-3',
+    text: '1つのトランザクションで変更できる集約の数は？',
+    options: [
+      { id: 'a', text: '制限なし', isCorrect: false },
+      { id: 'b', text: '1つのみ（原則として）', isCorrect: true },
+      { id: 'c', text: '最大3つまで', isCorrect: false },
+      { id: 'd', text: '同じタイプなら複数可', isCorrect: false },
+    ],
+    explanation: '原則として、1つのトランザクションで変更するのは1つの集約のみです。複数の集約をまたぐ変更は、結果整合性やイベント駆動で対応します。',
+  }),
+  Question.create({
+    id: 'q8-1-4',
+    text: '集約の構成要素として正しいものはどれですか？',
+    options: [
+      { id: 'a', text: '集約ルート、リポジトリ、サービス', isCorrect: false },
+      { id: 'b', text: '集約ルート、内部エンティティ、値オブジェクト', isCorrect: true },
+      { id: 'c', text: 'エンティティのみ', isCorrect: false },
+      { id: 'd', text: 'データベーステーブル', isCorrect: false },
+    ],
+    explanation: '集約は、集約ルート（エントリポイント）、内部エンティティ、値オブジェクトで構成されます。リポジトリやサービスは集約の外部です。',
+  }),
+  Question.create({
+    id: 'q8-1-5',
+    text: 'Order集約に OrderItem を含める理由は？',
+    options: [
+      { id: 'a', text: 'データベースの外部キー制約があるから', isCorrect: false },
+      { id: 'b', text: '常に一緒に整合性を保つ必要があるから', isCorrect: true },
+      { id: 'c', text: 'クラス設計が簡単になるから', isCorrect: false },
+      { id: 'd', text: 'パフォーマンスが良いから', isCorrect: false },
+    ],
+    explanation: 'OrderItemはOrderと常に一緒に整合性を保つ必要があります（合計金額 = 明細の和など）。そのため、同じ集約に含めて1トランザクションで変更します。',
+  }),
+];
+
+// Lesson 8-2: 集約ルート（5問）
+const lesson8_2Questions: Question[] = [
+  Question.create({
+    id: 'q8-2-1',
+    text: '集約ルートの最も重要な責務は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースアクセス', isCorrect: false },
+      { id: 'b', text: '外部アクセスの制御と不変条件の保護', isCorrect: true },
+      { id: 'c', text: 'UI表示', isCorrect: false },
+      { id: 'd', text: 'ログ出力', isCorrect: false },
+    ],
+    explanation: '集約ルートは、外部からのアクセスを制御し、集約全体の不変条件を保護する責務を持ちます。すべての操作は集約ルート経由で行われます。',
+  }),
+  Question.create({
+    id: 'q8-2-2',
+    text: '内部エンティティ（OrderItemなど）への外部からの直接アクセスは？',
+    options: [
+      { id: 'a', text: '推奨される', isCorrect: false },
+      { id: 'b', text: '禁止（集約ルート経由のみ）', isCorrect: true },
+      { id: 'c', text: '読み取りのみ可', isCorrect: false },
+      { id: 'd', text: '場合による', isCorrect: false },
+    ],
+    explanation: '内部エンティティへの直接アクセスは禁止です。すべての操作は集約ルート経由で行い、集約ルートが不変条件を保護します。',
+  }),
+  Question.create({
+    id: 'q8-2-3',
+    text: '内部エンティティのリストを外部に公開する適切な方法は？',
+    options: [
+      { id: 'a', text: 'public items: OrderItem[] で公開', isCorrect: false },
+      { id: 'b', text: 'readonly items: readonly OrderItem[] でコピーを返す', isCorrect: true },
+      { id: 'c', text: '公開しない', isCorrect: false },
+      { id: 'd', text: 'getter/setterで公開', isCorrect: false },
+    ],
+    explanation: '読み取り専用（readonly）でコピーを返すことで、外部からの直接変更を防ぎます。変更は集約ルートのメソッド（addItem、removeItemなど）経由で行います。',
+  }),
+  Question.create({
+    id: 'q8-2-4',
+    text: 'リポジトリが扱うべき単位は？',
+    options: [
+      { id: 'a', text: '個別のエンティティ', isCorrect: false },
+      { id: 'b', text: '集約ルート（集約全体）', isCorrect: true },
+      { id: 'c', text: 'テーブル単位', isCorrect: false },
+      { id: 'd', text: '値オブジェクト', isCorrect: false },
+    ],
+    explanation: 'リポジトリは集約ルート（集約全体）を単位として、取得・保存します。内部エンティティを個別に操作してはいけません。',
+  }),
+  Question.create({
+    id: 'q8-2-5',
+    text: '集約のファクトリーメソッドを private コンストラクタと組み合わせる理由は？',
+    options: [
+      { id: 'a', text: 'パフォーマンスの最適化', isCorrect: false },
+      { id: 'b', text: '不変条件を満たした状態でのみ生成を許可するため', isCorrect: true },
+      { id: 'c', text: 'コードの行数を減らすため', isCorrect: false },
+      { id: 'd', text: 'データベース接続を制御するため', isCorrect: false },
+    ],
+    explanation: 'privateコンストラクタとファクトリーメソッドの組み合わせにより、集約が常に不変条件を満たした状態で生成されることを保証できます。',
+  }),
+];
+
+// Lesson 8-3: 集約の設計ガイドライン（5問）
+const lesson8_3Questions: Question[] = [
+  Question.create({
+    id: 'q8-3-1',
+    text: '集約設計で最も推奨されるサイズは？',
+    options: [
+      { id: 'a', text: 'できるだけ大きく（すべての関連を含める）', isCorrect: false },
+      { id: 'b', text: 'できるだけ小さく（必要最小限）', isCorrect: true },
+      { id: 'c', text: '中くらい', isCorrect: false },
+      { id: 'd', text: 'サイズは関係ない', isCorrect: false },
+    ],
+    explanation: '集約は小さく保つことが推奨されます。大きな集約は、パフォーマンス問題、ロック競合、保守性の低下を引き起こします。',
+  }),
+  Question.create({
+    id: 'q8-3-2',
+    text: '他の集約を参照する適切な方法は？',
+    options: [
+      { id: 'a', text: 'オブジェクト参照（Customer customer）', isCorrect: false },
+      { id: 'b', text: 'ID参照（CustomerId customerId）', isCorrect: true },
+      { id: 'c', text: 'データベース外部キー', isCorrect: false },
+      { id: 'd', text: '参照しない', isCorrect: false },
+    ],
+    explanation: '他の集約はIDで参照します。オブジェクト参照すると、複数の集約が1トランザクションに含まれ、独立性が失われます。',
+  }),
+  Question.create({
+    id: 'q8-3-3',
+    text: 'トランザクション整合性と結果整合性の違いは？',
+    options: [
+      { id: 'a', text: 'トランザクション整合性は即座、結果整合性は最終的', isCorrect: true },
+      { id: 'b', text: 'トランザクション整合性は遅い、結果整合性は速い', isCorrect: false },
+      { id: 'c', text: '違いはない', isCorrect: false },
+      { id: 'd', text: 'トランザクション整合性はRDBMS、結果整合性はNoSQL', isCorrect: false },
+    ],
+    explanation: 'トランザクション整合性（集約内）は操作完了時に即座に整合が取れます。結果整合性（集約間）は最終的に整合が取れれば良いとする考え方です。',
+  }),
+  Question.create({
+    id: 'q8-3-4',
+    text: '集約間の連携に適した手法は？',
+    options: [
+      { id: 'a', text: '直接メソッド呼び出し', isCorrect: false },
+      { id: 'b', text: 'ドメインイベント', isCorrect: true },
+      { id: 'c', text: 'グローバル変数', isCorrect: false },
+      { id: 'd', text: 'データベーストリガー', isCorrect: false },
+    ],
+    explanation: '集約間の連携にはドメインイベントが適しています。イベント駆動により、集約を疎結合に保ちながら連携できます。',
+  }),
+  Question.create({
+    id: 'q8-3-5',
+    text: '大きな集約の問題点として正しいものは？',
+    options: [
+      { id: 'a', text: 'メモリ効率が良い', isCorrect: false },
+      { id: 'b', text: 'ロック競合が発生しやすく、同時実行性が低い', isCorrect: true },
+      { id: 'c', text: 'シンプルで理解しやすい', isCorrect: false },
+      { id: 'd', text: 'パフォーマンスが向上する', isCorrect: false },
+    ],
+    explanation: '大きな集約は、トランザクションが重くなり、ロック競合が発生しやすく、同時実行性が低下します。また複雑で保守が困難になります。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -1353,6 +1534,28 @@ export const sampleQuizzes: Quiz[] = [
     title: 'エンティティ・値オブジェクトとの使い分け - 理解度チェック',
     description: 'ロジック配置の判断基準についての理解度を確認するクイズです。',
     questions: lesson7_3Questions,
+  }),
+  // Chapter 8: 集約
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-8-1'),
+    lessonId: LessonId.create('lesson-8-1'),
+    title: '集約とは - 理解度チェック',
+    description: '集約の定義、整合性の境界、不変条件についての理解度を確認するクイズです。',
+    questions: lesson8_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-8-2'),
+    lessonId: LessonId.create('lesson-8-2'),
+    title: '集約ルート - 理解度チェック',
+    description: '集約ルートの役割と実装パターンについての理解度を確認するクイズです。',
+    questions: lesson8_2Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-8-3'),
+    lessonId: LessonId.create('lesson-8-3'),
+    title: '集約の設計ガイドライン - 理解度チェック',
+    description: '集約の設計原則と判断基準についての理解度を確認するクイズです。',
+    questions: lesson8_3Questions,
   }),
 ];
 

@@ -3532,3 +3532,949 @@ class Order {
 });
 
 export const chapter7Lessons = [lesson7_1, lesson7_2, lesson7_3];
+// Lesson 8-1: 集約とは
+export const lesson8_1 = Lesson.create({
+  id: LessonId.create('lesson-8-1'),
+  title: LessonTitle.create('集約とは'),
+  content: MarkdownContent.create(`
+# 集約（Aggregate）
+
+**集約** は、データ変更の一貫性を保つためにひとまとまりとして扱うオブジェクトの集まりです。
+
+## 集約が解決する問題
+
+### ❌ 問題: 一貫性の境界が不明確
+
+\\\`\\\`\\\`mermaid
+graph LR
+    A[Order] --> B[OrderItem]
+    A --> C[Customer]
+    A --> D[Payment]
+    B --> E[Product]
+    
+    style A fill:#f96,stroke:#333
+    style B fill:#f96,stroke:#333
+    style C fill:#9cf,stroke:#333
+    style D fill:#9cf,stroke:#333
+    style E fill:#9cf,stroke:#333
+    
+    Note[どこまでを一貫して変更すべき？]
+\\\`\\\`\\\`
+
+### ✅ 解決: 集約が境界を定義
+
+\\\`\\\`\\\`mermaid
+graph TB
+    subgraph "Order 集約"
+        A[Order<br/>集約ルート]
+        B[OrderItem]
+        C[OrderItem]
+    end
+    
+    subgraph "Customer 集約"
+        D[Customer<br/>集約ルート]
+    end
+    
+    subgraph "Product 集約"
+        E[Product<br/>集約ルート]
+    end
+    
+    A -.参照: CustomerId.-> D
+    B -.参照: ProductId.-> E
+    
+    style A fill:#6c6,stroke:#333,stroke-width:3px
+    style D fill:#6c6,stroke:#333,stroke-width:3px
+    style E fill:#6c6,stroke:#333,stroke-width:3px
+\\\`\\\`\\\`
+
+## 集約の3つの核心概念
+
+### 1. 整合性の境界（Consistency Boundary）
+
+集約は、**トランザクションで一貫性を保証する境界** を定義します。
+
+\\\`\\\`\\\`mermaid
+graph TB
+    subgraph "トランザクション境界 = 集約"
+        A[Order]
+        B[OrderItem 1]
+        C[OrderItem 2]
+        D[OrderItem 3]
+    end
+    
+    E[Customer] 
+    F[Product]
+    
+    A --> B
+    A --> C
+    A --> D
+    A -.別トランザクション.-> E
+    B -.別トランザクション.-> F
+    
+    Note[集約内は1トランザクションで変更<br/>集約間は別トランザクション]
+    
+    style A fill:#6c6,stroke:#333,stroke-width:3px
+    style E fill:#fc9,stroke:#333
+    style F fill:#fc9,stroke:#333
+\\\`\\\`\\\`
+
+**原則**:
+- ✅ 集約内のオブジェクトは、常に一貫した状態を保つ
+- ✅ 1つのトランザクションで変更できるのは、1つの集約のみ
+- ❌ 複数の集約を1トランザクションで変更しない
+
+### 2. 不変条件（Invariants）
+
+集約は、**常に満たすべきビジネスルール（不変条件）** を保護します。
+
+\\\`\\\`\\\`typescript
+export class Order {
+  private constructor(
+    private readonly _id: OrderId,
+    private _items: OrderItem[],
+    private _status: OrderStatus,
+    private _totalAmount: Money
+  ) {
+    // 不変条件: 注文金額は明細の合計と一致する
+    this.assertTotalAmountIsValid();
+  }
+
+  addItem(item: OrderItem): void {
+    if (this._status !== OrderStatus.Draft) {
+      throw new Error('Cannot modify confirmed order');
+    }
+    
+    this._items.push(item);
+    this._totalAmount = this.calculateTotal(); // 不変条件を維持
+    this.assertTotalAmountIsValid();
+  }
+
+  private calculateTotal(): Money {
+    return this._items.reduce(
+      (sum, item) => sum.add(item.subtotal()),
+      Money.zero()
+    );
+  }
+
+  private assertTotalAmountIsValid(): void {
+    const calculated = this.calculateTotal();
+    if (!this._totalAmount.equals(calculated)) {
+      throw new Error('Total amount invariant violated');
+    }
+  }
+}
+\\\`\\\`\\\`
+
+**不変条件の例**:
+- 注文の合計金額は、明細の合計と一致する
+- 在庫数は常に0以上
+- 予約済み座席数は、座席総数を超えない
+
+### 3. トランザクション境界（Transaction Boundary）
+
+集約は、**データベーストランザクションの単位** を定義します。
+
+\\\`\\\`\\\`mermaid
+sequenceDiagram
+    participant App as アプリケーション
+    participant Repo as OrderRepository
+    participant DB as データベース
+    
+    App->>Repo: save(order)
+    activate Repo
+    
+    Repo->>DB: BEGIN TRANSACTION
+    Repo->>DB: UPDATE orders SET ...
+    Repo->>DB: UPDATE order_items SET ...
+    Repo->>DB: COMMIT
+    
+    deactivate Repo
+    
+    Note over DB: Order集約全体が<br/>1トランザクションで保存
+\\\`\\\`\\\`
+
+## 集約の構成要素
+
+\\\`\\\`\\\`mermaid
+classDiagram
+    class Order {
+        <<Aggregate Root>>
+        -OrderId id
+        -OrderStatus status
+        -Money totalAmount
+        +addItem(item)
+        +removeItem(itemId)
+        +confirm()
+    }
+    
+    class OrderItem {
+        <<Entity>>
+        -OrderItemId id
+        -ProductId productId
+        -Quantity quantity
+        -Money unitPrice
+        +subtotal() Money
+    }
+    
+    class Money {
+        <<Value Object>>
+        -amount
+        -currency
+        +add(other) Money
+    }
+    
+    Order "1" *-- "many" OrderItem : 含む
+    OrderItem *-- "1" Money : 持つ
+    
+    note for Order "集約ルート:\\n外部からのエントリポイント"
+    note for OrderItem "内部エンティティ:\\n集約ルート経由でのみアクセス"
+\\\`\\\`\\\`
+
+### 集約ルート（Aggregate Root）
+
+- **外部からアクセスできる唯一のエントリポイント**
+- 集約全体の整合性を保証する責務を持つ
+- リポジトリは集約ルートのみを永続化・取得する
+
+### 内部エンティティ/値オブジェクト
+
+- **集約ルート経由でのみアクセス可能**
+- 外部から直接参照されない
+- 集約ルートが不変条件を保護する
+
+## まとめ
+
+| 概念 | 説明 | 例 |
+|------|------|-----|
+| **整合性の境界** | トランザクションで一貫性を保つ範囲 | Order + OrderItems |
+| **不変条件** | 常に満たすべきビジネスルール | 合計 = 明細の和 |
+| **トランザクション境界** | 1つのDBトランザクションの単位 | Order集約全体 |
+| **集約ルート** | 外部アクセスのエントリポイント | Order |
+| **内部オブジェクト** | 集約ルート経由でアクセス | OrderItem |
+
+**重要な原則**:
+- ✅ 1トランザクション = 1集約
+- ✅ 集約は小さく保つ
+- ✅ 集約間はIDで参照
+- ✅ 不変条件は集約ルートが保護
+`),
+  order: 1,
+});
+
+// Lesson 8-2: 集約ルート
+export const lesson8_2 = Lesson.create({
+  id: LessonId.create('lesson-8-2'),
+  title: LessonTitle.create('集約ルート'),
+  content: MarkdownContent.create(`
+# 集約ルート（Aggregate Root）
+
+**集約ルート** は、集約への外部アクセスを制御し、集約全体の整合性を保証する責務を持つエンティティです。
+
+## 集約ルートの役割
+
+### 1. 外部アクセスの制御
+
+\\\`\\\`\\\`mermaid
+graph TB
+    subgraph "外部"
+        App[アプリケーション]
+        Repo[Repository]
+    end
+    
+    subgraph "Order 集約"
+        Root[Order<br/>集約ルート<br/>✅ アクセス可能]
+        Item1[OrderItem]
+        Item2[OrderItem]
+    end
+    
+    App -->|OK| Root
+    App -.->|NG 直接アクセス禁止| Item1
+    Repo -->|OK| Root
+    Repo -.->|NG| Item2
+    
+    Root --> Item1
+    Root --> Item2
+    
+    style Root fill:#6c6,stroke:#333,stroke-width:4px
+    style Item1 fill:#ccc,stroke:#333
+    style Item2 fill:#ccc,stroke:#333
+\\\`\\\`\\\`
+
+**原則**:
+- ✅ 外部は集約ルートのみを参照できる
+- ❌ 内部エンティティへの直接アクセスは禁止
+- ✅ すべての操作は集約ルート経由
+
+### 2. 不変条件の保護
+
+集約ルートは、集約全体の不変条件を保護します。
+
+\\\`\\\`\\\`typescript
+export class Order {
+  // 集約ルート
+  private constructor(
+    private readonly _id: OrderId,
+    private _items: OrderItem[], // 内部エンティティ
+    private _status: OrderStatus
+  ) {}
+
+  // ✅ 集約ルートが不変条件を保護するメソッド
+  addItem(product: Product, quantity: Quantity): void {
+    // ビジネスルール1: 確定済み注文は変更不可
+    if (this._status !== OrderStatus.Draft) {
+      throw new Error('Cannot modify confirmed order');
+    }
+
+    // ビジネスルール2: 同じ商品は1つの明細にまとめる
+    const existingItem = this._items.find(item => 
+      item.productId.equals(product.id)
+    );
+    
+    if (existingItem) {
+      existingItem.increaseQuantity(quantity);
+    } else {
+      const newItem = OrderItem.create({
+        productId: product.id,
+        productName: product.name,
+        quantity,
+        unitPrice: product.price,
+      });
+      this._items.push(newItem);
+    }
+
+    // 不変条件の検証
+    this.assertInvariants();
+  }
+
+  // ❌ 外部から items を直接変更させない
+  // get items(): OrderItem[] { return this._items; } // NG!
+  
+  // ✅ 読み取り専用のコピーを返す
+  get items(): readonly OrderItem[] {
+    return [...this._items];
+  }
+
+  private assertInvariants(): void {
+    if (this._items.length > 100) {
+      throw new Error('Order cannot have more than 100 items');
+    }
+  }
+}
+\\\`\\\`\\\`
+
+### 3. ライフサイクル管理
+
+\\\`\\\`\\\`mermaid
+stateDiagram-v2
+    [*] --> Draft: create()
+    Draft --> Confirmed: confirm()
+    Confirmed --> Shipped: ship()
+    Shipped --> Delivered: deliver()
+    Delivered --> [*]
+    
+    Draft --> Cancelled: cancel()
+    Confirmed --> Cancelled: cancel()
+    Cancelled --> [*]
+    
+    note right of Draft
+        集約ルートが
+        状態遷移を制御
+    end note
+\\\`\\\`\\\`
+
+## 実装パターン
+
+### パターン1: ファクトリーメソッド
+
+集約の生成は、集約ルート自身またはファクトリーが担当します。
+
+\\\`\\\`\\\`typescript
+export class Order {
+  // private コンストラクタ
+  private constructor(
+    private readonly _id: OrderId,
+    private _customerId: CustomerId,
+    private _items: OrderItem[],
+    private _status: OrderStatus
+  ) {
+    this.assertInvariants();
+  }
+
+  // ✅ ファクトリーメソッド: 新規作成
+  static create(customerId: CustomerId): Order {
+    return new Order(
+      OrderId.generate(),
+      customerId,
+      [], // 空の明細リスト
+      OrderStatus.Draft
+    );
+  }
+
+  // ✅ ファクトリーメソッド: 再構築（リポジトリから取得時）
+  static reconstruct(params: {
+    id: OrderId;
+    customerId: CustomerId;
+    items: OrderItem[];
+    status: OrderStatus;
+  }): Order {
+    // 再構築時は不変条件チェックのみ
+    return new Order(
+      params.id,
+      params.customerId,
+      params.items,
+      params.status
+    );
+  }
+
+  private assertInvariants(): void {
+    if (this._status === OrderStatus.Confirmed && this._items.length === 0) {
+      throw new Error('Confirmed order must have at least one item');
+    }
+  }
+}
+\\\`\\\`\\\`
+
+### パターン2: 内部エンティティのカプセル化
+
+\\\`\\\`\\\`typescript
+export class Order {
+  private _items: OrderItem[] = [];
+
+  // ❌ 悪い例: 内部エンティティを直接公開
+  // get items(): OrderItem[] {
+  //   return this._items; // 外部から直接変更される危険！
+  // }
+
+  // ✅ 良い例: 読み取り専用で公開
+  get items(): readonly OrderItem[] {
+    return [...this._items]; // コピーを返す
+  }
+
+  // ✅ 良い例: 集約ルート経由で操作
+  addItem(product: Product, quantity: Quantity): void {
+    // 不変条件を守りながら追加
+    // ...
+  }
+
+  removeItem(orderItemId: OrderItemId): void {
+    const index = this._items.findIndex(item => 
+      item.id.equals(orderItemId)
+    );
+    
+    if (index === -1) {
+      throw new Error('Item not found');
+    }
+
+    this._items.splice(index, 1);
+    this.assertInvariants();
+  }
+
+  // ✅ 内部エンティティへのクエリメソッド
+  findItem(productId: ProductId): OrderItem | undefined {
+    return this._items.find(item => 
+      item.productId.equals(productId)
+    );
+  }
+
+  get totalAmount(): Money {
+    return this._items.reduce(
+      (sum, item) => sum.add(item.subtotal()),
+      Money.zero()
+    );
+  }
+}
+\\\`\\\`\\\`
+
+### パターン3: リポジトリとの連携
+
+\\\`\\\`\\\`mermaid
+sequenceDiagram
+    participant App as アプリケーション
+    participant Root as Order<br/>(集約ルート)
+    participant Repo as OrderRepository
+    participant DB as DB
+    
+    App->>Repo: findById(orderId)
+    Repo->>DB: SELECT order, order_items
+    DB-->>Repo: データ
+    Repo->>Root: reconstruct(data)
+    Root-->>App: Order
+    
+    App->>Root: addItem(product, quantity)
+    Root->>Root: 不変条件チェック
+    
+    App->>Repo: save(order)
+    Repo->>DB: BEGIN TRANSACTION
+    Repo->>DB: UPDATE orders
+    Repo->>DB: UPDATE order_items
+    Repo->>DB: COMMIT
+    
+    Note over Repo,DB: 集約全体を1トランザクションで保存
+\\\`\\\`\\\`
+
+\\\`\\\`\\\`typescript
+// リポジトリは集約ルートのみを扱う
+export interface OrderRepository {
+  // ✅ 集約ルート単位で取得
+  findById(id: OrderId): Promise<Order | null>;
+  
+  // ✅ 集約ルート単位で保存（内部エンティティも含む）
+  save(order: Order): Promise<void>;
+  
+  // ❌ 内部エンティティを個別に操作しない
+  // saveOrderItem(item: OrderItem): Promise<void>; // NG!
+}
+\\\`\\\`\\\`
+
+## カプセル化のベストプラクティス
+
+### ✅ 良い例
+
+\\\`\\\`\\\`typescript
+export class Order {
+  private _items: OrderItem[] = [];
+  
+  // 読み取り専用で公開
+  get items(): readonly OrderItem[] {
+    return [...this._items];
+  }
+  
+  // 操作は集約ルート経由
+  addItem(product: Product, quantity: Quantity): void {
+    this.assertCanModify();
+    // 不変条件を守りながら追加
+    const item = OrderItem.create({
+      productId: product.id,
+      productName: product.name,
+      quantity,
+      unitPrice: product.price,
+    });
+    this._items.push(item);
+  }
+  
+  private assertCanModify(): void {
+    if (this._status !== OrderStatus.Draft) {
+      throw new Error('Cannot modify confirmed order');
+    }
+  }
+}
+\\\`\\\`\\\`
+
+### ❌ 悪い例
+
+\\\`\\\`\\\`typescript
+export class Order {
+  // ❌ public で直接アクセス可能
+  public items: OrderItem[] = [];
+  
+  // ❌ setter で直接変更可能
+  set items(value: OrderItem[]) {
+    this.items = value; // 不変条件チェックなし！
+  }
+}
+
+// ❌ 外部から直接変更
+order.items.push(newItem); // 不変条件を破壊する可能性！
+order.items = []; // 注文を空にできてしまう！
+\\\`\\\`\\\`
+
+## まとめ
+
+### 集約ルートの責務
+
+| 責務 | 説明 | 実装方法 |
+|------|------|----------|
+| **外部アクセス制御** | 集約への唯一のエントリポイント | private 内部エンティティ |
+| **不変条件の保護** | ビジネスルールを常に満たす | assertInvariants() |
+| **ライフサイクル管理** | 状態遷移を制御 | 状態パターン |
+| **トランザクション境界** | 永続化の単位を定義 | Repository連携 |
+
+### 重要な原則
+
+- ✅ **外部は集約ルートのみ参照**
+- ✅ **内部エンティティはprivateで保護**
+- ✅ **操作は集約ルート経由**
+- ✅ **不変条件は常にチェック**
+- ✅ **リポジトリは集約ルート単位**
+`),
+  order: 2,
+});
+
+// Lesson 8-3: 集約の設計ガイドライン
+export const lesson8_3 = Lesson.create({
+  id: LessonId.create('lesson-8-3'),
+  title: LessonTitle.create('集約の設計ガイドライン'),
+  content: MarkdownContent.create(`
+# 集約の設計ガイドライン
+
+集約を適切に設計するための原則とパターンを学びます。
+
+## 原則1: 小さな集約を設計する
+
+### ❌ アンチパターン: 大きな集約
+
+\\\`\\\`\\\`mermaid
+graph TB
+    subgraph "巨大な Customer 集約"
+        Customer[Customer]
+        Profile[Profile]
+        Address1[Address 1]
+        Address2[Address 2]
+        Order1[Order 1]
+        Order2[Order 2]
+        Item1[OrderItem 1]
+        Item2[OrderItem 2]
+        Item3[OrderItem 3]
+        Payment1[Payment 1]
+        Payment2[Payment 2]
+    end
+    
+    Customer --> Profile
+    Customer --> Address1
+    Customer --> Address2
+    Customer --> Order1
+    Customer --> Order2
+    Order1 --> Item1
+    Order1 --> Item2
+    Order2 --> Item3
+    Order1 --> Payment1
+    Order2 --> Payment2
+    
+    style Customer fill:#f66,stroke:#333,stroke-width:3px
+    
+    Note[問題:<br/>・トランザクションが重い<br/>・同時実行性が低い<br/>・複雑で保守困難]
+\\\`\\\`\\\`
+
+**問題点**:
+- トランザクションが大きく、パフォーマンスが悪化
+- 同時実行時にロック競合が発生しやすい
+- 複雑で理解・保守が困難
+
+### ✅ 推奨: 小さな集約
+
+\\\`\\\`\\\`mermaid
+graph TB
+    subgraph "Customer 集約"
+        C[Customer<br/>集約ルート]
+        P[Profile]
+    end
+    
+    subgraph "Order 集約"
+        O[Order<br/>集約ルート]
+        I1[OrderItem]
+        I2[OrderItem]
+    end
+    
+    subgraph "Payment 集約"
+        Pay[Payment<br/>集約ルート]
+    end
+    
+    C -.CustomerId.-> O
+    O -.CustomerId.-> C
+    Pay -.OrderId.-> O
+    
+    style C fill:#6c6,stroke:#333,stroke-width:3px
+    style O fill:#6c6,stroke:#333,stroke-width:3px
+    style Pay fill:#6c6,stroke:#333,stroke-width:3px
+    
+    Note[利点:<br/>・軽量なトランザクション<br/>・高い同時実行性<br/>・シンプルで保守しやすい]
+\\\`\\\`\\\`
+
+**利点**:
+- トランザクションが軽量で高速
+- 異なる集約を並行して変更可能
+- シンプルで理解しやすい
+
+## 原則2: 集約間はIDで参照
+
+### ❌ 悪い例: オブジェクト参照
+
+\\\`\\\`\\\`typescript
+// ❌ 他の集約を直接参照
+export class Order {
+  constructor(
+    private readonly _id: OrderId,
+    private _customer: Customer, // NG: 別の集約を保持
+    private _items: OrderItem[]
+  ) {}
+}
+
+// 問題: 2つの集約が1トランザクションに含まれる
+const customer = await customerRepo.findById(customerId);
+const order = new Order(orderId, customer, []); // customer集約も含む
+await orderRepo.save(order); // customer も一緒に保存？
+\\\`\\\`\\\`
+
+### ✅ 良い例: ID参照
+
+\\\`\\\`\\\`typescript
+// ✅ 他の集約はIDで参照
+export class Order {
+  constructor(
+    private readonly _id: OrderId,
+    private _customerId: CustomerId, // OK: IDのみ
+    private _items: OrderItem[]
+  ) {}
+
+  get customerId(): CustomerId {
+    return this._customerId;
+  }
+}
+
+// 各集約を独立して操作
+const order = await orderRepo.findById(orderId);
+const customer = await customerRepo.findById(order.customerId);
+
+// 別々のトランザクションで変更
+await orderRepo.save(order);
+await customerRepo.save(customer);
+\\\`\\\`\\\`
+
+### ID参照のメリット
+
+\\\`\\\`\\\`mermaid
+sequenceDiagram
+    participant App
+    participant OrderRepo
+    participant CustomerRepo
+    participant OrderDB
+    participant CustomerDB
+    
+    par 並行実行可能
+        App->>OrderRepo: save(order)
+        OrderRepo->>OrderDB: UPDATE orders
+    and
+        App->>CustomerRepo: save(customer)
+        CustomerRepo->>CustomerDB: UPDATE customers
+    end
+    
+    Note over App,CustomerDB: 別々のトランザクション<br/>= 高い同時実行性
+\\\`\\\`\\\`
+
+## 原則3: トランザクション整合性 vs 結果整合性
+
+### トランザクション整合性（集約内）
+
+集約内は **即座に一貫した状態** を保ちます。
+
+\\\`\\\`\\\`typescript
+export class Order {
+  addItem(product: Product, quantity: Quantity): void {
+    const item = OrderItem.create({
+      productId: product.id,
+      quantity,
+      unitPrice: product.price,
+    });
+    this._items.push(item);
+    
+    // ✅ メソッド完了時に即座に整合性が保たれる
+    this.assertInvariants(); // totalAmount === sum(items)
+  }
+}
+\\\`\\\`\\\`
+
+### 結果整合性（集約間）
+
+集約間は **最終的に整合性が取れれば良い** とします。
+
+\\\`\\\`\\\`mermaid
+sequenceDiagram
+    participant App
+    participant OrderRepo
+    participant InventoryRepo
+    participant EventBus
+    participant InventoryHandler
+    
+    App->>OrderRepo: save(order)
+    Note over OrderRepo: Order確定
+    OrderRepo-->>App: 完了
+    
+    OrderRepo->>EventBus: OrderConfirmed イベント発行
+    
+    EventBus->>InventoryHandler: OrderConfirmed
+    InventoryHandler->>InventoryRepo: findById(productId)
+    InventoryRepo-->>InventoryHandler: inventory
+    InventoryHandler->>InventoryHandler: reserve(quantity)
+    InventoryHandler->>InventoryRepo: save(inventory)
+    
+    Note over InventoryRepo: 在庫引当（最終的に整合）
+\\\`\\\`\\\`
+
+\\\`\\\`\\\`typescript
+// 注文確定時
+export class OrderApplicationService {
+  async confirmOrder(orderId: OrderId): Promise<void> {
+    // 1. Order集約を変更（即座に整合）
+    const order = await this.orderRepo.findById(orderId);
+    order.confirm();
+    await this.orderRepo.save(order);
+    
+    // 2. イベント発行（非同期処理）
+    await this.eventBus.publish(
+      new OrderConfirmedEvent({
+        orderId: order.id,
+        items: order.items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      })
+    );
+    
+    // Inventory集約の在庫引当は別トランザクションで実行
+    // → 結果整合性
+  }
+}
+
+// イベントハンドラー（別トランザクション）
+export class InventoryEventHandler {
+  async handleOrderConfirmed(event: OrderConfirmedEvent): Promise<void> {
+    for (const item of event.items) {
+      const inventory = await this.inventoryRepo.findByProductId(
+        item.productId
+      );
+      inventory.reserve(item.quantity); // 在庫引当
+      await this.inventoryRepo.save(inventory);
+    }
+  }
+}
+\\\`\\\`\\\`
+
+## 原則4: 小さな集約 + イベント駆動
+
+\\\`\\\`\\\`mermaid
+graph LR
+    subgraph "Order 集約"
+        O[Order]
+    end
+    
+    subgraph "Inventory 集約"
+        I[Inventory]
+    end
+    
+    subgraph "Shipping 集約"
+        S[Shipment]
+    end
+    
+    O -->|OrderConfirmed<br/>イベント| I
+    O -->|OrderConfirmed<br/>イベント| S
+    
+    style O fill:#6c6,stroke:#333,stroke-width:3px
+    style I fill:#6c6,stroke:#333,stroke-width:3px
+    style S fill:#6c6,stroke:#333,stroke-width:3px
+    
+    Note[小さな集約を<br/>イベントで連携]
+\\\`\\\`\\\`
+
+### イベントによる集約間連携
+
+\\\`\\\`\\\`typescript
+// ドメインイベント
+export class OrderConfirmedEvent {
+  constructor(
+    public readonly orderId: OrderId,
+    public readonly customerId: CustomerId,
+    public readonly items: Array<{
+      productId: ProductId;
+      quantity: Quantity;
+    }>,
+    public readonly occurredAt: Date = new Date()
+  ) {}
+}
+
+// Order集約がイベントを発行
+export class Order {
+  private _domainEvents: DomainEvent[] = [];
+
+  confirm(): void {
+    if (this._items.length === 0) {
+      throw new Error('Cannot confirm empty order');
+    }
+    
+    this._status = OrderStatus.Confirmed;
+    
+    // イベント記録
+    this._domainEvents.push(
+      new OrderConfirmedEvent({
+        orderId: this._id,
+        customerId: this._customerId,
+        items: this._items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      })
+    );
+  }
+
+  getDomainEvents(): readonly DomainEvent[] {
+    return [...this._domainEvents];
+  }
+
+  clearDomainEvents(): void {
+    this._domainEvents = [];
+  }
+}
+\\\`\\\`\\\`
+
+## 集約設計の判断フローチャート
+
+\\\`\\\`\\\`mermaid
+graph TD
+    Start([集約設計開始])
+    
+    Q1{トランザクション整合性が<br/>必須か？}
+    Q2{同時に変更される<br/>頻度は高いか？}
+    Q3{小さく分割できるか？}
+    
+    A1[同じ集約に含める]
+    A2[別の集約に分ける<br/>イベントで連携]
+    A3[別の集約に分ける<br/>ID参照で連携]
+    
+    Start --> Q1
+    Q1 -->|YES| Q2
+    Q1 -->|NO| A2
+    
+    Q2 -->|YES| A1
+    Q2 -->|NO| Q3
+    
+    Q3 -->|YES| A2
+    Q3 -->|NO| A1
+    
+    style A1 fill:#6c6
+    style A2 fill:#69f
+    style A3 fill:#69f
+\\\`\\\`\\\`
+
+## まとめ
+
+### 集約設計の4原則
+
+| 原則 | 説明 | メリット |
+|------|------|----------|
+| **小さな集約** | 必要最小限のオブジェクトのみ含める | 軽量・高速・保守しやすい |
+| **ID参照** | 他の集約はIDで参照 | 独立性・同時実行性向上 |
+| **トランザクション整合性** | 集約内は即座に整合 | データの一貫性保証 |
+| **結果整合性** | 集約間は最終的に整合 | スケーラビリティ向上 |
+
+### 判断基準
+
+**同じ集約にする条件**:
+- ✅ トランザクション整合性が必須
+- ✅ 常に一緒に変更される
+- ✅ 不変条件が両方にまたがる
+
+**別の集約にする条件**:
+- ✅ 独立して変更されることが多い
+- ✅ 結果整合性で十分
+- ✅ 異なるチーム/コンテキストで管理
+
+### ベストプラクティス
+
+- ✅ **小さく始める**: 最初は小さな集約から
+- ✅ **イベント駆動**: 集約間はイベントで連携
+- ✅ **パフォーマンス優先**: 大きな集約はパフォーマンス問題の原因
+- ❌ **過度な正規化を避ける**: 必要なら集約内で重複を許容
+`),
+  order: 3,
+});
+
+export const chapter8Lessons = [lesson8_1, lesson8_2, lesson8_3];
