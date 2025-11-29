@@ -1,9 +1,11 @@
 'use client';
 
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { CSSProperties } from 'react';
+import { MermaidDiagram } from './MermaidDiagram';
 
 interface MarkdownRendererProps {
   content: string;
@@ -34,10 +36,18 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       prose-tr:transition-colors prose-tbody:hover:prose-tr:bg-slate-800/30
       prose-hr:border-slate-700 prose-hr:my-8">
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           code({ node, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
             const isInline = !match;
+            const language = match ? match[1] : '';
+
+            // Handle Mermaid diagrams
+            if (!isInline && language === 'mermaid') {
+              return <MermaidDiagram chart={String(children).replace(/\n$/, '')} />;
+            }
+
             return !isInline && match ? (
               <div className="relative rounded-lg overflow-hidden my-6 shadow-xl border border-slate-700/50">
                 <div className="bg-slate-800 px-4 py-2 border-b border-slate-700/50">
