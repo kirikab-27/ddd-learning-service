@@ -3545,7 +3545,7 @@ export const lesson8_1 = Lesson.create({
 
 ### ❌ 問題: 一貫性の境界が不明確
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 graph LR
     A[Order] --> B[OrderItem]
     A --> C[Customer]
@@ -3559,11 +3559,11 @@ graph LR
     style E fill:#9cf,stroke:#333
     
     Note[どこまでを一貫して変更すべき？]
-\\\`\\\`\\\`
+\`\`\`
 
 ### ✅ 解決: 集約が境界を定義
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 graph TB
     subgraph "Order 集約"
         A[Order<br/>集約ルート]
@@ -3585,7 +3585,7 @@ graph TB
     style A fill:#6c6,stroke:#333,stroke-width:3px
     style D fill:#6c6,stroke:#333,stroke-width:3px
     style E fill:#6c6,stroke:#333,stroke-width:3px
-\\\`\\\`\\\`
+\`\`\`
 
 ## 集約の3つの核心概念
 
@@ -3593,7 +3593,7 @@ graph TB
 
 集約は、**トランザクションで一貫性を保証する境界** を定義します。
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 graph TB
     subgraph "トランザクション境界 = 集約"
         A[Order]
@@ -3616,7 +3616,7 @@ graph TB
     style A fill:#6c6,stroke:#333,stroke-width:3px
     style E fill:#fc9,stroke:#333
     style F fill:#fc9,stroke:#333
-\\\`\\\`\\\`
+\`\`\`
 
 **原則**:
 - ✅ 集約内のオブジェクトは、常に一貫した状態を保つ
@@ -3627,7 +3627,7 @@ graph TB
 
 集約は、**常に満たすべきビジネスルール（不変条件）** を保護します。
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 export class Order {
   private constructor(
     private readonly _id: OrderId,
@@ -3663,7 +3663,7 @@ export class Order {
     }
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 **不変条件の例**:
 - 注文の合計金額は、明細の合計と一致する
@@ -3674,7 +3674,7 @@ export class Order {
 
 集約は、**データベーストランザクションの単位** を定義します。
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 sequenceDiagram
     participant App as アプリケーション
     participant Repo as OrderRepository
@@ -3691,11 +3691,11 @@ sequenceDiagram
     deactivate Repo
     
     Note over DB: Order集約全体が<br/>1トランザクションで保存
-\\\`\\\`\\\`
+\`\`\`
 
 ## 集約の構成要素
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 classDiagram
     class Order {
         <<Aggregate Root>>
@@ -3728,7 +3728,7 @@ classDiagram
     
     note for Order "集約ルート:\\n外部からのエントリポイント"
     note for OrderItem "内部エンティティ:\\n集約ルート経由でのみアクセス"
-\\\`\\\`\\\`
+\`\`\`
 
 ### 集約ルート（Aggregate Root）
 
@@ -3774,7 +3774,7 @@ export const lesson8_2 = Lesson.create({
 
 ### 1. 外部アクセスの制御
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 graph TB
     subgraph "外部"
         App[アプリケーション]
@@ -3798,7 +3798,7 @@ graph TB
     style Root fill:#6c6,stroke:#333,stroke-width:4px
     style Item1 fill:#ccc,stroke:#333
     style Item2 fill:#ccc,stroke:#333
-\\\`\\\`\\\`
+\`\`\`
 
 **原則**:
 - ✅ 外部は集約ルートのみを参照できる
@@ -3809,7 +3809,7 @@ graph TB
 
 集約ルートは、集約全体の不変条件を保護します。
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 export class Order {
   // 集約ルート
   private constructor(
@@ -3860,11 +3860,11 @@ export class Order {
     }
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ### 3. ライフサイクル管理
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 stateDiagram-v2
     [*] --> Draft: create()
     Draft --> Confirmed: confirm()
@@ -3880,7 +3880,7 @@ stateDiagram-v2
         集約ルートが
         状態遷移を制御
     end note
-\\\`\\\`\\\`
+\`\`\`
 
 ## 実装パターン
 
@@ -3888,7 +3888,7 @@ stateDiagram-v2
 
 集約の生成は、集約ルート自身またはファクトリーが担当します。
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 export class Order {
   // private コンストラクタ
   private constructor(
@@ -3932,11 +3932,11 @@ export class Order {
     }
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ### パターン2: 内部エンティティのカプセル化
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 export class Order {
   private _items: OrderItem[] = [];
 
@@ -3983,11 +3983,11 @@ export class Order {
     );
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ### パターン3: リポジトリとの連携
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 sequenceDiagram
     participant App as アプリケーション
     participant Root as Order<br/>(集約ルート)
@@ -4010,9 +4010,9 @@ sequenceDiagram
     Repo->>DB: COMMIT
     
     Note over Repo,DB: 集約全体を1トランザクションで保存
-\\\`\\\`\\\`
+\`\`\`
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // リポジトリは集約ルートのみを扱う
 export interface OrderRepository {
   // ✅ 集約ルート単位で取得
@@ -4024,13 +4024,13 @@ export interface OrderRepository {
   // ❌ 内部エンティティを個別に操作しない
   // saveOrderItem(item: OrderItem): Promise<void>; // NG!
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ## カプセル化のベストプラクティス
 
 ### ✅ 良い例
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 export class Order {
   private _items: OrderItem[] = [];
   
@@ -4058,11 +4058,11 @@ export class Order {
     }
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ### ❌ 悪い例
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 export class Order {
   // ❌ public で直接アクセス可能
   public items: OrderItem[] = [];
@@ -4076,7 +4076,7 @@ export class Order {
 // ❌ 外部から直接変更
 order.items.push(newItem); // 不変条件を破壊する可能性！
 order.items = []; // 注文を空にできてしまう！
-\\\`\\\`\\\`
+\`\`\`
 
 ## まとめ
 
@@ -4113,7 +4113,7 @@ export const lesson8_3 = Lesson.create({
 
 ### ❌ アンチパターン: 大きな集約
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 graph TB
     subgraph "巨大な Customer 集約"
         Customer[Customer]
@@ -4143,7 +4143,7 @@ graph TB
     style Customer fill:#f66,stroke:#333,stroke-width:3px
     
     Note[問題:<br/>・トランザクションが重い<br/>・同時実行性が低い<br/>・複雑で保守困難]
-\\\`\\\`\\\`
+\`\`\`
 
 **問題点**:
 - トランザクションが大きく、パフォーマンスが悪化
@@ -4152,7 +4152,7 @@ graph TB
 
 ### ✅ 推奨: 小さな集約
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 graph TB
     subgraph "Customer 集約"
         C[Customer<br/>集約ルート]
@@ -4178,7 +4178,7 @@ graph TB
     style Pay fill:#6c6,stroke:#333,stroke-width:3px
     
     Note[利点:<br/>・軽量なトランザクション<br/>・高い同時実行性<br/>・シンプルで保守しやすい]
-\\\`\\\`\\\`
+\`\`\`
 
 **利点**:
 - トランザクションが軽量で高速
@@ -4189,7 +4189,7 @@ graph TB
 
 ### ❌ 悪い例: オブジェクト参照
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // ❌ 他の集約を直接参照
 export class Order {
   constructor(
@@ -4203,11 +4203,11 @@ export class Order {
 const customer = await customerRepo.findById(customerId);
 const order = new Order(orderId, customer, []); // customer集約も含む
 await orderRepo.save(order); // customer も一緒に保存？
-\\\`\\\`\\\`
+\`\`\`
 
 ### ✅ 良い例: ID参照
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // ✅ 他の集約はIDで参照
 export class Order {
   constructor(
@@ -4228,11 +4228,11 @@ const customer = await customerRepo.findById(order.customerId);
 // 別々のトランザクションで変更
 await orderRepo.save(order);
 await customerRepo.save(customer);
-\\\`\\\`\\\`
+\`\`\`
 
 ### ID参照のメリット
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 sequenceDiagram
     participant App
     participant OrderRepo
@@ -4249,7 +4249,7 @@ sequenceDiagram
     end
     
     Note over App,CustomerDB: 別々のトランザクション<br/>= 高い同時実行性
-\\\`\\\`\\\`
+\`\`\`
 
 ## 原則3: トランザクション整合性 vs 結果整合性
 
@@ -4257,7 +4257,7 @@ sequenceDiagram
 
 集約内は **即座に一貫した状態** を保ちます。
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 export class Order {
   addItem(product: Product, quantity: Quantity): void {
     const item = OrderItem.create({
@@ -4271,13 +4271,13 @@ export class Order {
     this.assertInvariants(); // totalAmount === sum(items)
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ### 結果整合性（集約間）
 
 集約間は **最終的に整合性が取れれば良い** とします。
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 sequenceDiagram
     participant App
     participant OrderRepo
@@ -4298,9 +4298,9 @@ sequenceDiagram
     InventoryHandler->>InventoryRepo: save(inventory)
     
     Note over InventoryRepo: 在庫引当（最終的に整合）
-\\\`\\\`\\\`
+\`\`\`
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // 注文確定時
 export class OrderApplicationService {
   async confirmOrder(orderId: OrderId): Promise<void> {
@@ -4337,11 +4337,11 @@ export class InventoryEventHandler {
     }
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ## 原則4: 小さな集約 + イベント駆動
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 graph LR
     subgraph "Order 集約"
         O[Order]
@@ -4363,11 +4363,11 @@ graph LR
     style S fill:#6c6,stroke:#333,stroke-width:3px
     
     Note[小さな集約を<br/>イベントで連携]
-\\\`\\\`\\\`
+\`\`\`
 
 ### イベントによる集約間連携
 
-\\\`\\\`\\\`typescript
+\`\`\`typescript
 // ドメインイベント
 export class OrderConfirmedEvent {
   constructor(
@@ -4413,11 +4413,11 @@ export class Order {
     this._domainEvents = [];
   }
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ## 集約設計の判断フローチャート
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 graph TD
     Start([集約設計開始])
     
@@ -4442,7 +4442,7 @@ graph TD
     style A1 fill:#6c6
     style A2 fill:#69f
     style A3 fill:#69f
-\\\`\\\`\\\`
+\`\`\`
 
 ## まとめ
 
