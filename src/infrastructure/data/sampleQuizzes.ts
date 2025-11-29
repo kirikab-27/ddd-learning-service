@@ -1568,6 +1568,128 @@ const lesson9_3Questions: Question[] = [
   }),
 ];
 
+// =============================================================================
+// Chapter 10: ファクトリ
+// =============================================================================
+
+// Lesson 10-1: ファクトリとは
+const lesson10_1Questions: Question[] = [
+  Question.create({
+    id: 'q10-1-1',
+    text: 'ファクトリパターンの主な目的は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースのパフォーマンスを向上させる', isCorrect: false },
+      { id: 'b', text: '複雑なオブジェクト生成処理を抽象化し、ドメインモデルの責務を明確にする', isCorrect: true },
+      { id: 'c', text: 'UIコンポーネントを効率的に管理する', isCorrect: false },
+      { id: 'd', text: 'ネットワーク通信を最適化する', isCorrect: false },
+    ],
+    explanation: 'ファクトリパターンの主な目的は、複雑なオブジェクト生成処理をドメインモデルから分離し、ID採番やバリデーションなどの複雑な処理を専門に扱うことで、ドメインモデルをシンプルに保つことです。',
+  }),
+  Question.create({
+    id: 'q10-1-2',
+    text: 'ファクトリとリポジトリの違いとして正しいものはどれですか？',
+    options: [
+      { id: 'a', text: 'ファクトリは既存オブジェクトの取得、リポジトリは新規生成を担当する', isCorrect: false },
+      { id: 'b', text: 'ファクトリは新規オブジェクトの生成、リポジトリは永続化と再構築を担当する', isCorrect: true },
+      { id: 'c', text: 'ファクトリとリポジトリは同じ責務を持つため、どちらか一方を使えばよい', isCorrect: false },
+      { id: 'd', text: 'ファクトリはUI層、リポジトリはインフラ層で使用される', isCorrect: false },
+    ],
+    explanation: 'ファクトリは新しいオブジェクトを生成する役割を持ち、リポジトリは永続化（保存）と既存データからのオブジェクト再構築を担当します。両者は異なる責務を持つため、適切に使い分ける必要があります。',
+  }),
+  Question.create({
+    id: 'q10-1-3',
+    text: 'コンストラクタに複雑なロジック（DB接続やID採番）を書くことの問題点として適切でないものはどれですか？',
+    options: [
+      { id: 'a', text: 'ドメインロジックとインフラ処理が混在する', isCorrect: false },
+      { id: 'b', text: 'ユニットテストが困難になる', isCorrect: false },
+      { id: 'c', text: '単一責任の原則に違反する', isCorrect: false },
+      { id: 'd', text: 'コンパイル時にエラーが発生する', isCorrect: true },
+    ],
+    explanation: 'コンストラクタに複雑なロジックを書いても、コンパイルエラーは発生しません。しかし、ドメインロジックとインフラ処理の混在、テストの困難さ、単一責任の原則違反などの設計上の問題が発生します。',
+  }),
+  Question.create({
+    id: 'q10-1-4',
+    text: '集約とファクトリの関係について正しい記述はどれですか？',
+    options: [
+      { id: 'a', text: '集約の内部エンティティごとに専用のファクトリを作成すべき', isCorrect: false },
+      { id: 'b', text: 'ファクトリは集約ルート全体（内部エンティティを含む）を生成すべき', isCorrect: true },
+      { id: 'c', text: 'ファクトリは集約ルートのみを生成し、内部エンティティは別途生成する', isCorrect: false },
+      { id: 'd', text: '集約とファクトリは関係がない', isCorrect: false },
+    ],
+    explanation: 'ファクトリは集約ルート全体を生成する責務を持ちます。つまり、集約ルートだけでなく、その内部エンティティも含めて一貫性のある状態で生成します。内部エンティティ専用のファクトリは作成しません。',
+  }),
+  Question.create({
+    id: 'q10-1-5',
+    text: 'ファクトリの導入を検討すべきケースとして最も適切なものはどれですか？',
+    options: [
+      { id: 'a', text: 'シンプルな値オブジェクトを生成する場合', isCorrect: false },
+      { id: 'b', text: 'コンストラクタ内で他のオブジェクト（DBコネクション等）を取得している場合', isCorrect: true },
+      { id: 'c', text: 'すでに保存されているデータを読み込む場合', isCorrect: false },
+      { id: 'd', text: 'オブジェクトのメソッドを呼び出す場合', isCorrect: false },
+    ],
+    explanation: 'コンストラクタ内で他のオブジェクトを取得している場合、生成処理が複雑になっているサインです。このような場合、ファクトリパターンの導入を検討すべきです。',
+  }),
+];
+
+// Lesson 10-2: ファクトリの実装パターン
+const lesson10_2Questions: Question[] = [
+  Question.create({
+    id: 'q10-2-1',
+    text: 'Static Createパターン（ファクトリメソッド）が最も適しているケースはどれですか？',
+    options: [
+      { id: 'a', text: 'データベースからIDを採番する必要がある場合', isCorrect: false },
+      { id: 'b', text: '外部APIと連携して生成する場合', isCorrect: false },
+      { id: 'c', text: '値オブジェクトなど、外部依存がない場合', isCorrect: true },
+      { id: 'd', text: '複雑なバリデーションが必要な場合', isCorrect: false },
+    ],
+    explanation: 'Static Createパターンは、外部依存がないシンプルなケース（特に値オブジェクト）に適しています。外部依存（DB、API等）が必要な場合は、ファクトリクラスを使用すべきです。',
+  }),
+  Question.create({
+    id: 'q10-2-2',
+    text: 'ID採番戦略としてUUIDを使用するメリットはどれですか？',
+    options: [
+      { id: 'a', text: 'IDが短く、人間が読みやすい', isCorrect: false },
+      { id: 'b', text: 'データベースアクセスが不要で高速', isCorrect: true },
+      { id: 'c', text: '必ず連番になる', isCorrect: false },
+      { id: 'd', text: 'IDに意味を持たせることができる', isCorrect: false },
+    ],
+    explanation: 'UUIDを使用する最大のメリットは、データベースアクセスなしに一意なIDを生成できるため、処理が高速であることです。ただし、IDが長い（36文字）、順序性がないなどのデメリットもあります。',
+  }),
+  Question.create({
+    id: 'q10-2-3',
+    text: 'ファクトリでのバリデーションについて正しい記述はどれですか？',
+    options: [
+      { id: 'a', text: 'バリデーションはオブジェクト生成後に行うべき', isCorrect: false },
+      { id: 'b', text: 'バリデーションはリポジトリの責務である', isCorrect: false },
+      { id: 'c', text: 'バリデーションは生成時に行い、不正なオブジェクトを作らせない', isCorrect: true },
+      { id: 'd', text: 'バリデーションは必要ない', isCorrect: false },
+    ],
+    explanation: 'ファクトリでは、オブジェクト生成時にバリデーションを行い、ドメイン不変条件を満たさないオブジェクトの生成を防ぎます。無効なオブジェクトが一時的にでも存在するリスクを避けることが重要です。',
+  }),
+  Question.create({
+    id: 'q10-2-4',
+    text: 'Repository.nextId()パターン（リポジトリにID採番メソッドを持たせる）のデメリットとして正しいものはどれですか？',
+    options: [
+      { id: 'a', text: '実装が非常に複雑になる', isCorrect: false },
+      { id: 'b', text: 'リポジトリの責務が増える（永続化 + 採番）', isCorrect: true },
+      { id: 'c', text: 'テストができなくなる', isCorrect: false },
+      { id: 'd', text: 'パフォーマンスが大幅に低下する', isCorrect: false },
+    ],
+    explanation: 'リポジトリにID採番メソッドを持たせると、本来の責務（永続化・再構築）に加えて採番という責務が追加され、単一責任の原則の観点から純粋さが犠牲になります。ただし、シンプルで実用的な選択肢ではあります。',
+  }),
+  Question.create({
+    id: 'q10-2-5',
+    text: 'User.reconstruct()メソッドの目的として正しいものはどれですか？',
+    options: [
+      { id: 'a', text: '新しいユーザーオブジェクトを生成する', isCorrect: false },
+      { id: 'b', text: 'データベースから取得したデータでオブジェクトを復元する', isCorrect: true },
+      { id: 'c', text: 'ユーザーの情報を更新する', isCorrect: false },
+      { id: 'd', text: 'ユーザーを削除する', isCorrect: false },
+    ],
+    explanation: 'reconstruct()メソッドは、リポジトリがデータベースから取得したデータを使って既存のオブジェクトを復元（再構築）するために使用されます。新規生成とは異なり、createdAtなどの既存の値をそのまま使用します。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -1759,6 +1881,22 @@ export const sampleQuizzes: Quiz[] = [
     title: 'リポジトリ設計のベストプラクティス - 理解度チェック',
     description: 'クエリメソッド設計、仕様パターン、アンチパターンについての理解度を確認するクイズです。',
     questions: lesson9_3Questions,
+  }),
+
+  // Chapter 10: ファクトリ
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-10-1'),
+    lessonId: LessonId.create('lesson-10-1'),
+    title: 'ファクトリとは - 理解度チェック',
+    description: 'ファクトリの目的、リポジトリとの違い、集約との関係についての理解度を確認するクイズです。',
+    questions: lesson10_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-10-2'),
+    lessonId: LessonId.create('lesson-10-2'),
+    title: 'ファクトリの実装パターン - 理解度チェック',
+    description: 'Static Create、ID採番戦略、バリデーション、再構築についての理解度を確認するクイズです。',
+    questions: lesson10_2Questions,
   }),
 ];
 
