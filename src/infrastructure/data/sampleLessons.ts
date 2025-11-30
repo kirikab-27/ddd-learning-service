@@ -5643,3 +5643,628 @@ describe('OrderService', () => {
 });
 
 export const chapter9Lessons = [lesson9_1, lesson9_2, lesson9_3];
+
+// =============================================================================
+// Chapter 10: ファクトリ
+// =============================================================================
+
+// Lesson 10-1: ファクトリとは
+export const lesson10_1 = Lesson.create({
+  id: LessonId.create('lesson-10-1'),
+  title: LessonTitle.create('ファクトリとは'),
+  content: MarkdownContent.create(`
+# ファクトリとは
+
+## 概要
+
+このレッスンでは、ドメイン駆動設計におけるファクトリパターンについて学びます。
+ファクトリは**オブジェクトの生成という複雑な処理を専門に扱う**設計パターンです。
+適切に使用することで、ドメインモデルをクリーンに保ち、テスト容易性を向上させることができます。
+
+## 道具を作ることと使うこと
+
+DDDの文脈でファクトリを理解するための重要な原則があります：
+
+> **「道具を作ることと道具を使うことは、全く別の知識である」**
+
+私たちがコンピュータを使うとき、CPUの設計やメモリの仕組みを知る必要はありません。
+同様に、オブジェクト指向プログラミングでは、クラスの**使い方**さえ分かれば
+その内部実装を意識せずに済みます。これがカプセル化の恩恵です。
+
+しかし、そのオブジェクトを**作る**となると話は別です。
+
+\`\`\`mermaid
+graph LR
+    subgraph "道具を作る"
+        A[部品を集める] --> B[組み立てる]
+        B --> C[初期設定]
+    end
+    subgraph "道具を使う"
+        D[完成品] --> E[機能を呼び出す]
+    end
+    C --> D
+
+    style A fill:#f9f,stroke:#333
+    style B fill:#f9f,stroke:#333
+    style C fill:#f9f,stroke:#333
+    style D fill:#9f9,stroke:#333
+    style E fill:#9f9,stroke:#333
+\`\`\`
+
+## コンストラクタに生成ロジックを書く問題点
+
+ドメインモデルの中心となる重要なオブジェクトは、生成過程でさまざまな情報が必要になり、
+その製造過程が複雑になりがちです。
+
+### シンプルな例（問題なし）
+
+\`\`\`typescript
+// 最初はシンプル：UUID でIDを生成
+class User {
+  private _id: UserId;
+  private _name: UserName;
+
+  constructor(name: UserName) {
+    this._id = UserId.create(crypto.randomUUID());
+    this._name = name;
+  }
+}
+
+// クラス内部で完結しており、問題なし
+const user = new User(new UserName('田中太郎'));
+\`\`\`
+
+### 問題のある例
+
+要件が変わり、「IDはデータベースの連番を使う」となった場合：
+
+\`\`\`typescript
+// ❌ 問題のある実装
+class User {
+  private _id: UserId;
+  private _name: UserName;
+
+  constructor(name: UserName) {
+    // データベースに接続してシーケンスから番号を取得
+    const connection = new DatabaseConnection();  // ❌ インフラ依存
+    const sequence = connection.getNextSequence('users');  // ❌ DB操作
+    this._id = UserId.create(sequence.toString());
+    this._name = name;
+  }
+}
+\`\`\`
+
+### なぜ問題なのか？
+
+1. **責務の混在**: ドメインの概念（User）にインフラ処理（DB接続）が混入
+2. **単一責任の原則違反**: Userクラスが「ユーザーを表現する」と「IDを採番する」の2つの責務を持つ
+3. **テスト困難**: Userをテストするだけなのに、データベースの準備が必要
+4. **変更の影響**: DB接続方法を変えると、ドメインモデルが影響を受ける
+
+\`\`\`mermaid
+graph TB
+    subgraph "❌ 責務が混在"
+        A[User クラス] --> B[ユーザーを表現]
+        A --> C[DB接続を管理]
+        A --> D[IDを採番]
+    end
+
+    subgraph "✅ 責務が分離"
+        E[User クラス] --> F[ユーザーを表現]
+        G[UserFactory] --> H[IDを採番]
+        G --> I[Userを生成]
+    end
+
+    style A fill:#f66,stroke:#333
+    style E fill:#6f6,stroke:#333
+    style G fill:#6f6,stroke:#333
+\`\`\`
+
+## ファクトリの導入
+
+ファクトリは、オブジェクトの生成という「複雑で時々ダーティな仕事」を
+専門に引き受ける別のクラスです。
+
+### ステップ1: インターフェースを定義
+
+\`\`\`typescript
+// domain/factories/IUserFactory.ts
+export interface IUserFactory {
+  create(name: UserName): User;
+}
+\`\`\`
+
+### ステップ2: 実装クラスを作成
+
+\`\`\`typescript
+// infrastructure/factories/UserFactory.ts
+export class UserFactory implements IUserFactory {
+  constructor(private connection: DatabaseConnection) {}
+
+  create(name: UserName): User {
+    // 採番ロジックはここに集約
+    const sequence = this.connection.getNextSequence('users');
+    const id = UserId.create(sequence.toString());
+
+    return User.reconstruct({ id, name });
+  }
+}
+\`\`\`
+
+### ステップ3: Userクラスをクリーンに
+
+\`\`\`typescript
+// domain/models/User.ts
+export class User {
+  private constructor(
+    private readonly _id: UserId,
+    private readonly _name: UserName
+  ) {}
+
+  // ファクトリからのみ呼ばれる再構築メソッド
+  static reconstruct(props: { id: UserId; name: UserName }): User {
+    return new User(props.id, props.name);
+  }
+
+  // ビジネスロジックに集中
+  changeName(newName: UserName): void {
+    // ...
+  }
+}
+\`\`\`
+
+## ファクトリとテスト容易性
+
+ファクトリの真価が発揮されるのがテストの場面です。
+
+### テスト用のInMemoryファクトリ
+
+\`\`\`typescript
+// test/factories/InMemoryUserFactory.ts
+export class InMemoryUserFactory implements IUserFactory {
+  private counter = 0;
+
+  create(name: UserName): User {
+    this.counter++;
+    const id = UserId.create(\`test-user-\${this.counter}\`);
+    return User.reconstruct({ id, name });
+  }
+}
+\`\`\`
+
+### テストコード
+
+\`\`\`typescript
+describe('UserService', () => {
+  let userFactory: IUserFactory;
+  let userService: UserService;
+
+  beforeEach(() => {
+    // ✅ テスト用のファクトリに差し替え
+    userFactory = new InMemoryUserFactory();
+    userService = new UserService(userFactory);
+  });
+
+  it('should create user', () => {
+    const user = userService.register('田中太郎');
+    expect(user.name.value).toBe('田中太郎');
+    // ✅ データベース不要！高速なテスト
+  });
+});
+\`\`\`
+
+## ファクトリとリポジトリの関係
+
+ファクトリとリポジトリは似て非なるものです：
+
+| 概念 | ファクトリ | リポジトリ |
+|------|-----------|------------|
+| **責務** | 新しいオブジェクトを生成 | 既存オブジェクトの永続化・取得 |
+| **タイミング** | オブジェクトの誕生時 | オブジェクトのライフサイクル全体 |
+| **例え** | 工場で製品を作る | 倉庫で製品を保管・出荷 |
+
+\`\`\`mermaid
+graph LR
+    A[Factory] -->|生成| B[新しいUser]
+    B -->|保存| C[Repository]
+    C -->|取得| D[既存のUser]
+    D -->|再保存| C
+
+    style A fill:#f9f,stroke:#333
+    style C fill:#9ff,stroke:#333
+\`\`\`
+
+## まとめ
+
+### ファクトリを使うべきケース
+
+- ✅ オブジェクト生成に複雑なロジックが必要
+- ✅ ID採番など外部リソースへのアクセスが必要
+- ✅ テスト時に生成方法を差し替えたい
+
+### ファクトリを使わなくてよいケース
+
+- ❌ シンプルなコンストラクタで十分
+- ❌ 外部依存がない
+
+### 重要な原則
+
+- **関心の分離**: 生成と利用は別の責務
+- **依存性の逆転**: インターフェースで抽象化
+- **テスト容易性**: InMemory実装への差し替え
+`),
+  order: 1,
+});
+
+// Lesson 10-2: ファクトリの実装パターン
+export const lesson10_2 = Lesson.create({
+  id: LessonId.create('lesson-10-2'),
+  title: LessonTitle.create('ファクトリの実装パターン'),
+  content: MarkdownContent.create(`
+# ファクトリの実装パターン
+
+## 概要
+
+このレッスンでは、ファクトリパターンのさまざまな実装方法と、
+それぞれの使い分けについて学びます。
+
+## コンストラクタ vs ファクトリの使い分け
+
+### コンストラクタが適切な場合
+
+\`\`\`typescript
+// シンプルな値オブジェクト
+class Money {
+  private constructor(
+    private readonly _amount: number,
+    private readonly _currency: Currency
+  ) {}
+
+  // ✅ コンストラクタ相当のファクトリメソッド
+  static create(amount: number, currency: Currency): Money {
+    if (amount < 0) {
+      throw new Error('金額は0以上である必要があります');
+    }
+    return new Money(amount, currency);
+  }
+}
+
+// 使用例
+const price = Money.create(1000, Currency.JPY);
+\`\`\`
+
+このような場合は、クラス内のスタティックメソッドで十分です。
+
+### ファクトリが適切な場合
+
+\`\`\`typescript
+// 複雑な生成ロジックが必要
+interface IOrderFactory {
+  create(customerId: CustomerId, items: OrderItem[]): Order;
+}
+
+class OrderFactory implements IOrderFactory {
+  constructor(
+    private orderIdGenerator: IOrderIdGenerator,
+    private pricingService: IPricingService,
+    private inventoryChecker: IInventoryChecker
+  ) {}
+
+  create(customerId: CustomerId, items: OrderItem[]): Order {
+    // 1. 在庫チェック
+    this.inventoryChecker.checkAvailability(items);
+
+    // 2. 価格計算
+    const totalPrice = this.pricingService.calculate(items);
+
+    // 3. ID生成
+    const orderId = this.orderIdGenerator.generate();
+
+    // 4. Order生成
+    return Order.create({
+      id: orderId,
+      customerId,
+      items,
+      totalPrice,
+    });
+  }
+}
+\`\`\`
+
+## パターン1: 集約のファクトリ
+
+集約ルートが子エンティティを生成する責務を持つパターンです。
+
+\`\`\`mermaid
+graph TB
+    subgraph "Order 集約"
+        A[Order<br/>集約ルート] -->|生成| B[OrderItem]
+        A -->|生成| C[OrderItem]
+    end
+
+    D[外部] -->|addItem| A
+
+    style A fill:#f96,stroke:#333,stroke-width:3px
+\`\`\`
+
+\`\`\`typescript
+class Order {
+  private _items: OrderItem[] = [];
+
+  // ✅ 集約ルートが子エンティティを生成
+  addItem(productId: ProductId, quantity: number, unitPrice: Money): void {
+    // 不変条件のチェック
+    if (this._items.length >= 100) {
+      throw new Error('注文明細は100件までです');
+    }
+
+    // OrderItem の生成は Order が責任を持つ
+    const item = OrderItem.create({
+      id: OrderItemId.generate(),
+      productId,
+      quantity,
+      unitPrice,
+    });
+
+    this._items.push(item);
+  }
+}
+\`\`\`
+
+### メリット
+
+- 集約の不変条件を確実に守れる
+- 子エンティティの生成ルールが集約内にカプセル化される
+- 外部から直接 OrderItem を作れない（整合性の保証）
+
+## パターン2: ファクトリメソッド
+
+クラス自身が別のオブジェクトを生成するメソッドを持つパターンです。
+
+\`\`\`typescript
+class User {
+  private constructor(
+    private readonly _id: UserId,
+    private readonly _name: UserName
+  ) {}
+
+  // ✅ User が Circle を生成するファクトリメソッド
+  createCircle(circleName: CircleName): Circle {
+    // User の内部情報（_id）を使って Circle を生成
+    // _id を外部に公開せずに済む
+    return Circle.create({
+      id: CircleId.generate(),
+      name: circleName,
+      ownerId: this._id,  // private なIDを内部的に使用
+    });
+  }
+}
+\`\`\`
+
+### ユースケース
+
+- あるオブジェクトのprivateな情報を使って別のオブジェクトを生成したい
+- ゲッターでIDを公開したくない
+- 生成に元オブジェクトの状態チェックが必要
+
+\`\`\`typescript
+// 使用例
+const user = await userRepository.findById(userId);
+const circle = user.createCircle(new CircleName('TypeScript勉強会'));
+
+// ✅ user.id にアクセスせずに circle を作成できた
+await circleRepository.save(circle);
+\`\`\`
+
+## パターン3: 独立したファクトリクラス
+
+生成ロジックが複雑な場合、専用のファクトリクラスを作成します。
+
+\`\`\`typescript
+// インターフェース（Domain層）
+interface IUserFactory {
+  create(name: UserName, email: Email): Promise<User>;
+}
+
+// 実装クラス（Infrastructure層）
+class UserFactory implements IUserFactory {
+  constructor(
+    private idGenerator: IUserIdGenerator,
+    private emailValidator: IEmailValidator
+  ) {}
+
+  async create(name: UserName, email: Email): Promise<User> {
+    // 1. メールアドレスの有効性確認（外部API呼び出し）
+    const isValid = await this.emailValidator.validate(email);
+    if (!isValid) {
+      throw new InvalidEmailError(email);
+    }
+
+    // 2. ID生成（シーケンス取得）
+    const id = await this.idGenerator.generate();
+
+    // 3. User生成
+    return User.reconstruct({ id, name, email });
+  }
+}
+\`\`\`
+
+### 依存性の注入
+
+\`\`\`typescript
+// Application層での使用
+class RegisterUserUseCase {
+  constructor(
+    private userFactory: IUserFactory,  // インターフェースに依存
+    private userRepository: IUserRepository
+  ) {}
+
+  async execute(command: RegisterUserCommand): Promise<UserDto> {
+    const name = new UserName(command.name);
+    const email = new Email(command.email);
+
+    // ファクトリでユーザーを生成
+    const user = await this.userFactory.create(name, email);
+
+    // リポジトリで永続化
+    await this.userRepository.save(user);
+
+    return UserDto.from(user);
+  }
+}
+\`\`\`
+
+## テスト用ファクトリの実装
+
+\`\`\`typescript
+// test/factories/InMemoryUserFactory.ts
+class InMemoryUserFactory implements IUserFactory {
+  private sequence = 0;
+
+  async create(name: UserName, email: Email): Promise<User> {
+    this.sequence++;
+    const id = UserId.create(\`test-\${this.sequence}\`);
+    return User.reconstruct({ id, name, email });
+  }
+
+  // テストヘルパー
+  reset(): void {
+    this.sequence = 0;
+  }
+}
+
+// テストコード
+describe('RegisterUserUseCase', () => {
+  let userFactory: InMemoryUserFactory;
+  let userRepository: InMemoryUserRepository;
+  let useCase: RegisterUserUseCase;
+
+  beforeEach(() => {
+    userFactory = new InMemoryUserFactory();
+    userRepository = new InMemoryUserRepository();
+    useCase = new RegisterUserUseCase(userFactory, userRepository);
+  });
+
+  it('should register a new user', async () => {
+    const result = await useCase.execute({
+      name: '田中太郎',
+      email: 'tanaka@example.com',
+    });
+
+    expect(result.name).toBe('田中太郎');
+    // ✅ 外部API、DBなしで高速テスト
+  });
+});
+\`\`\`
+
+## ID採番の代替案
+
+ファクトリ以外のID採番方法も紹介します。
+
+### 代替案1: データベースの自動採番
+
+\`\`\`typescript
+// ❌ 問題のあるアプローチ
+class User {
+  private _id: UserId | null = null;  // 保存前はnull
+
+  // IDのセッターが必要になる
+  setId(id: UserId): void {
+    this._id = id;
+  }
+}
+
+// 保存後にIDがセットされる
+const user = new User(name);
+await userRepository.save(user);  // DB保存時にIDが決まる
+console.log(user.id);  // やっとIDにアクセスできる
+\`\`\`
+
+**問題点**:
+- 保存前のUserはIDがnullという不安定な状態
+- IDのセッターを公開する必要がある（変更リスク）
+- エンティティの同一性がDBに依存
+
+### 代替案2: リポジトリで採番
+
+\`\`\`typescript
+// リポジトリに採番メソッドを追加
+interface IUserRepository {
+  nextId(): UserId;  // 追加
+  save(user: User): Promise<void>;
+  findById(id: UserId): Promise<User | null>;
+}
+
+// 使用例
+const id = userRepository.nextId();
+const user = User.create({ id, name });
+await userRepository.save(user);
+\`\`\`
+
+**トレードオフ**:
+- シンプルで気軽な選択肢
+- しかしリポジトリの責務が増える（永続化 + 採番）
+- 採番がAPIで、永続化がDBの場合、1クラスに複数の関心事
+
+## ファクトリ導入の判断基準
+
+### 導入すべきサイン
+
+\`\`\`typescript
+// ❌ コンストラクタ内で他のオブジェクトを new している
+class User {
+  constructor(name: UserName) {
+    const idGenerator = new DatabaseIdGenerator();  // ❌
+    this._id = idGenerator.generate();
+  }
+}
+\`\`\`
+
+コンストラクタの中で **他のオブジェクトを生成** している場合、
+それはファクトリに分離すべきサインです。
+
+### 判断フローチャート
+
+\`\`\`mermaid
+graph TD
+    A[オブジェクト生成が必要] --> B{外部リソースが必要?}
+    B -->|Yes| C[ファクトリを使う]
+    B -->|No| D{生成ロジックが複雑?}
+    D -->|Yes| C
+    D -->|No| E{テストで差し替えたい?}
+    E -->|Yes| C
+    E -->|No| F[static createメソッドで十分]
+
+    style C fill:#9f9,stroke:#333
+    style F fill:#ff9,stroke:#333
+\`\`\`
+
+## まとめ
+
+### ファクトリパターンの種類
+
+| パターン | 用途 | 例 |
+|----------|------|-----|
+| **集約のファクトリ** | 子エンティティの生成 | Order.addItem() |
+| **ファクトリメソッド** | 関連オブジェクトの生成 | User.createCircle() |
+| **独立ファクトリ** | 複雑な生成ロジック | UserFactory.create() |
+
+### ベストプラクティス
+
+- ✅ インターフェースで抽象化（テスト容易性）
+- ✅ 生成ロジックとビジネスロジックを分離
+- ✅ ファクトリとリポジトリは別の責務
+- ✅ コンストラクタ内のnewはファクトリ化のサイン
+
+### 避けるべきパターン
+
+- ❌ ドメインモデルにインフラ依存を持ち込む
+- ❌ 過剰なファクトリ化（シンプルなケースには不要）
+- ❌ IDがnullの不安定なエンティティ
+
+**原則**: ファクトリは生成の複雑さを隠蔽し、ドメインモデルをビジネスロジックに集中させる
+`),
+  order: 2,
+});
+
+export const chapter10Lessons = [lesson10_1, lesson10_2];

@@ -1568,6 +1568,124 @@ const lesson9_3Questions: Question[] = [
   }),
 ];
 
+// Lesson 10-1: ファクトリとは（5問）
+const lesson10_1Questions: Question[] = [
+  Question.create({
+    id: 'q10-1-1',
+    text: 'ファクトリパターンの主な目的は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースへの接続を管理する', isCorrect: false },
+      { id: 'b', text: 'オブジェクトの生成という複雑な処理を専門に扱う', isCorrect: true },
+      { id: 'c', text: 'オブジェクトの永続化を担当する', isCorrect: false },
+      { id: 'd', text: 'UIコンポーネントを生成する', isCorrect: false },
+    ],
+    explanation: 'ファクトリは「オブジェクトの生成」という複雑で時々ダーティな仕事を専門に引き受けるクラスです。これにより生成ロジックとビジネスロジックを分離できます。',
+  }),
+  Question.create({
+    id: 'q10-1-2',
+    text: '「道具を作ることと道具を使うことは全く別の知識である」という原則が示唆することは？',
+    options: [
+      { id: 'a', text: 'すべてのクラスにファクトリを作るべき', isCorrect: false },
+      { id: 'b', text: 'オブジェクトの生成と利用は異なる責務である', isCorrect: true },
+      { id: 'c', text: 'コンストラクタは使うべきではない', isCorrect: false },
+      { id: 'd', text: 'テストは不要である', isCorrect: false },
+    ],
+    explanation: 'この原則は、オブジェクトを「使う」知識と「作る」知識は別物であり、生成の複雑さを隠蔽してクリーンに分離すべきということを示しています。',
+  }),
+  Question.create({
+    id: 'q10-1-3',
+    text: 'コンストラクタにデータベース接続ロジックを書く問題点として適切でないものは？',
+    options: [
+      { id: 'a', text: '単一責任の原則に違反する', isCorrect: false },
+      { id: 'b', text: 'テストが困難になる', isCorrect: false },
+      { id: 'c', text: 'コードの行数が増える', isCorrect: true },
+      { id: 'd', text: 'ドメインモデルにインフラ依存が混入する', isCorrect: false },
+    ],
+    explanation: 'コンストラクタにDB接続を書く問題は、責務の混在、テスト困難、インフラ依存の混入です。コード行数が増えること自体は本質的な問題ではありません。',
+  }),
+  Question.create({
+    id: 'q10-1-4',
+    text: 'ファクトリをテスト容易にするための方法として正しいものは？',
+    options: [
+      { id: 'a', text: 'ファクトリを使わずに直接newする', isCorrect: false },
+      { id: 'b', text: 'インターフェースを定義し、InMemory実装に差し替える', isCorrect: true },
+      { id: 'c', text: 'すべてのテストでデータベースを使う', isCorrect: false },
+      { id: 'd', text: 'ファクトリをstaticメソッドにする', isCorrect: false },
+    ],
+    explanation: 'IUserFactoryのようなインターフェースを定義し、テスト時にはInMemoryUserFactoryに差し替えることで、データベースなしで高速なテストが可能になります。',
+  }),
+  Question.create({
+    id: 'q10-1-5',
+    text: 'ファクトリとリポジトリの責務の違いとして正しいものは？',
+    options: [
+      { id: 'a', text: 'ファクトリは永続化、リポジトリは生成', isCorrect: false },
+      { id: 'b', text: 'ファクトリは新規生成、リポジトリは永続化・取得', isCorrect: true },
+      { id: 'c', text: '両者は同じ責務を持つ', isCorrect: false },
+      { id: 'd', text: 'ファクトリは検索、リポジトリは削除', isCorrect: false },
+    ],
+    explanation: 'ファクトリは新しいオブジェクトの生成を担当し、リポジトリは既存オブジェクトの永続化と取得を担当します。例えるなら、ファクトリは工場、リポジトリは倉庫です。',
+  }),
+];
+
+// Lesson 10-2: ファクトリの実装パターン（5問）
+const lesson10_2Questions: Question[] = [
+  Question.create({
+    id: 'q10-2-1',
+    text: 'コンストラクタ（static createメソッド）で十分なケースはどれですか？',
+    options: [
+      { id: 'a', text: '外部APIへのアクセスが必要な場合', isCorrect: false },
+      { id: 'b', text: 'シンプルな値オブジェクトでバリデーションのみ行う場合', isCorrect: true },
+      { id: 'c', text: 'データベースからIDを採番する場合', isCorrect: false },
+      { id: 'd', text: '複数のサービスを組み合わせる場合', isCorrect: false },
+    ],
+    explanation: 'Moneyのようなシンプルな値オブジェクトで、バリデーションのみ行う場合は、クラス内のstatic createメソッドで十分です。外部依存がある場合はファクトリを検討します。',
+  }),
+  Question.create({
+    id: 'q10-2-2',
+    text: '集約のファクトリ（集約ルートが子エンティティを生成する）のメリットは？',
+    options: [
+      { id: 'a', text: 'コードの行数が減る', isCorrect: false },
+      { id: 'b', text: '集約の不変条件を確実に守れる', isCorrect: true },
+      { id: 'c', text: 'パフォーマンスが向上する', isCorrect: false },
+      { id: 'd', text: 'テストが不要になる', isCorrect: false },
+    ],
+    explanation: 'Order.addItem()のように集約ルートが子エンティティを生成すると、不変条件（例: 明細は100件まで）を確実にチェックでき、外部から直接OrderItemを作られることを防げます。',
+  }),
+  Question.create({
+    id: 'q10-2-3',
+    text: 'ファクトリメソッド（User.createCircle()）のユースケースとして適切なものは？',
+    options: [
+      { id: 'a', text: 'Userのprivateな情報を使って別オブジェクトを生成したい', isCorrect: true },
+      { id: 'b', text: '大量のUserを一括生成したい', isCorrect: false },
+      { id: 'c', text: 'Userをデータベースに保存したい', isCorrect: false },
+      { id: 'd', text: 'Userを削除したい', isCorrect: false },
+    ],
+    explanation: 'User.createCircle()のようなファクトリメソッドは、Userのprivate IDを外部に公開せずにCircleを生成できます。ゲッターでIDを公開したくない場合に有効です。',
+  }),
+  Question.create({
+    id: 'q10-2-4',
+    text: 'ファクトリ導入を検討すべきサインとして正しいものは？',
+    options: [
+      { id: 'a', text: 'クラスのメソッドが3つ以上ある', isCorrect: false },
+      { id: 'b', text: 'コンストラクタ内で他のオブジェクトをnewしている', isCorrect: true },
+      { id: 'c', text: 'クラスがインターフェースを実装している', isCorrect: false },
+      { id: 'd', text: 'クラス名が長い', isCorrect: false },
+    ],
+    explanation: 'コンストラクタの中で他のオブジェクト（例: DatabaseIdGenerator）を生成している場合、それはファクトリに分離すべきサインです。生成の複雑さが混入しています。',
+  }),
+  Question.create({
+    id: 'q10-2-5',
+    text: 'データベースの自動採番（INSERT後にIDが決まる）の問題点は？',
+    options: [
+      { id: 'a', text: 'パフォーマンスが悪い', isCorrect: false },
+      { id: 'b', text: '保存前のエンティティがIDなしの不安定な状態になる', isCorrect: true },
+      { id: 'c', text: 'トランザクションが使えない', isCorrect: false },
+      { id: 'd', text: 'テーブル設計が複雑になる', isCorrect: false },
+    ],
+    explanation: 'DB自動採番では、保存前のエンティティはIDがnullの不安定な状態になります。また、IDのセッターを公開する必要があり、意図しない変更のリスクが生まれます。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -1759,6 +1877,21 @@ export const sampleQuizzes: Quiz[] = [
     title: 'リポジトリ設計のベストプラクティス - 理解度チェック',
     description: 'クエリメソッド設計、仕様パターン、アンチパターンについての理解度を確認するクイズです。',
     questions: lesson9_3Questions,
+  }),
+  // Chapter 10: ファクトリ
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-10-1'),
+    lessonId: LessonId.create('lesson-10-1'),
+    title: 'ファクトリとは - 理解度チェック',
+    description: 'ファクトリパターンの目的、責務分離、テスト容易性についての理解度を確認するクイズです。',
+    questions: lesson10_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-10-2'),
+    lessonId: LessonId.create('lesson-10-2'),
+    title: 'ファクトリの実装パターン - 理解度チェック',
+    description: 'ファクトリの実装パターン、使い分け、判断基準についての理解度を確認するクイズです。',
+    questions: lesson10_2Questions,
   }),
 ];
 
