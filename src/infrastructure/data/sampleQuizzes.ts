@@ -2099,6 +2099,128 @@ const lesson13_3Questions: Question[] = [
   }),
 ];
 
+// =============================================================================
+// Chapter 14: ヘキサゴナルアーキテクチャ
+// =============================================================================
+
+// Lesson 14-1: ヘキサゴナルアーキテクチャとは（5問）
+const lesson14_1Questions: Question[] = [
+  Question.create({
+    id: 'q14-1-1',
+    text: 'ヘキサゴナルアーキテクチャを提唱した人物と年代として正しいものは？',
+    options: [
+      { id: 'a', text: 'Robert C. Martin、2012年', isCorrect: false },
+      { id: 'b', text: 'Alistair Cockburn、2005年', isCorrect: true },
+      { id: 'c', text: 'Eric Evans、2003年', isCorrect: false },
+      { id: 'd', text: 'Martin Fowler、2000年', isCorrect: false },
+    ],
+    explanation: 'ヘキサゴナルアーキテクチャは2005年にAlistair Cockburnによって提唱されました。Ports and Adaptersアーキテクチャとも呼ばれます。',
+  }),
+  Question.create({
+    id: 'q14-1-2',
+    text: '六角形（Hexagon）という形が表現しているものは何ですか？',
+    options: [
+      { id: 'a', text: '6つの固定されたポート', isCorrect: false },
+      { id: 'b', text: '任意の数のポートを持てることと対称性', isCorrect: true },
+      { id: 'c', text: '6つのレイヤー', isCorrect: false },
+      { id: 'd', text: '6つのコンポーネント', isCorrect: false },
+    ],
+    explanation: '六角形は「6つのポート」を意味するのではなく、任意の数のポートを持てることと、内側と外側の対称的な関係を視覚的に表現しています。',
+  }),
+  Question.create({
+    id: 'q14-1-3',
+    text: 'ヘキサゴナルアーキテクチャの「内側」に配置されるものは？',
+    options: [
+      { id: 'a', text: 'データベース、外部API', isCorrect: false },
+      { id: 'b', text: 'Webフレームワーク、UI', isCorrect: false },
+      { id: 'c', text: 'ドメインロジック、ユースケース', isCorrect: true },
+      { id: 'd', text: 'ファイルシステム、メッセージキュー', isCorrect: false },
+    ],
+    explanation: '内側（Application Core）には、技術に依存しない純粋なビジネスロジックであるドメインロジックとユースケースが配置されます。',
+  }),
+  Question.create({
+    id: 'q14-1-4',
+    text: 'ゲーム機の例えで「ゲーム機本体」に相当するのは？',
+    options: [
+      { id: 'a', text: 'アダプター', isCorrect: false },
+      { id: 'b', text: 'ポート', isCorrect: false },
+      { id: 'c', text: 'Application Core（ビジネスロジック）', isCorrect: true },
+      { id: 'd', text: 'データベース', isCorrect: false },
+    ],
+    explanation: 'ゲーム機本体はApplication Core（ビジネスロジック）に相当します。どのコントローラーやディスプレイが接続されているか知らずに、純粋なゲームロジックを実行します。',
+  }),
+  Question.create({
+    id: 'q14-1-5',
+    text: 'ヘキサゴナルアーキテクチャとクリーンアーキテクチャの関係として正しいものは？',
+    options: [
+      { id: 'a', text: '全く異なる目的を持つ独立したアーキテクチャ', isCorrect: false },
+      { id: 'b', text: 'クリーンはヘキサゴナルの考え方を継承・発展させたもの', isCorrect: true },
+      { id: 'c', text: 'ヘキサゴナルはクリーンを継承・発展させたもの', isCorrect: false },
+      { id: 'd', text: '同時に同じ人物が提唱した', isCorrect: false },
+    ],
+    explanation: 'クリーンアーキテクチャ（2012年、Robert C. Martin）はヘキサゴナルアーキテクチャ（2005年、Alistair Cockburn）の考え方を継承・発展させたものです。どちらも「ビジネスロジックを技術から隔離する」という同じ目標を持ちます。',
+  }),
+];
+
+// Lesson 14-2: ポートとアダプターの実装（5問）
+const lesson14_2Questions: Question[] = [
+  Question.create({
+    id: 'q14-2-1',
+    text: '駆動ポート（Driving Port）の役割として正しいものは？',
+    options: [
+      { id: 'a', text: 'データベースにアクセスする', isCorrect: false },
+      { id: 'b', text: '外部からアプリケーションを駆動するためのインターフェース', isCorrect: true },
+      { id: 'c', text: 'ログを出力する', isCorrect: false },
+      { id: 'd', text: 'メール送信を行う', isCorrect: false },
+    ],
+    explanation: '駆動ポート（Driving Port / Primary Port）は、外部からアプリケーションを駆動するためのインターフェースです。UseCase Interfaceがその典型例です。',
+  }),
+  Question.create({
+    id: 'q14-2-2',
+    text: '被駆動ポート（Driven Port）の例として正しいものは？',
+    options: [
+      { id: 'a', text: 'Controller', isCorrect: false },
+      { id: 'b', text: 'UseCase Interface', isCorrect: false },
+      { id: 'c', text: 'Repository Interface、EmailService Interface', isCorrect: true },
+      { id: 'd', text: 'CLI', isCorrect: false },
+    ],
+    explanation: '被駆動ポート（Driven Port / Secondary Port）は、アプリケーションから外部リソースにアクセスするためのインターフェースです。Repository InterfaceやEmailService Interfaceがその例です。',
+  }),
+  Question.create({
+    id: 'q14-2-3',
+    text: 'プライマリアダプター（Primary Adapter）の役割として正しいものは？',
+    options: [
+      { id: 'a', text: 'データベースに保存する', isCorrect: false },
+      { id: 'b', text: '外部からの入力をアプリケーションが理解できる形式に変換する', isCorrect: true },
+      { id: 'c', text: 'メールを送信する', isCorrect: false },
+      { id: 'd', text: 'ファイルを読み書きする', isCorrect: false },
+    ],
+    explanation: 'プライマリアダプター（Primary Adapter / Driving Adapter）は、外部からの入力（HTTPリクエスト、コマンドライン引数など）をアプリケーションが理解できる形式（UseCase Input）に変換します。Controllerがその典型例です。',
+  }),
+  Question.create({
+    id: 'q14-2-4',
+    text: 'セカンダリアダプター（Secondary Adapter）の例として正しいものは？',
+    options: [
+      { id: 'a', text: 'Web Controller、CLI', isCorrect: false },
+      { id: 'b', text: 'PostgresUserRepository、SendGridEmailService', isCorrect: true },
+      { id: 'c', text: 'UseCase Implementation', isCorrect: false },
+      { id: 'd', text: 'Domain Model', isCorrect: false },
+    ],
+    explanation: 'セカンダリアダプター（Secondary Adapter / Driven Adapter）は、被駆動ポートの具体的な実装です。PostgresUserRepository（データベース）やSendGridEmailService（メール送信）などがその例です。',
+  }),
+  Question.create({
+    id: 'q14-2-5',
+    text: 'テスト時にアダプターを差し替えることの利点として正しいものは？',
+    options: [
+      { id: 'a', text: 'コード量が減る', isCorrect: false },
+      { id: 'b', text: '本番データを使ってテストできる', isCorrect: false },
+      { id: 'c', text: '高速で独立したテストが可能になる', isCorrect: true },
+      { id: 'd', text: 'テストコードが不要になる', isCorrect: false },
+    ],
+    explanation: 'テスト時にインメモリリポジトリやモックサービスに差し替えることで、データベースや外部サービスに依存しない、高速で独立したテストが可能になります。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -2357,6 +2479,21 @@ export const sampleQuizzes: Quiz[] = [
     title: 'ユースケース層の実装 - 理解度チェック',
     description: 'ユースケースの責務、境界、DTO、テストについての理解度を確認するクイズです。',
     questions: lesson13_3Questions,
+  }),
+  // Chapter 14: ヘキサゴナルアーキテクチャ
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-14-1'),
+    lessonId: LessonId.create('lesson-14-1'),
+    title: 'ヘキサゴナルアーキテクチャとは - 理解度チェック',
+    description: 'Ports and Adapters、内側と外側の分離、クリーンアーキテクチャとの比較についての理解度を確認するクイズです。',
+    questions: lesson14_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-14-2'),
+    lessonId: LessonId.create('lesson-14-2'),
+    title: 'ポートとアダプターの実装 - 理解度チェック',
+    description: '駆動ポート/被駆動ポート、プライマリ/セカンダリアダプター、テスト容易性についての理解度を確認するクイズです。',
+    questions: lesson14_2Questions,
   }),
 ];
 

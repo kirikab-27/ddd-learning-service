@@ -8523,3 +8523,890 @@ class UserUseCase {
 });
 
 export const chapter13Lessons = [lesson13_1, lesson13_2, lesson13_3];
+
+// =============================================================================
+// Chapter 14: ヘキサゴナルアーキテクチャ
+// =============================================================================
+
+const lesson14_1 = Lesson.create({
+  id: LessonId.create('lesson-14-1'),
+  title: LessonTitle.create('ヘキサゴナルアーキテクチャとは'),
+  content: MarkdownContent.create(`
+# ヘキサゴナルアーキテクチャとは
+
+## 概要
+
+**ヘキサゴナルアーキテクチャ**（Hexagonal Architecture）は、Alistair Cockburn によって2005年に提唱されたアーキテクチャパターンです。**Ports and Adapters**（ポートとアダプター）アーキテクチャとも呼ばれます。
+
+\`\`\`mermaid
+graph TB
+    subgraph "外部"
+        UI[Web UI]
+        CLI[CLI]
+        API[外部API]
+        DB[(Database)]
+        MQ[Message Queue]
+    end
+
+    subgraph "六角形（Application Core）"
+        subgraph "Ports"
+            DP1[Driving Port<br/>UseCase Interface]
+            DP2[Driven Port<br/>Repository Interface]
+        end
+        subgraph "Domain"
+            D[ドメインロジック]
+        end
+    end
+
+    UI --> DP1
+    CLI --> DP1
+    DP1 --> D
+    D --> DP2
+    DP2 --> DB
+    DP2 --> API
+    DP2 --> MQ
+
+    style D fill:#f9f,stroke:#333
+\`\`\`
+
+## なぜ六角形なのか？
+
+六角形という形には深い意味があります：
+
+\`\`\`mermaid
+graph TB
+    subgraph "六角形の意味"
+        H[六角形] --> M1[任意の数の<br/>ポートを持てる]
+        H --> M2[対称性<br/>内側と外側の関係]
+        H --> M3[4辺より多く<br/>拡張可能性を表現]
+    end
+\`\`\`
+
+**重要なポイント:**
+- 六角形は「6つのポート」を意味するわけではない
+- 任意の数のポート（インターフェース）を持てることを視覚的に表現
+- 四角形だと「4つの層」と誤解されやすい
+- アプリケーションの**対称性**を強調
+
+## コアコンセプト：内側と外側
+
+\`\`\`mermaid
+graph LR
+    subgraph "外側（Infrastructure）"
+        E1[Web Framework]
+        E2[Database]
+        E3[External Services]
+        E4[File System]
+    end
+
+    subgraph "内側（Application Core）"
+        I1[Domain Logic]
+        I2[Use Cases]
+        I3[Domain Models]
+    end
+
+    E1 -.-> I1
+    E2 -.-> I1
+    E3 -.-> I1
+    E4 -.-> I1
+
+    style I1 fill:#9f9
+    style I2 fill:#9f9
+    style I3 fill:#9f9
+\`\`\`
+
+| 領域 | 内容 | 特徴 |
+|------|------|------|
+| **内側** | ドメインロジック、ユースケース | 技術に依存しない純粋なビジネスロジック |
+| **外側** | UI、DB、外部API | 技術的な実装詳細 |
+
+## ゲーム機の例え
+
+ヘキサゴナルアーキテクチャを理解するのに最適な例えが**ゲーム機**です：
+
+\`\`\`mermaid
+graph TB
+    subgraph "ゲーム機システム"
+        subgraph "コントローラー（入力アダプター）"
+            C1[純正コントローラー]
+            C2[アーケードスティック]
+            C3[ハンドルコントローラー]
+        end
+
+        subgraph "ゲーム機本体（Application Core）"
+            P1[コントローラーポート<br/>入力インターフェース]
+            G[ゲームロジック]
+            P2[映像出力ポート<br/>出力インターフェース]
+        end
+
+        subgraph "ディスプレイ（出力アダプター）"
+            D1[テレビ]
+            D2[モニター]
+            D3[プロジェクター]
+        end
+    end
+
+    C1 --> P1
+    C2 --> P1
+    C3 --> P1
+    P1 --> G
+    G --> P2
+    P2 --> D1
+    P2 --> D2
+    P2 --> D3
+
+    style G fill:#f9f
+\`\`\`
+
+**この例えから学べること:**
+
+1. **ゲーム機本体**（Application Core）
+   - ゲームのロジックそのもの
+   - どのコントローラーが接続されているか知らない
+   - どのディスプレイに出力されるか知らない
+
+2. **ポート**（標準化されたインターフェース）
+   - コントローラーポート：入力の規格
+   - 映像出力ポート：出力の規格
+   - 規格さえ合えば何でも接続可能
+
+3. **アダプター**（具体的な機器）
+   - 様々なメーカーのコントローラー
+   - 様々な種類のディスプレイ
+   - ポートの規格に従って実装
+
+\`\`\`typescript
+// ゲーム機の例をコードで表現
+interface ControllerPort {
+  getInput(): GameInput;
+}
+
+interface DisplayPort {
+  render(frame: GameFrame): void;
+}
+
+// ゲーム機本体（Application Core）
+class GameConsole {
+  constructor(
+    private controller: ControllerPort,
+    private display: DisplayPort
+  ) {}
+
+  run(): void {
+    const input = this.controller.getInput();
+    const frame = this.processGame(input);
+    this.display.render(frame);
+  }
+
+  private processGame(input: GameInput): GameFrame {
+    // ゲームロジック（技術に依存しない）
+    return { /* ... */ };
+  }
+}
+
+// アダプター実装
+class PS5Controller implements ControllerPort {
+  getInput(): GameInput {
+    // PS5固有の入力処理
+    return { /* ... */ };
+  }
+}
+
+class HDMIDisplay implements DisplayPort {
+  render(frame: GameFrame): void {
+    // HDMI出力処理
+  }
+}
+\`\`\`
+
+## クリーンアーキテクチャとの比較
+
+\`\`\`mermaid
+graph TB
+    subgraph "ヘキサゴナル（2005年）"
+        H1[Ports and Adapters]
+        H2[内側/外側の分離]
+        H3[技術詳細の隔離]
+    end
+
+    subgraph "クリーン（2012年）"
+        C1[同心円構造]
+        C2[依存性ルール]
+        C3[より具体的な層定義]
+    end
+
+    H1 --> C1
+    H2 --> C2
+    H3 --> C3
+
+    style H1 fill:#9cf
+    style C1 fill:#fc9
+\`\`\`
+
+| 観点 | ヘキサゴナル | クリーン |
+|------|-------------|----------|
+| **提唱年** | 2005年 | 2012年 |
+| **提唱者** | Alistair Cockburn | Robert C. Martin |
+| **構造** | 六角形（内側/外側） | 同心円（複数層） |
+| **焦点** | ポートとアダプターによる分離 | 依存性の方向 |
+| **層の数** | 2つ（内側/外側） | 4つ以上（明示的） |
+| **抽象度** | より抽象的 | より具体的 |
+
+**関係性:**
+- クリーンアーキテクチャはヘキサゴナルの考え方を**継承・発展**
+- どちらも「ビジネスロジックを技術から隔離する」という同じ目標
+- ヘキサゴナルは**より柔軟**で解釈の幅が広い
+- クリーンは**より規範的**で実装指針が明確
+
+\`\`\`typescript
+// どちらのアーキテクチャでも共通する核心
+// 「ドメインは外部を知らない」
+
+// ❌ ドメインが技術に依存
+class User {
+  async save(): Promise<void> {
+    await mysql.query('INSERT INTO users...');  // 技術依存
+  }
+}
+
+// ✅ ドメインは純粋
+class User {
+  constructor(
+    public readonly id: UserId,
+    public readonly name: UserName
+  ) {}
+  // データベースの存在を知らない
+}
+\`\`\`
+
+## ヘキサゴナルアーキテクチャの利点
+
+\`\`\`mermaid
+graph TB
+    subgraph "利点"
+        A1[技術の交換可能性]
+        A2[テスト容易性]
+        A3[ビジネスロジックの純粋性]
+        A4[並行開発の促進]
+    end
+
+    A1 --> B1[DBをMySQLからPostgreSQLに変更]
+    A2 --> B2[モックアダプターでテスト]
+    A3 --> B3[ドメインに集中]
+    A4 --> B4[ポートを決めれば独立開発]
+\`\`\`
+
+1. **技術の交換可能性**
+   - アダプターを差し替えるだけで技術変更可能
+   - ビジネスロジックへの影響なし
+
+2. **テスト容易性**
+   - 本番用アダプターをテスト用に差し替え
+   - 高速で信頼性の高いテスト
+
+3. **ビジネスロジックの純粋性**
+   - 内側は技術的な詳細から解放
+   - ドメインの本質に集中
+
+4. **並行開発の促進**
+   - ポートさえ決まれば独立して開発可能
+   - チーム間の依存を減らす
+
+## まとめ
+
+- **ヘキサゴナルアーキテクチャ**: 2005年にAlistair Cockburnが提唱
+- **六角形の意味**: 任意の数のポートを持てることを表現
+- **内側と外側**: ビジネスロジックと技術詳細の分離
+- **ゲーム機の例え**: 本体（コア）+ ポート（規格）+ アダプター（機器）
+- **クリーンとの関係**: ヘキサゴナルを継承・発展させたのがクリーン
+`),
+  order: 1,
+});
+
+const lesson14_2 = Lesson.create({
+  id: LessonId.create('lesson-14-2'),
+  title: LessonTitle.create('ポートとアダプターの実装'),
+  content: MarkdownContent.create(`
+# ポートとアダプターの実装
+
+## ポート（Port）とは
+
+**ポート**は、アプリケーションの境界を定義する**インターフェース**です。アプリケーションコアと外部世界の間の「契約」を表現します。
+
+\`\`\`mermaid
+graph LR
+    subgraph "外部世界"
+        E1[Web Controller]
+        E2[CLI]
+        E3[Database]
+        E4[Email Service]
+    end
+
+    subgraph "Ports（境界）"
+        DP[Driving Ports<br/>駆動ポート]
+        SP[Driven Ports<br/>被駆動ポート]
+    end
+
+    subgraph "Application Core"
+        UC[Use Cases]
+        D[Domain]
+    end
+
+    E1 --> DP
+    E2 --> DP
+    DP --> UC
+    UC --> D
+    D --> SP
+    SP --> E3
+    SP --> E4
+
+    style DP fill:#9cf
+    style SP fill:#fc9
+\`\`\`
+
+## ポートの2つの種類
+
+### 1. 駆動ポート（Driving Port / Primary Port）
+
+外部から**アプリケーションを駆動する**ためのポートです。
+
+\`\`\`mermaid
+graph LR
+    subgraph "プライマリアクター"
+        U[ユーザー]
+        S[外部システム]
+        T[タイマー]
+    end
+
+    subgraph "駆動ポート"
+        P[UseCase Interface]
+    end
+
+    subgraph "Application"
+        UC[UseCase実装]
+    end
+
+    U --> P
+    S --> P
+    T --> P
+    P --> UC
+
+    style P fill:#9cf
+\`\`\`
+
+\`\`\`typescript
+// 駆動ポート（Driving Port）の例
+// アプリケーションを「使う」ためのインターフェース
+
+interface RegisterUserUseCase {
+  execute(input: RegisterUserInput): Promise<RegisterUserOutput>;
+}
+
+interface GetCourseUseCase {
+  execute(courseId: string): Promise<CourseDTO>;
+}
+
+interface StartLessonUseCase {
+  execute(input: StartLessonInput): Promise<void>;
+}
+
+// 入力と出力の型定義
+interface RegisterUserInput {
+  name: string;
+  email: string;
+  password: string;
+}
+
+interface RegisterUserOutput {
+  userId: string;
+  createdAt: Date;
+}
+\`\`\`
+
+### 2. 被駆動ポート（Driven Port / Secondary Port）
+
+アプリケーションから**外部リソースにアクセスする**ためのポートです。
+
+\`\`\`mermaid
+graph LR
+    subgraph "Application"
+        UC[UseCase]
+    end
+
+    subgraph "被駆動ポート"
+        P1[Repository Interface]
+        P2[EmailService Interface]
+        P3[PaymentGateway Interface]
+    end
+
+    subgraph "セカンダリアクター"
+        DB[(Database)]
+        EM[Email Server]
+        PG[Payment API]
+    end
+
+    UC --> P1
+    UC --> P2
+    UC --> P3
+    P1 --> DB
+    P2 --> EM
+    P3 --> PG
+
+    style P1 fill:#fc9
+    style P2 fill:#fc9
+    style P3 fill:#fc9
+\`\`\`
+
+\`\`\`typescript
+// 被駆動ポート（Driven Port）の例
+// アプリケーションが「使う」外部リソースのインターフェース
+
+interface UserRepository {
+  save(user: User): Promise<void>;
+  findById(id: UserId): Promise<User | null>;
+  findByEmail(email: Email): Promise<User | null>;
+  delete(id: UserId): Promise<void>;
+}
+
+interface EmailService {
+  sendWelcomeEmail(to: Email, userName: string): Promise<void>;
+  sendPasswordReset(to: Email, token: string): Promise<void>;
+}
+
+interface PaymentGateway {
+  charge(amount: Money, cardToken: string): Promise<PaymentResult>;
+  refund(transactionId: string): Promise<RefundResult>;
+}
+\`\`\`
+
+## アダプター（Adapter）とは
+
+**アダプター**は、ポートの具体的な**実装**です。外部の技術とポートの橋渡しをします。
+
+\`\`\`mermaid
+graph TB
+    subgraph "アダプターの役割"
+        A[アダプター] --> T1[技術固有の処理を隠蔽]
+        A --> T2[ポートの契約を実装]
+        A --> T3[データ形式の変換]
+    end
+\`\`\`
+
+## アダプターの2つの種類
+
+### 1. プライマリアダプター（Primary Adapter / Driving Adapter）
+
+外部からの入力を**アプリケーションが理解できる形式に変換**します。
+
+\`\`\`typescript
+// プライマリアダプター: Express Controller
+import { Request, Response } from 'express';
+
+class UserController {
+  constructor(
+    private registerUserUseCase: RegisterUserUseCase,
+    private getUserUseCase: GetUserUseCase
+  ) {}
+
+  // HTTPリクエストをUseCaseの入力に変換
+  async register(req: Request, res: Response): Promise<void> {
+    try {
+      // HTTP → UseCase Input
+      const input: RegisterUserInput = {
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+      };
+
+      const output = await this.registerUserUseCase.execute(input);
+
+      // UseCase Output → HTTP Response
+      res.status(201).json({
+        id: output.userId,
+        createdAt: output.createdAt.toISOString(),
+      });
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    }
+  }
+}
+
+// プライマリアダプター: CLI
+class UserCLI {
+  constructor(private registerUserUseCase: RegisterUserUseCase) {}
+
+  async registerCommand(args: string[]): Promise<void> {
+    // コマンドライン引数 → UseCase Input
+    const input: RegisterUserInput = {
+      name: args[0],
+      email: args[1],
+      password: args[2],
+    };
+
+    const output = await this.registerUserUseCase.execute(input);
+
+    // UseCase Output → コンソール出力
+    console.log(\`User created: \${output.userId}\`);
+  }
+}
+\`\`\`
+
+### 2. セカンダリアダプター（Secondary Adapter / Driven Adapter）
+
+アプリケーションの要求を**外部リソースが理解できる形式に変換**します。
+
+\`\`\`typescript
+// セカンダリアダプター: PostgreSQL Repository
+import { Pool } from 'pg';
+
+class PostgresUserRepository implements UserRepository {
+  constructor(private pool: Pool) {}
+
+  async save(user: User): Promise<void> {
+    // ドメインオブジェクト → SQL
+    await this.pool.query(
+      'INSERT INTO users (id, name, email) VALUES ($1, $2, $3)',
+      [user.id.value, user.name.value, user.email.value]
+    );
+  }
+
+  async findById(id: UserId): Promise<User | null> {
+    // SQL → ドメインオブジェクト
+    const result = await this.pool.query(
+      'SELECT * FROM users WHERE id = $1',
+      [id.value]
+    );
+
+    if (result.rows.length === 0) return null;
+
+    const row = result.rows[0];
+    return User.reconstruct({
+      id: UserId.create(row.id),
+      name: UserName.create(row.name),
+      email: Email.create(row.email),
+    });
+  }
+
+  async findByEmail(email: Email): Promise<User | null> {
+    const result = await this.pool.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email.value]
+    );
+
+    if (result.rows.length === 0) return null;
+
+    const row = result.rows[0];
+    return User.reconstruct({
+      id: UserId.create(row.id),
+      name: UserName.create(row.name),
+      email: Email.create(row.email),
+    });
+  }
+
+  async delete(id: UserId): Promise<void> {
+    await this.pool.query('DELETE FROM users WHERE id = $1', [id.value]);
+  }
+}
+
+// セカンダリアダプター: SendGrid Email Service
+import sgMail from '@sendgrid/mail';
+
+class SendGridEmailService implements EmailService {
+  constructor(apiKey: string) {
+    sgMail.setApiKey(apiKey);
+  }
+
+  async sendWelcomeEmail(to: Email, userName: string): Promise<void> {
+    // ドメインの要求 → SendGrid API
+    await sgMail.send({
+      to: to.value,
+      from: 'noreply@example.com',
+      subject: 'Welcome!',
+      html: \`<h1>Hello, \${userName}!</h1><p>Welcome to our service.</p>\`,
+    });
+  }
+
+  async sendPasswordReset(to: Email, token: string): Promise<void> {
+    await sgMail.send({
+      to: to.value,
+      from: 'noreply@example.com',
+      subject: 'Password Reset',
+      html: \`<p>Click <a href="https://example.com/reset?token=\${token}">here</a> to reset.</p>\`,
+    });
+  }
+}
+\`\`\`
+
+## 全体の接続
+
+\`\`\`mermaid
+graph TB
+    subgraph "プライマリアダプター"
+        C[Controller]
+    end
+
+    subgraph "駆動ポート"
+        UCP[RegisterUserUseCase]
+    end
+
+    subgraph "Application Core"
+        UCI[RegisterUserUseCaseImpl]
+        D[User Domain]
+    end
+
+    subgraph "被駆動ポート"
+        RP[UserRepository]
+        EP[EmailService]
+    end
+
+    subgraph "セカンダリアダプター"
+        PG[PostgresUserRepository]
+        SG[SendGridEmailService]
+    end
+
+    C --> UCP
+    UCP -.-> UCI
+    UCI --> D
+    UCI --> RP
+    UCI --> EP
+    RP -.-> PG
+    EP -.-> SG
+
+    style UCP fill:#9cf
+    style RP fill:#fc9
+    style EP fill:#fc9
+\`\`\`
+
+\`\`\`typescript
+// UseCase実装（Application Core）
+class RegisterUserUseCaseImpl implements RegisterUserUseCase {
+  constructor(
+    private userRepository: UserRepository,  // 被駆動ポート
+    private emailService: EmailService        // 被駆動ポート
+  ) {}
+
+  async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
+    // 重複チェック
+    const existing = await this.userRepository.findByEmail(
+      Email.create(input.email)
+    );
+    if (existing) {
+      throw new Error('このメールアドレスは既に登録されています');
+    }
+
+    // ユーザー作成
+    const user = User.create({
+      id: UserId.generate(),
+      name: UserName.create(input.name),
+      email: Email.create(input.email),
+    });
+
+    // 保存
+    await this.userRepository.save(user);
+
+    // ウェルカムメール送信
+    await this.emailService.sendWelcomeEmail(user.email, user.name.value);
+
+    return {
+      userId: user.id.value,
+      createdAt: new Date(),
+    };
+  }
+}
+
+// 依存性の組み立て（Composition Root）
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const userRepository = new PostgresUserRepository(pool);
+const emailService = new SendGridEmailService(process.env.SENDGRID_API_KEY);
+const registerUserUseCase = new RegisterUserUseCaseImpl(userRepository, emailService);
+const userController = new UserController(registerUserUseCase);
+\`\`\`
+
+## テスト時のアダプター差し替え
+
+ヘキサゴナルアーキテクチャの大きな利点は、**テスト時にアダプターを差し替えられる**ことです。
+
+\`\`\`mermaid
+graph TB
+    subgraph "本番環境"
+        UC1[UseCase]
+        PR[PostgresRepository]
+        SG[SendGridEmail]
+        UC1 --> PR
+        UC1 --> SG
+    end
+
+    subgraph "テスト環境"
+        UC2[UseCase]
+        MR[InMemoryRepository]
+        ME[MockEmailService]
+        UC2 --> MR
+        UC2 --> ME
+    end
+
+    style PR fill:#f99
+    style SG fill:#f99
+    style MR fill:#9f9
+    style ME fill:#9f9
+\`\`\`
+
+\`\`\`typescript
+// テスト用のインメモリリポジトリ
+class InMemoryUserRepository implements UserRepository {
+  private users: Map<string, User> = new Map();
+
+  async save(user: User): Promise<void> {
+    this.users.set(user.id.value, user);
+  }
+
+  async findById(id: UserId): Promise<User | null> {
+    return this.users.get(id.value) || null;
+  }
+
+  async findByEmail(email: Email): Promise<User | null> {
+    for (const user of this.users.values()) {
+      if (user.email.equals(email)) {
+        return user;
+      }
+    }
+    return null;
+  }
+
+  async delete(id: UserId): Promise<void> {
+    this.users.delete(id.value);
+  }
+
+  // テスト用ヘルパー
+  clear(): void {
+    this.users.clear();
+  }
+}
+
+// テスト用のモックEmailService
+class MockEmailService implements EmailService {
+  public sentEmails: Array<{ to: string; type: string }> = [];
+
+  async sendWelcomeEmail(to: Email, userName: string): Promise<void> {
+    this.sentEmails.push({ to: to.value, type: 'welcome' });
+  }
+
+  async sendPasswordReset(to: Email, token: string): Promise<void> {
+    this.sentEmails.push({ to: to.value, type: 'password-reset' });
+  }
+
+  // テスト用ヘルパー
+  clear(): void {
+    this.sentEmails = [];
+  }
+}
+
+// テストコード
+describe('RegisterUserUseCase', () => {
+  let userRepository: InMemoryUserRepository;
+  let emailService: MockEmailService;
+  let useCase: RegisterUserUseCase;
+
+  beforeEach(() => {
+    // テスト用アダプターを注入
+    userRepository = new InMemoryUserRepository();
+    emailService = new MockEmailService();
+    useCase = new RegisterUserUseCaseImpl(userRepository, emailService);
+  });
+
+  it('should register a new user', async () => {
+    const input = {
+      name: '田中太郎',
+      email: 'tanaka@example.com',
+      password: 'password123',
+    };
+
+    const output = await useCase.execute(input);
+
+    // ユーザーが保存されたことを確認
+    const savedUser = await userRepository.findById(
+      UserId.create(output.userId)
+    );
+    expect(savedUser).not.toBeNull();
+    expect(savedUser!.name.value).toBe('田中太郎');
+
+    // ウェルカムメールが送信されたことを確認
+    expect(emailService.sentEmails).toHaveLength(1);
+    expect(emailService.sentEmails[0].type).toBe('welcome');
+  });
+
+  it('should reject duplicate email', async () => {
+    // 既存ユーザーを登録
+    const existingUser = User.create({
+      id: UserId.generate(),
+      name: UserName.create('既存ユーザー'),
+      email: Email.create('existing@example.com'),
+    });
+    await userRepository.save(existingUser);
+
+    // 同じメールで登録を試みる
+    await expect(
+      useCase.execute({
+        name: '新規ユーザー',
+        email: 'existing@example.com',
+        password: 'password123',
+      })
+    ).rejects.toThrow('このメールアドレスは既に登録されています');
+  });
+});
+\`\`\`
+
+## ディレクトリ構造の例
+
+\`\`\`
+src/
+├── domain/                    # ドメイン層
+│   ├── user/
+│   │   ├── User.ts
+│   │   ├── UserId.ts
+│   │   └── UserName.ts
+│   └── shared/
+│       └── Email.ts
+│
+├── application/               # アプリケーション層（ポート定義含む）
+│   ├── ports/
+│   │   ├── driving/          # 駆動ポート
+│   │   │   └── RegisterUserUseCase.ts
+│   │   └── driven/           # 被駆動ポート
+│   │       ├── UserRepository.ts
+│   │       └── EmailService.ts
+│   └── usecases/
+│       └── RegisterUserUseCaseImpl.ts
+│
+├── adapters/                  # アダプター層
+│   ├── primary/              # プライマリアダプター
+│   │   ├── web/
+│   │   │   └── UserController.ts
+│   │   └── cli/
+│   │       └── UserCLI.ts
+│   └── secondary/            # セカンダリアダプター
+│       ├── persistence/
+│       │   └── PostgresUserRepository.ts
+│       └── email/
+│           └── SendGridEmailService.ts
+│
+└── main.ts                    # Composition Root
+\`\`\`
+
+## まとめ
+
+- **ポート**: アプリケーション境界を定義するインターフェース
+  - **駆動ポート**: アプリケーションを駆動（UseCase Interface）
+  - **被駆動ポート**: 外部リソースにアクセス（Repository Interface）
+- **アダプター**: ポートの具体的な実装
+  - **プライマリアダプター**: 外部入力を変換（Controller）
+  - **セカンダリアダプター**: 外部出力を変換（RepositoryImpl）
+- **テスト**: アダプターを差し替えて高速・独立したテストが可能
+`),
+  order: 2,
+});
+
+export const chapter14Lessons = [lesson14_1, lesson14_2];
