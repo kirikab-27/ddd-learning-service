@@ -1804,6 +1804,124 @@ const lesson11_2Questions: Question[] = [
   }),
 ];
 
+// Lesson 12-1: レイヤードアーキテクチャとは（5問）
+const lesson12_1Questions: Question[] = [
+  Question.create({
+    id: 'q12-1-1',
+    text: 'DDDにおいてアーキテクチャが果たすべき最も重要な役割は何ですか？',
+    options: [
+      { id: 'a', text: 'UIを美しくする', isCorrect: false },
+      { id: 'b', text: 'データベースを高速化する', isCorrect: false },
+      { id: 'c', text: 'ドメインモデルを隔離し、防衛する', isCorrect: true },
+      { id: 'd', text: 'コードの行数を減らす', isCorrect: false },
+    ],
+    explanation: 'DDDにおいてアーキテクチャの最も重要な役割は、ドメインモデルをUIやデータベースといったソフトウェア固有の事情から隔離し、防衛することです。',
+  }),
+  Question.create({
+    id: 'q12-1-2',
+    text: '「利口なUI」アンチパターンの問題点として正しいものは？',
+    options: [
+      { id: 'a', text: 'UIが美しくなりすぎる', isCorrect: false },
+      { id: 'b', text: 'ビジネスロジックがUIに分散し、仕様変更に弱くなる', isCorrect: true },
+      { id: 'c', text: 'サーバー負荷が高くなる', isCorrect: false },
+      { id: 'd', text: 'テストが速くなりすぎる', isCorrect: false },
+    ],
+    explanation: '利口なUIでは、ビジネスロジックが複数の画面に分散するため、仕様変更時に複数箇所を修正する必要があり、修正漏れというバグの温床になります。',
+  }),
+  Question.create({
+    id: 'q12-1-3',
+    text: 'レイヤードアーキテクチャの依存関係ルールとして正しいものは？',
+    options: [
+      { id: 'a', text: 'すべての層が自由に依存できる', isCorrect: false },
+      { id: 'b', text: '下から上への一方通行', isCorrect: false },
+      { id: 'c', text: '上から下への一方通行', isCorrect: true },
+      { id: 'd', text: '水平方向にのみ依存できる', isCorrect: false },
+    ],
+    explanation: 'レイヤードアーキテクチャでは、依存の方向は原則として上から下への一方通行です。プレゼンテーション → アプリケーション → ドメイン → インフラの順に依存します。',
+  }),
+  Question.create({
+    id: 'q12-1-4',
+    text: 'ドメイン層が守るべき原則として正しいものは？',
+    options: [
+      { id: 'a', text: 'データベースに直接アクセスする', isCorrect: false },
+      { id: 'b', text: 'UIの都合を知っている', isCorrect: false },
+      { id: 'c', text: '他の層の都合を知らない（最も純粋）', isCorrect: true },
+      { id: 'd', text: 'すべての層に依存する', isCorrect: false },
+    ],
+    explanation: 'ドメイン層は他の層の都合を知らない「最も純粋」な層でなければなりません。UIの表示形式やデータベースの保存方法は知らずに、ビジネスロジックだけを表現します。',
+  }),
+  Question.create({
+    id: 'q12-1-5',
+    text: 'アーキテクチャがもたらす利点として「一度に多くのことを考えなくて済む」とはどういう意味ですか？',
+    options: [
+      { id: 'a', text: 'コードの量が減る', isCorrect: false },
+      { id: 'b', text: '関心事が分離され、今考えるべきことが明確になる', isCorrect: true },
+      { id: 'c', text: '自動でコードが生成される', isCorrect: false },
+      { id: 'd', text: 'ドキュメントを読まなくて済む', isCorrect: false },
+    ],
+    explanation: 'アーキテクチャにより関心事が分離されると、例えばUIの色を考えるときは割引計算を忘れられ、ビジネスロジック実装時はDB保存方法を考えなくて済みます。',
+  }),
+];
+
+// Lesson 12-2: DDDにおける4層構造（5問）
+const lesson12_2Questions: Question[] = [
+  Question.create({
+    id: 'q12-2-1',
+    text: 'アプリケーション層の役割として正しいものは？',
+    options: [
+      { id: 'a', text: 'ビジネスルールを定義する', isCorrect: false },
+      { id: 'b', text: 'ユースケースの調整役（オーケストラの指揮者）', isCorrect: true },
+      { id: 'c', text: 'データベースに直接アクセスする', isCorrect: false },
+      { id: 'd', text: 'UIのレイアウトを決める', isCorrect: false },
+    ],
+    explanation: 'アプリケーション層は指揮者のように、ドメインオブジェクトを調整してユースケースを実現します。ビジネスルール自体はドメイン層に任せ、処理の流れを管理します。',
+  }),
+  Question.create({
+    id: 'q12-2-2',
+    text: 'プレゼンテーション層がドメインオブジェクトを直接扱わず、DTOを使う理由は？',
+    options: [
+      { id: 'a', text: 'DTOの方が処理が速い', isCorrect: false },
+      { id: 'b', text: 'ドメインの純粋性を保ち、表示用データと分離するため', isCorrect: true },
+      { id: 'c', text: 'DTOの方がコード量が少ない', isCorrect: false },
+      { id: 'd', text: 'データベースがDTOしか受け付けない', isCorrect: false },
+    ],
+    explanation: 'DTOを使うことで、ドメインモデルが表示の都合に汚染されることを防ぎ、プレゼンテーション層とドメイン層を明確に分離できます。',
+  }),
+  Question.create({
+    id: 'q12-2-3',
+    text: '依存性逆転の原則（DIP）がもたらすメリットとして正しいものは？',
+    options: [
+      { id: 'a', text: 'コードの実行速度が上がる', isCorrect: false },
+      { id: 'b', text: 'テスト時にモック実装に差し替えやすくなる', isCorrect: true },
+      { id: 'c', text: 'データベース接続が不要になる', isCorrect: false },
+      { id: 'd', text: 'UIのデザインが向上する', isCorrect: false },
+    ],
+    explanation: 'DIPにより、ドメイン層で定義したインターフェースを使うと、テスト時にモック実装に簡単に差し替えられ、データベースなしで高速にテストできます。',
+  }),
+  Question.create({
+    id: 'q12-2-4',
+    text: 'インフラストラクチャ層の責務として正しいものは？',
+    options: [
+      { id: 'a', text: 'ビジネスルールの実装', isCorrect: false },
+      { id: 'b', text: 'ユーザー入力の検証', isCorrect: false },
+      { id: 'c', text: 'データベースや外部APIとの技術的詳細の実装', isCorrect: true },
+      { id: 'd', text: 'ユースケースの調整', isCorrect: false },
+    ],
+    explanation: 'インフラストラクチャ層は、データベース接続、外部API連携、ORMの使用など、技術的詳細の実装を担当します。ドメイン層のインターフェースを実装します。',
+  }),
+  Question.create({
+    id: 'q12-2-5',
+    text: 'アプリケーション層でビジネスルール（例: 名前は3文字以上）を実装することの問題点は？',
+    options: [
+      { id: 'a', text: 'コードが長くなる', isCorrect: false },
+      { id: 'b', text: 'ビジネスルールがドメイン層から漏れ出し、重複や不整合が起きやすくなる', isCorrect: true },
+      { id: 'c', text: '実行速度が遅くなる', isCorrect: false },
+      { id: 'd', text: 'データベースに保存できなくなる', isCorrect: false },
+    ],
+    explanation: 'ビジネスルールをアプリケーション層に書くと、ドメインの知識が外部に漏れ、複数のユースケースで同じルールを重複実装したり、ルールの不整合が起きやすくなります。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -2025,6 +2143,21 @@ export const sampleQuizzes: Quiz[] = [
     title: '仕様の実装と合成 - 理解度チェック',
     description: '仕様の実装、AND/OR/NOT合成、パフォーマンスとのトレードオフについての理解度を確認するクイズです。',
     questions: lesson11_2Questions,
+  }),
+  // Chapter 12: レイヤードアーキテクチャ
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-12-1'),
+    lessonId: LessonId.create('lesson-12-1'),
+    title: 'レイヤードアーキテクチャとは - 理解度チェック',
+    description: 'アーキテクチャの目的、利口なUIアンチパターン、依存関係のルールについての理解度を確認するクイズです。',
+    questions: lesson12_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-12-2'),
+    lessonId: LessonId.create('lesson-12-2'),
+    title: 'DDDにおける4層構造 - 理解度チェック',
+    description: '4層構造の責務、DIP、本プロジェクトの構造についての理解度を確認するクイズです。',
+    questions: lesson12_2Questions,
   }),
 ];
 

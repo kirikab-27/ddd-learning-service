@@ -6828,3 +6828,634 @@ const eligible = premiumSpec
 });
 
 export const chapter11Lessons = [lesson11_1, lesson11_2];
+
+// =============================================================================
+// 第3部: アーキテクチャパターン
+// =============================================================================
+
+// Lesson 12-1: レイヤードアーキテクチャとは
+export const lesson12_1 = Lesson.create({
+  id: LessonId.create('lesson-12-1'),
+  title: LessonTitle.create('レイヤードアーキテクチャとは'),
+  content: MarkdownContent.create(`
+# レイヤードアーキテクチャとは
+
+## 概要
+
+このレッスンでは、レイヤードアーキテクチャの基本概念と、
+DDDにおいてアーキテクチャが果たす役割について学びます。
+
+## アーキテクチャの目的
+
+### ドメインの隔離と防衛
+
+DDDにおいてアーキテクチャが果たすべき最も重要な役割は：
+
+> **ドメインモデルを、UIやデータベースといったソフトウェア固有の事情から隔離し、防衛すること**
+
+アーキテクチャは主役ではありませんが、ドメインという主役を輝かせるための**不可欠な舞台装置**です。
+
+\`\`\`mermaid
+graph TB
+    subgraph "アーキテクチャの役割"
+        A[UI] -.->|保護| D[ドメイン]
+        B[データベース] -.->|保護| D
+        C[外部API] -.->|保護| D
+    end
+
+    style D fill:#f96,stroke:#333,stroke-width:3px
+    style A fill:#ccc
+    style B fill:#ccc
+    style C fill:#ccc
+\`\`\`
+
+### 一度に多くのことを考えなくて済む
+
+アーキテクチャという**地図とコンパス**があることで：
+- UIのボタンの色を考えているときは、複雑な割引計算のことは忘れられる
+- ビジネスロジックを実装しているときは、データベースへの保存方法は考えなくて済む
+
+## 「利口なUI」アンチパターン
+
+### 問題: ビジネスロジックがUIに漏れる
+
+高納期に追われていると、つい「一旦UI側で計算しちゃおう」という誘惑に駆られます。
+
+\`\`\`typescript
+// ❌ 利口なUI: ECサイトの合計金額計算がUIに散在
+// 注文確認画面
+function OrderConfirmationPage({ items }) {
+  // UIにビジネスロジックが漏れている！
+  const subtotal = items.reduce((sum, item) =>
+    sum + item.price * item.quantity, 0
+  );
+  const tax = subtotal * 0.1;
+  const shipping = subtotal >= 5000 ? 0 : 500;
+  const total = subtotal + tax + shipping;
+
+  return <div>合計: {total}円</div>;
+}
+
+// 注文履歴画面（同じロジックの重複！）
+function OrderHistoryPage({ orders }) {
+  return orders.map(order => {
+    const subtotal = order.items.reduce((sum, item) =>
+      sum + item.price * item.quantity, 0
+    );
+    // 同じ計算ロジックがまた出現...
+  });
+}
+\`\`\`
+
+### 問題点1: 仕様変更に弱い
+
+税率が変わったり、特定の条件で送料が無料になるルールが追加されると：
+- 3つの画面を**すべて忘れずに**修正する必要がある
+- **修正漏れ**という最も怖いバグの温床
+
+\`\`\`mermaid
+graph TD
+    A[仕様変更: 税率8% → 10%] --> B[注文確認画面を修正]
+    A --> C[注文履歴画面を修正]
+    A --> D[注文詳細画面を修正]
+    A -->|修正漏れ!| E[管理画面...??]
+
+    style A fill:#f66
+    style E fill:#ff0
+\`\`\`
+
+### 問題点2: コードが怪物化する
+
+最初は同じだったロジックが、画面ごとの都合で微妙にカスタマイズされていき、
+気づいた頃には**誰にも全体像がわからないモンスター**に...
+
+### 利口なUIの本質
+
+> **短期的な利益のために、未来の選択肢（変更する自由）を売り払っている**
+
+アーキテクチャは、この「未来の選択肢を守るための保険」です。
+
+## 層による関心事の分離
+
+### レイヤードアーキテクチャとは
+
+ソフトウェアの**関心事を層（レイヤー）で分割**する考え方です。
+
+\`\`\`mermaid
+graph TB
+    subgraph "レイヤードアーキテクチャ"
+        P[プレゼンテーション層<br/>UI・画面表示] --> A
+        A[アプリケーション層<br/>ユースケースの調整] --> D
+        D[ドメイン層<br/>ビジネスルール] --> I
+        I[インフラストラクチャ層<br/>データベース・外部API]
+    end
+
+    style D fill:#f96,stroke:#333,stroke-width:3px
+\`\`\`
+
+### 各層の責務
+
+| 層 | 責務 | 例 |
+|---|---|---|
+| **プレゼンテーション** | 画面表示、ユーザー入力 | React コンポーネント |
+| **アプリケーション** | ユースケースの調整 | RegisterUserUseCase |
+| **ドメイン** | ビジネスルール | User, Order エンティティ |
+| **インフラストラクチャ** | 技術的詳細 | PostgreSQL, REST API |
+
+## 依存関係のルール
+
+### 原則: 上から下への一方通行
+
+\`\`\`mermaid
+graph TB
+    P[プレゼンテーション] -->|依存OK| A[アプリケーション]
+    A -->|依存OK| D[ドメイン]
+    D -->|依存NG!| I[インフラストラクチャ]
+    I -.->|依存性逆転で<br/>抽象に依存| D
+
+    P x-->|依存NG!| D
+    A x-->|依存NG!| P
+
+    style D fill:#f96,stroke:#333,stroke-width:3px
+\`\`\`
+
+**ルール:**
+- 上位層は下位層に依存できる
+- **ドメイン層は他の層の都合を知らない**（最も純粋）
+- 下位層が上位層に依存してはいけない
+
+### なぜこのルールが重要か
+
+\`\`\`typescript
+// ❌ ドメイン層がプレゼンテーション層に依存
+class Order {
+  // HTMLを知っている → アーキテクチャ違反！
+  toHtml(): string {
+    return \`<div class="order">\${this.id}</div>\`;
+  }
+}
+
+// ✅ ドメイン層は純粋なビジネスロジックのみ
+class Order {
+  confirm(): void {
+    if (!this.canBeConfirmed()) {
+      throw new OrderCannotBeConfirmedException();
+    }
+    this._status = OrderStatus.Confirmed;
+  }
+}
+\`\`\`
+
+## 変更に強い設計の実現
+
+### 利口なUIとの比較
+
+\`\`\`mermaid
+graph LR
+    subgraph "利口なUI"
+        A1[画面A] --> L1[計算ロジック]
+        A2[画面B] --> L2[計算ロジック]
+        A3[画面C] --> L3[計算ロジック]
+    end
+
+    subgraph "レイヤード"
+        B1[画面A] --> S[アプリケーション層]
+        B2[画面B] --> S
+        B3[画面C] --> S
+        S --> D[ドメイン層<br/>計算ロジック]
+    end
+
+    style L1 fill:#f66
+    style L2 fill:#f66
+    style L3 fill:#f66
+    style D fill:#6c6
+\`\`\`
+
+レイヤードアーキテクチャでは：
+- ビジネスロジックは**ドメイン層に1箇所だけ**
+- 仕様変更時は**1箇所だけ修正**
+- 修正漏れのリスクが大幅に低下
+
+### コードの可読性向上
+
+\`\`\`typescript
+// どこに何があるか明確
+src/
+├── presentation/    # UIの関心事
+├── application/     # ユースケースの関心事
+├── domain/          # ビジネスルールの関心事
+└── infrastructure/  # 技術的詳細の関心事
+\`\`\`
+
+開発者は「今自分が考えるべきこと」と「今は考える必要がないこと」が明確になり、
+**本当に重要な作業に集中**できます。
+
+## まとめ
+
+- **アーキテクチャの目的**: ドメインの隔離と防衛
+- **利口なUI**: ビジネスロジックがUIに漏れるアンチパターン
+  - 仕様変更に弱い、コードが怪物化する
+- **レイヤードアーキテクチャ**: 関心事を層で分離
+  - プレゼンテーション → アプリケーション → ドメイン → インフラ
+- **依存関係のルール**: 上から下への一方通行
+- **変更に強い設計**: ビジネスロジックを1箇所に集約
+`),
+  order: 1,
+});
+
+// Lesson 12-2: DDDにおける4層構造
+export const lesson12_2 = Lesson.create({
+  id: LessonId.create('lesson-12-2'),
+  title: LessonTitle.create('DDDにおける4層構造'),
+  content: MarkdownContent.create(`
+# DDDにおける4層構造
+
+## 概要
+
+このレッスンでは、DDDで一般的に採用される4層構造の詳細と、
+本プロジェクトの実際の構造を例に各層の役割を深く理解します。
+
+## 4層構造の全体像
+
+\`\`\`mermaid
+graph TB
+    subgraph "4層アーキテクチャ"
+        P[プレゼンテーション層]
+        A[アプリケーション層]
+        D[ドメイン層]
+        I[インフラストラクチャ層]
+    end
+
+    P -->|DTO| A
+    A -->|ドメインモデル| D
+    A -->|インターフェース| I
+    I -.->|実装| D
+
+    U[ユーザー] --> P
+    DB[(データベース)] --- I
+    API[外部API] --- I
+
+    style D fill:#f96,stroke:#333,stroke-width:3px
+\`\`\`
+
+## プレゼンテーション層
+
+### 責務
+
+- **UIの表示**: 画面のレイアウト、スタイリング
+- **ユーザー入力の受付**: フォーム、ボタンクリック
+- **DTOへの変換**: ドメインモデルを表示用データに変換
+
+### 本プロジェクトの例（src/presentation/）
+
+\`\`\`
+src/presentation/
+├── components/       # UIコンポーネント
+│   ├── common/       # 共通コンポーネント
+│   └── course/       # コース関連コンポーネント
+└── pages/            # ページコンポーネント
+\`\`\`
+
+### コード例
+
+\`\`\`typescript
+// presentation/components/course/LessonCard.tsx
+'use client';
+
+import { LessonDto } from '@/application/dto';
+
+interface Props {
+  lesson: LessonDto;  // DTO を受け取る
+  onSelect: (id: string) => void;
+}
+
+export function LessonCard({ lesson, onSelect }: Props) {
+  // ✅ UIの関心事のみ
+  return (
+    <div className="lesson-card" onClick={() => onSelect(lesson.id)}>
+      <h3>{lesson.title}</h3>
+      <p>{lesson.description}</p>
+    </div>
+  );
+}
+\`\`\`
+
+### 重要なルール
+
+\`\`\`typescript
+// ❌ プレゼンテーション層でビジネスロジック
+function OrderPage({ order }) {
+  // プレゼンテーション層で計算してはいけない
+  const discount = order.totalPrice * 0.1;
+  const finalPrice = order.totalPrice - discount;
+}
+
+// ✅ アプリケーション層から計算済みのDTOを受け取る
+function OrderPage({ orderDto }) {
+  // 表示するだけ
+  return <div>合計: {orderDto.finalPrice}円</div>;
+}
+\`\`\`
+
+## アプリケーション層
+
+### 責務
+
+- **ユースケースの調整**: 処理の流れを組み立てる
+- **トランザクション管理**: 処理の開始と終了
+- **DTO変換**: ドメインモデル ↔ DTO の変換
+
+### オーケストラの指揮者
+
+アプリケーション層は**指揮者**です：
+- ドメインオブジェクト（演奏者）にビジネスルールは教えない
+- ユースケース（楽曲）を実現するための**流れを管理**する
+
+\`\`\`mermaid
+graph LR
+    subgraph "オーケストラ"
+        C[指揮者<br/>アプリケーション層] -->|指示| V[バイオリン<br/>User]
+        C -->|指示| P[ピアノ<br/>Order]
+        C -->|指示| D[ドラム<br/>Repository]
+    end
+
+    S[楽譜<br/>ユースケース] --> C
+
+    style C fill:#69f
+\`\`\`
+
+### 本プロジェクトの例（src/application/）
+
+\`\`\`
+src/application/
+├── dto/              # Data Transfer Objects
+├── services/         # アプリケーションサービス
+└── usecases/         # ユースケース
+\`\`\`
+
+### コード例
+
+\`\`\`typescript
+// application/usecases/RegisterUserUseCase.ts
+export class RegisterUserUseCase {
+  constructor(
+    private userRepository: IUserRepository,
+    private userFactory: IUserFactory,
+    private notificationService: INotificationService
+  ) {}
+
+  async execute(input: RegisterUserInput): Promise<UserDto> {
+    // 1. ドメインオブジェクトの生成
+    const user = await this.userFactory.create(
+      new UserName(input.name),
+      new Email(input.email)
+    );
+
+    // 2. 永続化（リポジトリに依頼）
+    await this.userRepository.save(user);
+
+    // 3. 通知（外部サービスに依頼）
+    await this.notificationService.sendWelcomeEmail(user);
+
+    // 4. DTOに変換して返す
+    return UserDto.fromDomain(user);
+  }
+}
+\`\`\`
+
+### アプリケーション層がやってはいけないこと
+
+\`\`\`typescript
+// ❌ ビジネスルールを書いてはいけない
+class RegisterUserUseCase {
+  async execute(input: RegisterUserInput) {
+    // ❌ ビジネスルールがアプリケーション層に漏れている
+    if (input.name.length < 3) {
+      throw new Error('名前は3文字以上必要です');
+    }
+    // ...
+  }
+}
+
+// ✅ ビジネスルールはドメイン層に
+class UserName {
+  private constructor(private readonly value: string) {}
+
+  static create(value: string): UserName {
+    // ✅ ビジネスルールはここ
+    if (value.length < 3) {
+      throw new InvalidUserNameError('名前は3文字以上必要です');
+    }
+    return new UserName(value);
+  }
+}
+\`\`\`
+
+## ドメイン層
+
+### 責務
+
+- **ビジネスルールの表現**: エンティティ、値オブジェクト
+- **ドメインサービス**: 複数オブジェクトにまたがるロジック
+- **リポジトリインターフェース**: 永続化の抽象
+
+### 本プロジェクトの例（src/domain/）
+
+\`\`\`
+src/domain/
+├── content/          # コンテンツコンテキスト
+│   ├── models/       # エンティティ・値オブジェクト
+│   └── repositories/ # リポジトリインターフェース
+├── quiz/             # クイズコンテキスト
+└── shared/           # 共有カーネル
+\`\`\`
+
+### 純粋性の維持
+
+ドメイン層は**最も純粋**でなければなりません：
+
+\`\`\`typescript
+// domain/content/models/Course.ts
+export class Course {
+  private constructor(
+    private readonly _id: CourseId,
+    private readonly _title: string,
+    private readonly _chapters: Chapter[]
+  ) {}
+
+  // ✅ 純粋なビジネスロジックのみ
+  getChapter(chapterId: ChapterId): Chapter | undefined {
+    return this._chapters.find(ch => ch.id.equals(chapterId));
+  }
+
+  // ✅ データベースやUIのことは知らない
+  get totalLessons(): number {
+    return this._chapters.reduce(
+      (sum, ch) => sum + ch.lessons.length, 0
+    );
+  }
+}
+\`\`\`
+
+### ドメイン層がやってはいけないこと
+
+\`\`\`typescript
+// ❌ インフラの知識を持ってはいけない
+class User {
+  async save(): Promise<void> {
+    // データベースに直接アクセス → NG!
+    await prisma.user.create({ data: this });
+  }
+}
+
+// ❌ プレゼンテーションの知識を持ってはいけない
+class Order {
+  toJson(): string {
+    // JSON形式を知っている → NG!
+    return JSON.stringify(this);
+  }
+}
+\`\`\`
+
+## インフラストラクチャ層
+
+### 責務
+
+- **技術的詳細の実装**: データベース、外部API
+- **リポジトリの実装**: ドメイン層のインターフェースを実装
+- **フレームワーク固有のコード**: ORM、HTTPクライアント
+
+### 本プロジェクトの例（src/infrastructure/）
+
+\`\`\`
+src/infrastructure/
+├── data/             # サンプルデータ
+├── repositories/     # リポジトリ実装
+└── external/         # 外部サービス連携
+\`\`\`
+
+### コード例
+
+\`\`\`typescript
+// infrastructure/repositories/CourseRepositoryImpl.ts
+export class CourseRepositoryImpl implements ICourseRepository {
+  constructor(private prisma: PrismaClient) {}
+
+  async findById(id: CourseId): Promise<Course | null> {
+    // ✅ 技術的詳細（Prisma）はここに閉じ込める
+    const data = await this.prisma.course.findUnique({
+      where: { id: id.value },
+      include: { chapters: { include: { lessons: true } } }
+    });
+
+    if (!data) return null;
+
+    // データベースの形式からドメインモデルに変換
+    return Course.reconstruct({
+      id: CourseId.create(data.id),
+      title: data.title,
+      chapters: data.chapters.map(ch => Chapter.reconstruct({
+        // ...
+      }))
+    });
+  }
+}
+\`\`\`
+
+## 依存性逆転の原則（DIP）
+
+### 問題: ドメイン層がインフラに依存
+
+従来の設計では、上位層が下位層に直接依存します：
+
+\`\`\`mermaid
+graph TB
+    A[アプリケーション層] -->|直接依存| R[UserRepositoryImpl]
+    D[ドメイン層] x-->|依存NG!| R
+    R --> DB[(データベース)]
+\`\`\`
+
+### 解決: インターフェースによる逆転
+
+\`\`\`mermaid
+graph TB
+    A[アプリケーション層] -->|依存| I[IUserRepository<br/>インターフェース]
+    D[ドメイン層] -->|定義| I
+    R[UserRepositoryImpl] -.->|実装| I
+    R --> DB[(データベース)]
+
+    style I fill:#69f
+\`\`\`
+
+### コードでの実現
+
+\`\`\`typescript
+// domain/repositories/IUserRepository.ts（ドメイン層）
+export interface IUserRepository {
+  findById(id: UserId): Promise<User | null>;
+  save(user: User): Promise<void>;
+}
+
+// infrastructure/repositories/UserRepositoryImpl.ts（インフラ層）
+export class UserRepositoryImpl implements IUserRepository {
+  // ドメイン層のインターフェースを実装
+  async findById(id: UserId): Promise<User | null> {
+    // Prismaを使った実装
+  }
+}
+
+// application/usecases/RegisterUserUseCase.ts（アプリケーション層）
+export class RegisterUserUseCase {
+  constructor(
+    private userRepository: IUserRepository  // インターフェースに依存
+  ) {}
+}
+\`\`\`
+
+### DIPのメリット
+
+\`\`\`typescript
+// テスト時は簡単にモックに差し替え
+const mockRepository: IUserRepository = {
+  findById: jest.fn(),
+  save: jest.fn(),
+};
+
+const useCase = new RegisterUserUseCase(mockRepository);
+\`\`\`
+
+- **テストが容易**: モックに簡単に差し替え
+- **技術選択の自由**: PostgreSQL → MongoDB も可能
+- **ドメインの純粋性**: 技術的詳細から完全に独立
+
+## まとめ
+
+### 4層の責務
+
+| 層 | 責務 | キーワード |
+|---|---|---|
+| **プレゼンテーション** | UI表示 | コンポーネント, DTO |
+| **アプリケーション** | ユースケース調整 | 指揮者, トランザクション |
+| **ドメイン** | ビジネスルール | 純粋性, エンティティ |
+| **インフラストラクチャ** | 技術的詳細 | DB, 外部API |
+
+### 本プロジェクトの構造
+
+\`\`\`
+src/
+├── presentation/    # プレゼンテーション層
+├── application/     # アプリケーション層
+├── domain/          # ドメイン層
+└── infrastructure/  # インフラストラクチャ層
+\`\`\`
+
+### 依存性逆転の原則
+
+- ドメイン層でインターフェースを定義
+- インフラ層がそれを実装
+- **ドメインの純粋性を守りながら、技術的詳細を扱える**
+`),
+  order: 2,
+});
+
+export const chapter12Lessons = [lesson12_1, lesson12_2];
