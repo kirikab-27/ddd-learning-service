@@ -1922,6 +1922,183 @@ const lesson12_2Questions: Question[] = [
   }),
 ];
 
+// Lesson 13-1: クリーンアーキテクチャとは（5問）
+const lesson13_1Questions: Question[] = [
+  Question.create({
+    id: 'q13-1-1',
+    text: 'クリーンアーキテクチャを提唱したのは誰ですか？',
+    options: [
+      { id: 'a', text: 'Martin Fowler', isCorrect: false },
+      { id: 'b', text: 'Eric Evans', isCorrect: false },
+      { id: 'c', text: 'Robert C. Martin（Uncle Bob）', isCorrect: true },
+      { id: 'd', text: 'Kent Beck', isCorrect: false },
+    ],
+    explanation: 'クリーンアーキテクチャは2012年にRobert C. Martin（通称Uncle Bob）によって提唱されました。Hexagonal ArchitectureやOnion Architectureの影響を受けています。',
+  }),
+  Question.create({
+    id: 'q13-1-2',
+    text: 'クリーンアーキテクチャの同心円構造で、最も内側に位置するのは何ですか？',
+    options: [
+      { id: 'a', text: 'Use Cases', isCorrect: false },
+      { id: 'b', text: 'Interface Adapters', isCorrect: false },
+      { id: 'c', text: 'Frameworks & Drivers', isCorrect: false },
+      { id: 'd', text: 'Entities', isCorrect: true },
+    ],
+    explanation: 'クリーンアーキテクチャでは、Entities（エンティティ）が最も内側に位置し、ビジネスルールの核心を表現します。外側に向かってUse Cases、Interface Adapters、Frameworks & Driversと続きます。',
+  }),
+  Question.create({
+    id: 'q13-1-3',
+    text: 'クリーンアーキテクチャの依存関係のルールとして正しいものは？',
+    options: [
+      { id: 'a', text: '内側から外側への一方通行', isCorrect: false },
+      { id: 'b', text: '外側から内側への一方通行', isCorrect: true },
+      { id: 'c', text: '双方向の依存が許可される', isCorrect: false },
+      { id: 'd', text: '隣接する層のみ依存可能', isCorrect: false },
+    ],
+    explanation: 'クリーンアーキテクチャでは、依存関係は外側から内側への一方通行です。内側の層は外側の層について何も知らないというルールを厳守します。',
+  }),
+  Question.create({
+    id: 'q13-1-4',
+    text: 'Uncle Bobが「フレームワークは詳細である」と主張する理由として正しいものは？',
+    options: [
+      { id: 'a', text: 'フレームワークは学習が難しいから', isCorrect: false },
+      { id: 'b', text: 'フレームワークは交換可能であり、ビジネスロジックは知らなくてよいから', isCorrect: true },
+      { id: 'c', text: 'フレームワークは処理が遅いから', isCorrect: false },
+      { id: 'd', text: 'フレームワークは無料だから', isCorrect: false },
+    ],
+    explanation: 'フレームワーク、データベース、Webは「詳細」であり、交換可能です。ビジネスロジックはこれらの詳細を知らなくてよく、独立して存在すべきです。',
+  }),
+  Question.create({
+    id: 'q13-1-5',
+    text: 'クリーンアーキテクチャがテスタビリティを重視する理由として正しいものは？',
+    options: [
+      { id: 'a', text: 'テストコードが少なくて済むから', isCorrect: false },
+      { id: 'b', text: 'インターフェースによる依存注入でモックに差し替えやすいから', isCorrect: true },
+      { id: 'c', text: 'テストフレームワークが不要だから', isCorrect: false },
+      { id: 'd', text: 'テストが自動生成されるから', isCorrect: false },
+    ],
+    explanation: 'クリーンアーキテクチャではインターフェースを介して依存するため、テスト時にモック実装に簡単に差し替えられます。これによりデータベースやネットワークなしで高速にテストできます。',
+  }),
+];
+
+// Lesson 13-2: 依存性逆転の原則（DIP）（5問）
+const lesson13_2Questions: Question[] = [
+  Question.create({
+    id: 'q13-2-1',
+    text: '依存性逆転の原則（DIP）の定義として正しいものは？',
+    options: [
+      { id: 'a', text: '高レベルモジュールは低レベルモジュールに直接依存すべき', isCorrect: false },
+      { id: 'b', text: '高レベルモジュールも低レベルモジュールも抽象（インターフェース）に依存すべき', isCorrect: true },
+      { id: 'c', text: '低レベルモジュールは高レベルモジュールに依存すべき', isCorrect: false },
+      { id: 'd', text: 'すべてのモジュールは具体的な実装に依存すべき', isCorrect: false },
+    ],
+    explanation: 'DIPでは、高レベルモジュールも低レベルモジュールも抽象（インターフェース）に依存すべきです。具体的な実装ではなく、抽象に依存することで疎結合を実現します。',
+  }),
+  Question.create({
+    id: 'q13-2-2',
+    text: '高レベルモジュールが低レベルモジュールに直接依存する場合の問題点は？',
+    options: [
+      { id: 'a', text: 'コンパイルが遅くなる', isCorrect: false },
+      { id: 'b', text: 'テスト困難、変更困難、再利用困難になる', isCorrect: true },
+      { id: 'c', text: 'メモリ使用量が増える', isCorrect: false },
+      { id: 'd', text: 'セキュリティが低下する', isCorrect: false },
+    ],
+    explanation: '直接依存すると、テスト時に実際のデータベース接続が必要になり、実装を変更するにはコード修正が必要で、他のプロジェクトで再利用できなくなります。',
+  }),
+  Question.create({
+    id: 'q13-2-3',
+    text: 'DIコンテナの主な役割として正しいものは？',
+    options: [
+      { id: 'a', text: 'データベースへの接続を管理する', isCorrect: false },
+      { id: 'b', text: 'オブジェクトの生成と依存関係の解決を自動化する', isCorrect: true },
+      { id: 'c', text: 'UIコンポーネントを生成する', isCorrect: false },
+      { id: 'd', text: 'ログを記録する', isCorrect: false },
+    ],
+    explanation: 'DIコンテナは、オブジェクトの生成と依存関係の解決を自動化します。登録されたファクトリに基づいて、必要な依存関係を注入してオブジェクトを生成します。',
+  }),
+  Question.create({
+    id: 'q13-2-4',
+    text: 'コンストラクタインジェクションの利点として正しいものは？',
+    options: [
+      { id: 'a', text: '依存関係を後から変更できる', isCorrect: false },
+      { id: 'b', text: '依存関係が明確で、不変性を保証できる', isCorrect: true },
+      { id: 'c', text: 'コードが短くなる', isCorrect: false },
+      { id: 'd', text: '実行速度が向上する', isCorrect: false },
+    ],
+    explanation: 'コンストラクタインジェクションでは、オブジェクト生成時に必要な依存関係が明確になり、生成後は変更されないため不変性が保証されます。',
+  }),
+  Question.create({
+    id: 'q13-2-5',
+    text: 'DIPを適用した場合、リポジトリのインターフェースはどこに配置すべきですか？',
+    options: [
+      { id: 'a', text: 'Infrastructure層', isCorrect: false },
+      { id: 'b', text: 'Presentation層', isCorrect: false },
+      { id: 'c', text: 'Domain層', isCorrect: true },
+      { id: 'd', text: 'Application層', isCorrect: false },
+    ],
+    explanation: 'リポジトリのインターフェースはDomain層に配置します。これにより、ドメイン層が技術的詳細（Infrastructure層）に依存せず、依存関係が逆転します。',
+  }),
+];
+
+// Lesson 13-3: ユースケース層の実装（5問）
+const lesson13_3Questions: Question[] = [
+  Question.create({
+    id: 'q13-3-1',
+    text: 'ユースケース（Interactor）の主な責務は何ですか？',
+    options: [
+      { id: 'a', text: 'UIの表示を制御する', isCorrect: false },
+      { id: 'b', text: 'アプリケーション固有のビジネスロジックをカプセル化する', isCorrect: true },
+      { id: 'c', text: 'データベースに直接アクセスする', isCorrect: false },
+      { id: 'd', text: 'HTTPリクエストを処理する', isCorrect: false },
+    ],
+    explanation: 'ユースケースは、アプリケーション固有のビジネスロジックをカプセル化します。入力を受け取り、ドメインオブジェクトを操作し、永続化を依頼し、出力を返します。',
+  }),
+  Question.create({
+    id: 'q13-3-2',
+    text: 'EntityとUse Caseの違いとして正しいものは？',
+    options: [
+      { id: 'a', text: 'Entityはアプリケーション固有、Use Caseは普遍的なビジネスルール', isCorrect: false },
+      { id: 'b', text: 'Entityは普遍的なビジネスルール、Use Caseはアプリケーション固有のルール', isCorrect: true },
+      { id: 'c', text: 'どちらも同じ責務を持つ', isCorrect: false },
+      { id: 'd', text: 'Entityはデータベース、Use CaseはAPI', isCorrect: false },
+    ],
+    explanation: 'Entityは普遍的なビジネスルール（例：注文は0個以上の商品を持つ）を持ち、Use Caseはアプリケーション固有のルール（例：ユーザー登録時にメール送信）を持ちます。',
+  }),
+  Question.create({
+    id: 'q13-3-3',
+    text: 'DTOを使う主な理由として正しいものは？',
+    options: [
+      { id: 'a', text: '処理速度を向上させるため', isCorrect: false },
+      { id: 'b', text: 'ドメインオブジェクトを外部に漏らさないため', isCorrect: true },
+      { id: 'c', text: 'データベースのスキーマを定義するため', isCorrect: false },
+      { id: 'd', text: 'コード量を減らすため', isCorrect: false },
+    ],
+    explanation: 'DTOを使うことで、ドメインオブジェクトを外部に漏らさず、必要なデータだけを選別し、入出力の形式を自由に設計できます。',
+  }),
+  Question.create({
+    id: 'q13-3-4',
+    text: 'Input BoundaryとOutput Boundaryの役割として正しいものは？',
+    options: [
+      { id: 'a', text: 'データベースとの境界を定義する', isCorrect: false },
+      { id: 'b', text: 'ユースケースと外部（Controller/Presenter）との明確なインターフェースを定義する', isCorrect: true },
+      { id: 'c', text: 'UIコンポーネントの境界を定義する', isCorrect: false },
+      { id: 'd', text: 'ネットワーク通信の境界を定義する', isCorrect: false },
+    ],
+    explanation: 'Input BoundaryとOutput Boundaryは、ユースケースと外部（Controller、Presenter）との明確なインターフェースを定義します。これにより外部の変更からユースケースを保護します。',
+  }),
+  Question.create({
+    id: 'q13-3-5',
+    text: 'ユースケースの命名規則として推奨されるパターンは？',
+    options: [
+      { id: 'a', text: '名詞のみ（例：User）', isCorrect: false },
+      { id: 'b', text: '動詞 + 名詞 + UseCase（例：RegisterUserUseCase）', isCorrect: true },
+      { id: 'c', text: '名詞 + Manager（例：UserManager）', isCorrect: false },
+      { id: 'd', text: 'Service + 名詞（例：ServiceUser）', isCorrect: false },
+    ],
+    explanation: 'ユースケースは「動詞 + 名詞 + UseCase」のパターンで命名するのが推奨されます。例：RegisterUserUseCase、GetCourseUseCase、CreateOrderUseCaseなど。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -2158,6 +2335,28 @@ export const sampleQuizzes: Quiz[] = [
     title: 'DDDにおける4層構造 - 理解度チェック',
     description: '4層構造の責務、DIP、本プロジェクトの構造についての理解度を確認するクイズです。',
     questions: lesson12_2Questions,
+  }),
+  // Chapter 13: クリーンアーキテクチャ
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-13-1'),
+    lessonId: LessonId.create('lesson-13-1'),
+    title: 'クリーンアーキテクチャとは - 理解度チェック',
+    description: '同心円構造、依存関係のルール、フレームワーク非依存についての理解度を確認するクイズです。',
+    questions: lesson13_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-13-2'),
+    lessonId: LessonId.create('lesson-13-2'),
+    title: '依存性逆転の原則（DIP） - 理解度チェック',
+    description: 'DIPの定義、インターフェースによる解決、DIコンテナについての理解度を確認するクイズです。',
+    questions: lesson13_2Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-13-3'),
+    lessonId: LessonId.create('lesson-13-3'),
+    title: 'ユースケース層の実装 - 理解度チェック',
+    description: 'ユースケースの責務、境界、DTO、テストについての理解度を確認するクイズです。',
+    questions: lesson13_3Questions,
   }),
 ];
 

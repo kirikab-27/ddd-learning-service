@@ -7459,3 +7459,1067 @@ src/
 });
 
 export const chapter12Lessons = [lesson12_1, lesson12_2];
+
+// Lesson 13-1: クリーンアーキテクチャとは
+export const lesson13_1 = Lesson.create({
+  id: LessonId.create('lesson-13-1'),
+  title: LessonTitle.create('クリーンアーキテクチャとは'),
+  content: MarkdownContent.create(`
+# クリーンアーキテクチャとは
+
+## 概要
+
+このレッスンでは、Robert C. Martin（通称 Uncle Bob）が提唱したクリーンアーキテクチャの
+基本概念と設計思想について学びます。
+
+## クリーンアーキテクチャの誕生
+
+### Uncle Bob による提唱
+
+クリーンアーキテクチャは、2012年にRobert C. Martinによって提唱されました。
+
+\`\`\`mermaid
+graph LR
+    subgraph "影響を受けたアーキテクチャ"
+        H[Hexagonal Architecture<br/>Alistair Cockburn] --> CA
+        O[Onion Architecture<br/>Jeffrey Palermo] --> CA
+        S[Screaming Architecture<br/>Robert C. Martin] --> CA
+    end
+
+    CA[Clean Architecture]
+
+    style CA fill:#f96,stroke:#333,stroke-width:3px
+\`\`\`
+
+**目的**: フレームワークやデータベースといった「詳細」から、ビジネスロジックを独立させる
+
+## 同心円構造
+
+### 4つの層
+
+クリーンアーキテクチャは、**同心円**で表現される4つの層で構成されます：
+
+\`\`\`mermaid
+graph TB
+    subgraph "Clean Architecture"
+        E[Entities<br/>エンティティ]
+        U[Use Cases<br/>ユースケース]
+        I[Interface Adapters<br/>インターフェースアダプター]
+        F[Frameworks & Drivers<br/>フレームワーク]
+    end
+
+    F --> I --> U --> E
+
+    style E fill:#f96,stroke:#333,stroke-width:3px
+    style U fill:#fb9,stroke:#333
+    style I fill:#9cf,stroke:#333
+    style F fill:#ccc,stroke:#333
+\`\`\`
+
+### 各層の責務
+
+| 層 | 責務 | 例 |
+|---|---|---|
+| **Entities** | ビジネスルールの核心 | User, Order エンティティ |
+| **Use Cases** | アプリケーション固有のロジック | RegisterUserUseCase |
+| **Interface Adapters** | 外部との変換 | Controller, Presenter, Gateway |
+| **Frameworks & Drivers** | フレームワーク、ツール | Express, PostgreSQL, React |
+
+### 層の詳細
+
+\`\`\`typescript
+// Entities（最も内側）: ビジネスルールのみ
+class Order {
+  private _items: OrderItem[];
+  private _status: OrderStatus;
+
+  confirm(): void {
+    if (this._items.length === 0) {
+      throw new EmptyOrderError();
+    }
+    this._status = OrderStatus.Confirmed;
+  }
+}
+
+// Use Cases: アプリケーション固有のロジック
+class PlaceOrderUseCase {
+  constructor(
+    private orderRepository: IOrderRepository,
+    private paymentGateway: IPaymentGateway
+  ) {}
+
+  async execute(input: PlaceOrderInput): Promise<PlaceOrderOutput> {
+    const order = Order.create(input.items);
+    order.confirm();
+    await this.paymentGateway.charge(order.totalAmount);
+    await this.orderRepository.save(order);
+    return { orderId: order.id.value };
+  }
+}
+\`\`\`
+
+## 依存関係のルール
+
+### 原則: 外側から内側への一方通行
+
+\`\`\`mermaid
+graph TB
+    subgraph "依存の方向"
+        F[Frameworks] -->|依存OK| I[Interface Adapters]
+        I -->|依存OK| U[Use Cases]
+        U -->|依存OK| E[Entities]
+
+        E x-->|依存NG!| U
+        U x-->|依存NG!| I
+        I x-->|依存NG!| F
+    end
+
+    style E fill:#f96
+\`\`\`
+
+**ルール**: 内側の層は外側の層について何も知らない
+
+### 具体例
+
+\`\`\`typescript
+// ❌ 内側（Use Case）が外側（Framework）を知っている
+class RegisterUserUseCase {
+  async execute(req: Express.Request) {  // Expressに依存！
+    const name = req.body.name;
+    // ...
+  }
+}
+
+// ✅ 内側は抽象（Input）だけを知っている
+interface RegisterUserInput {
+  name: string;
+  email: string;
+}
+
+class RegisterUserUseCase {
+  async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
+    // Expressのことは知らない
+  }
+}
+\`\`\`
+
+## フレームワーク非依存の設計
+
+### フレームワークは「詳細」
+
+Uncle Bobの重要な主張：
+
+> **フレームワークは詳細である。データベースも詳細である。Webも詳細である。**
+> ビジネスロジックはこれらの詳細を知らなくてよい。
+
+\`\`\`mermaid
+graph LR
+    subgraph "ビジネスの核心"
+        B[ビジネスロジック<br/>永続的な価値]
+    end
+
+    subgraph "詳細（交換可能）"
+        F1[Express] -.->|今日| B
+        F2[Fastify] -.->|明日| B
+        D1[PostgreSQL] -.->|今日| B
+        D2[MongoDB] -.->|明日| B
+    end
+
+    style B fill:#f96,stroke:#333,stroke-width:3px
+\`\`\`
+
+### なぜフレームワーク非依存が重要か
+
+\`\`\`typescript
+// ❌ フレームワーク依存: Expressに縛られる
+import { Request, Response } from 'express';
+
+class UserController {
+  async register(req: Request, res: Response) {
+    const user = new User(req.body.name);
+    // ビジネスロジックがExpressに結合
+    res.status(201).json(user);
+  }
+}
+
+// ✅ フレームワーク非依存
+// Use Case層（フレームワークを知らない）
+class RegisterUserUseCase {
+  async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
+    const user = User.create(input.name);
+    await this.userRepository.save(user);
+    return { id: user.id.value, name: user.name.value };
+  }
+}
+
+// Controller層（フレームワークの知識はここだけ）
+class UserController {
+  constructor(private registerUserUseCase: RegisterUserUseCase) {}
+
+  async register(req: Request, res: Response) {
+    const output = await this.registerUserUseCase.execute({
+      name: req.body.name,
+      email: req.body.email,
+    });
+    res.status(201).json(output);
+  }
+}
+\`\`\`
+
+## テスタビリティの重視
+
+### クリーンアーキテクチャの大きなメリット
+
+\`\`\`mermaid
+graph LR
+    subgraph "テスト可能な設計"
+        UC[Use Case] -->|依存| IR[IRepository<br/>インターフェース]
+        IR -.->|本番| RR[RealRepository]
+        IR -.->|テスト| MR[MockRepository]
+    end
+
+    style UC fill:#f96
+    style IR fill:#69f
+\`\`\`
+
+### テストが容易になる理由
+
+\`\`\`typescript
+// インターフェースを定義
+interface IUserRepository {
+  save(user: User): Promise<void>;
+  findById(id: UserId): Promise<User | null>;
+}
+
+// Use Caseはインターフェースに依存
+class RegisterUserUseCase {
+  constructor(private userRepository: IUserRepository) {}
+
+  async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
+    const user = User.create(input.name);
+    await this.userRepository.save(user);
+    return { id: user.id.value };
+  }
+}
+
+// テスト時はモックを注入
+describe('RegisterUserUseCase', () => {
+  it('should register a user', async () => {
+    // モックリポジトリ
+    const mockRepository: IUserRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+    };
+
+    const useCase = new RegisterUserUseCase(mockRepository);
+    const result = await useCase.execute({ name: '田中太郎' });
+
+    expect(mockRepository.save).toHaveBeenCalled();
+    expect(result.id).toBeDefined();
+  });
+});
+\`\`\`
+
+### テストの独立性
+
+- **データベース不要**: モックで置換
+- **ネットワーク不要**: 外部APIもモック
+- **高速**: ミリ秒単位で実行可能
+- **安定**: 外部要因に左右されない
+
+## レイヤードアーキテクチャとの違い
+
+| 観点 | レイヤードアーキテクチャ | クリーンアーキテクチャ |
+|---|---|---|
+| **構造** | 上下の層 | 同心円 |
+| **中心** | 特に規定なし | Entities（ビジネスルール） |
+| **依存** | 上から下 | 外から内 |
+| **フレームワーク** | 層の一部 | 最外周の詳細 |
+| **テスト重視** | 副次的 | 設計の核心 |
+
+## まとめ
+
+- **クリーンアーキテクチャ**: Uncle Bobが提唱した、ビジネスロジック中心の設計
+- **同心円構造**: Entities → Use Cases → Interface Adapters → Frameworks
+- **依存関係のルール**: 外側から内側への一方通行
+- **フレームワーク非依存**: フレームワークは「詳細」として外周に配置
+- **テスタビリティ**: インターフェースによる依存注入で高いテスト容易性
+`),
+  order: 1,
+});
+
+// Lesson 13-2: 依存性逆転の原則（DIP）
+export const lesson13_2 = Lesson.create({
+  id: LessonId.create('lesson-13-2'),
+  title: LessonTitle.create('依存性逆転の原則（DIP）'),
+  content: MarkdownContent.create(`
+# 依存性逆転の原則（DIP）
+
+## 概要
+
+このレッスンでは、SOLID原則の「D」である依存性逆転の原則（Dependency Inversion Principle）を
+深く理解し、クリーンアーキテクチャにおける実装方法を学びます。
+
+## 依存性逆転の原則とは
+
+### 定義
+
+依存性逆転の原則（DIP）は、2つの重要なルールで構成されます：
+
+> 1. **高レベルモジュールは低レベルモジュールに依存してはならない。**
+>    両者は抽象に依存すべきである。
+> 2. **抽象は詳細に依存してはならない。**
+>    詳細が抽象に依存すべきである。
+
+\`\`\`mermaid
+graph TB
+    subgraph "❌ 従来の依存"
+        H1[高レベル<br/>ビジネスロジック] -->|直接依存| L1[低レベル<br/>データベース]
+    end
+
+    subgraph "✅ 依存性逆転"
+        H2[高レベル<br/>ビジネスロジック] -->|依存| A[抽象<br/>インターフェース]
+        L2[低レベル<br/>データベース] -.->|実装| A
+    end
+
+    style H2 fill:#f96
+    style A fill:#69f
+\`\`\`
+
+### 高レベルモジュールと低レベルモジュール
+
+| モジュール | 説明 | 例 |
+|---|---|---|
+| **高レベル** | ビジネスロジック、ポリシー | RegisterUserUseCase |
+| **低レベル** | 技術的詳細、I/O | PostgreSQLRepository |
+
+## 従来の問題
+
+### 直接依存の問題点
+
+\`\`\`typescript
+// ❌ 従来の設計: 高レベルが低レベルに直接依存
+class RegisterUserUseCase {
+  private repository = new PostgreSQLUserRepository();  // 直接生成！
+
+  async execute(name: string): Promise<void> {
+    const user = User.create(name);
+    await this.repository.save(user);  // PostgreSQLに縛られる
+  }
+}
+\`\`\`
+
+**問題点:**
+1. **テスト困難**: PostgreSQL接続が必要
+2. **変更困難**: MongoDBに変えるにはコード修正
+3. **再利用困難**: 他のプロジェクトで使えない
+
+## インターフェースによる解決
+
+### 抽象（インターフェース）の定義
+
+\`\`\`typescript
+// domain/repositories/IUserRepository.ts
+// 抽象: 「何をするか」だけ定義
+export interface IUserRepository {
+  save(user: User): Promise<void>;
+  findById(id: UserId): Promise<User | null>;
+  findByEmail(email: Email): Promise<User | null>;
+  delete(id: UserId): Promise<void>;
+}
+\`\`\`
+
+### 実装の分離
+
+\`\`\`mermaid
+graph TB
+    subgraph "Domain層"
+        UC[RegisterUserUseCase] -->|依存| IR[IUserRepository]
+    end
+
+    subgraph "Infrastructure層"
+        PR[PostgreSQLUserRepository] -.->|実装| IR
+        MR[MongoDBUserRepository] -.->|実装| IR
+        IM[InMemoryUserRepository] -.->|実装| IR
+    end
+
+    style UC fill:#f96
+    style IR fill:#69f
+\`\`\`
+
+### TypeScriptでの実装
+
+\`\`\`typescript
+// infrastructure/repositories/PostgreSQLUserRepository.ts
+export class PostgreSQLUserRepository implements IUserRepository {
+  constructor(private prisma: PrismaClient) {}
+
+  async save(user: User): Promise<void> {
+    await this.prisma.user.upsert({
+      where: { id: user.id.value },
+      create: {
+        id: user.id.value,
+        name: user.name.value,
+        email: user.email.value,
+      },
+      update: {
+        name: user.name.value,
+        email: user.email.value,
+      },
+    });
+  }
+
+  async findById(id: UserId): Promise<User | null> {
+    const data = await this.prisma.user.findUnique({
+      where: { id: id.value },
+    });
+    if (!data) return null;
+    return User.reconstruct({
+      id: UserId.create(data.id),
+      name: UserName.create(data.name),
+      email: Email.create(data.email),
+    });
+  }
+
+  // ... 他のメソッド
+}
+
+// テスト用のモック実装
+export class InMemoryUserRepository implements IUserRepository {
+  private users: Map<string, User> = new Map();
+
+  async save(user: User): Promise<void> {
+    this.users.set(user.id.value, user);
+  }
+
+  async findById(id: UserId): Promise<User | null> {
+    return this.users.get(id.value) ?? null;
+  }
+
+  // ... 他のメソッド
+}
+\`\`\`
+
+## DIコンテナの役割
+
+### 依存性注入（Dependency Injection）
+
+DIコンテナは、オブジェクトの生成と依存関係の解決を自動化します：
+
+\`\`\`mermaid
+graph TB
+    subgraph "DIコンテナ"
+        C[Container] -->|生成| UC[RegisterUserUseCase]
+        C -->|注入| PR[PostgreSQLUserRepository]
+        C -->|注入| ES[EmailService]
+    end
+
+    UC -->|依存| PR
+    UC -->|依存| ES
+
+    style C fill:#9cf
+\`\`\`
+
+### 手動での依存注入
+
+\`\`\`typescript
+// 最もシンプルな方法: コンストラクタインジェクション
+class RegisterUserUseCase {
+  constructor(
+    private userRepository: IUserRepository,  // インターフェースに依存
+    private emailService: IEmailService
+  ) {}
+
+  async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
+    const user = User.create(input.name, input.email);
+    await this.userRepository.save(user);
+    await this.emailService.sendWelcome(user.email);
+    return { id: user.id.value };
+  }
+}
+
+// 使用時に具体的な実装を注入
+const userRepository = new PostgreSQLUserRepository(prisma);
+const emailService = new SendGridEmailService(apiKey);
+const useCase = new RegisterUserUseCase(userRepository, emailService);
+\`\`\`
+
+### DIコンテナの実装例
+
+\`\`\`typescript
+// infrastructure/di/container.ts
+// シンプルなDIコンテナの例
+
+type Factory<T> = () => T;
+
+class Container {
+  private factories = new Map<string, Factory<unknown>>();
+  private singletons = new Map<string, unknown>();
+
+  // ファクトリを登録
+  register<T>(key: string, factory: Factory<T>): void {
+    this.factories.set(key, factory);
+  }
+
+  // シングルトンとして登録
+  registerSingleton<T>(key: string, factory: Factory<T>): void {
+    this.factories.set(key, () => {
+      if (!this.singletons.has(key)) {
+        this.singletons.set(key, factory());
+      }
+      return this.singletons.get(key);
+    });
+  }
+
+  // 解決
+  resolve<T>(key: string): T {
+    const factory = this.factories.get(key);
+    if (!factory) {
+      throw new Error(\`Service not found: \${key}\`);
+    }
+    return factory() as T;
+  }
+}
+
+// 使用例
+const container = new Container();
+
+// リポジトリの登録
+container.registerSingleton('IUserRepository', () =>
+  new PostgreSQLUserRepository(prisma)
+);
+
+// ユースケースの登録
+container.register('RegisterUserUseCase', () =>
+  new RegisterUserUseCase(
+    container.resolve<IUserRepository>('IUserRepository'),
+    container.resolve<IEmailService>('IEmailService')
+  )
+);
+
+// 解決
+const useCase = container.resolve<RegisterUserUseCase>('RegisterUserUseCase');
+\`\`\`
+
+## 本プロジェクトでの実装例
+
+### src/infrastructure/ の構造
+
+\`\`\`
+src/infrastructure/
+├── data/             # サンプルデータ
+├── repositories/     # リポジトリ実装
+│   ├── InMemoryCourseRepository.ts
+│   └── InMemoryQuizRepository.ts
+└── di/               # 依存性注入
+    └── container.ts
+\`\`\`
+
+### 実際のコード例
+
+\`\`\`typescript
+// domain/content/repositories/ICourseRepository.ts
+export interface ICourseRepository {
+  findById(id: CourseId): Promise<Course | null>;
+  findAll(): Promise<Course[]>;
+}
+
+// infrastructure/repositories/InMemoryCourseRepository.ts
+export class InMemoryCourseRepository implements ICourseRepository {
+  constructor(private courses: Course[]) {}
+
+  async findById(id: CourseId): Promise<Course | null> {
+    return this.courses.find(c => c.id.equals(id)) ?? null;
+  }
+
+  async findAll(): Promise<Course[]> {
+    return [...this.courses];
+  }
+}
+
+// infrastructure/di/container.ts
+import { sampleCourses } from '../data/sampleCourses';
+
+export function createContainer() {
+  const courseRepository = new InMemoryCourseRepository(sampleCourses);
+
+  return {
+    courseRepository,
+    // 他のリポジトリやサービス...
+  };
+}
+\`\`\`
+
+## DIPのメリット
+
+### 1. テスト容易性
+
+\`\`\`typescript
+describe('RegisterUserUseCase', () => {
+  it('should register user and send email', async () => {
+    // モックを注入
+    const mockRepo: IUserRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findByEmail: jest.fn().mockResolvedValue(null),
+      delete: jest.fn(),
+    };
+    const mockEmail: IEmailService = {
+      sendWelcome: jest.fn(),
+    };
+
+    const useCase = new RegisterUserUseCase(mockRepo, mockEmail);
+    await useCase.execute({ name: '田中', email: 'tanaka@example.com' });
+
+    expect(mockRepo.save).toHaveBeenCalled();
+    expect(mockEmail.sendWelcome).toHaveBeenCalled();
+  });
+});
+\`\`\`
+
+### 2. 実装の切り替え
+
+\`\`\`typescript
+// 開発環境
+const container = {
+  userRepository: new InMemoryUserRepository(),
+};
+
+// 本番環境
+const container = {
+  userRepository: new PostgreSQLUserRepository(prisma),
+};
+
+// 同じUse Caseが両方で動作
+const useCase = new RegisterUserUseCase(container.userRepository);
+\`\`\`
+
+### 3. 関心の分離
+
+- **ドメイン層**: ビジネスルールのみ
+- **インフラ層**: 技術的詳細のみ
+- 両者は**インターフェースを介して**だけ通信
+
+## まとめ
+
+- **DIP**: 高レベルモジュールは低レベルモジュールに直接依存しない
+- **抽象への依存**: 両者はインターフェースに依存する
+- **実装の分離**: インターフェースと実装を分けて配置
+- **DIコンテナ**: 依存関係の解決を自動化
+- **メリット**: テスト容易性、実装の切り替え、関心の分離
+`),
+  order: 2,
+});
+
+// Lesson 13-3: ユースケース層の実装
+export const lesson13_3 = Lesson.create({
+  id: LessonId.create('lesson-13-3'),
+  title: LessonTitle.create('ユースケース層の実装'),
+  content: MarkdownContent.create(`
+# ユースケース層の実装
+
+## 概要
+
+このレッスンでは、クリーンアーキテクチャにおけるユースケース層（Use Cases / Interactors）の
+設計と実装方法について学びます。
+
+## ユースケース（Interactor）とは
+
+### 責務
+
+ユースケースは、**アプリケーション固有のビジネスロジック**をカプセル化します：
+
+\`\`\`mermaid
+graph LR
+    subgraph "ユースケースの位置"
+        C[Controller] --> UC[Use Case<br/>Interactor]
+        UC --> E[Entities]
+        UC --> R[Repository]
+    end
+
+    style UC fill:#f96,stroke:#333,stroke-width:3px
+\`\`\`
+
+**ユースケースの役割:**
+- 入力を受け取る
+- ドメインオブジェクトを操作する
+- 永続化を依頼する
+- 出力を返す
+
+### エンティティとの違い
+
+| 観点 | Entity | Use Case |
+|---|---|---|
+| **ロジック** | ビジネスルール（普遍的） | アプリケーションルール |
+| **依存** | 何にも依存しない | Entity、Repository |
+| **例** | 「注文は0個以上の商品を持つ」 | 「ユーザー登録時にメール送信」 |
+
+## 入力境界と出力境界
+
+### 境界（Boundary）の概念
+
+クリーンアーキテクチャでは、**境界**を明確に定義します：
+
+\`\`\`mermaid
+graph LR
+    subgraph "外部"
+        C[Controller]
+        P[Presenter]
+    end
+
+    subgraph "Use Case層"
+        IB[Input Boundary<br/>インターフェース]
+        UC[Use Case<br/>Interactor]
+        OB[Output Boundary<br/>インターフェース]
+    end
+
+    C -->|入力| IB
+    IB -.->|実装| UC
+    UC -->|出力| OB
+    OB -.->|実装| P
+
+    style UC fill:#f96
+    style IB fill:#69f
+    style OB fill:#69f
+\`\`\`
+
+### Input Boundary
+
+\`\`\`typescript
+// Input Boundary（インターフェース）
+interface IRegisterUserUseCase {
+  execute(input: RegisterUserInput): Promise<RegisterUserOutput>;
+}
+
+// Input DTO
+interface RegisterUserInput {
+  name: string;
+  email: string;
+  password: string;
+}
+\`\`\`
+
+### Output Boundary
+
+\`\`\`typescript
+// Output DTO
+interface RegisterUserOutput {
+  userId: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
+
+// または、Presenterパターンを使用
+interface IRegisterUserPresenter {
+  present(output: RegisterUserOutput): void;
+}
+\`\`\`
+
+## DTOによるデータ受け渡し
+
+### なぜDTOが必要か
+
+\`\`\`mermaid
+graph LR
+    subgraph "❌ ドメインオブジェクトを直接渡す"
+        C1[Controller] -->|User| UC1[Use Case]
+    end
+
+    subgraph "✅ DTOを介して渡す"
+        C2[Controller] -->|UserInputDTO| UC2[Use Case]
+        UC2 -->|UserOutputDTO| P2[Presenter]
+    end
+
+    style C2 fill:#9cf
+    style UC2 fill:#f96
+    style P2 fill:#9cf
+\`\`\`
+
+**DTOの利点:**
+- ドメインオブジェクトを外部に漏らさない
+- 必要なデータだけを選別
+- 入出力の形式を自由に設計
+
+### Input DTOの設計
+
+\`\`\`typescript
+// application/usecases/RegisterUser/RegisterUserInput.ts
+export interface RegisterUserInput {
+  // プリミティブ型のみ
+  name: string;
+  email: string;
+  password: string;
+}
+
+// バリデーションはUse Case内で行う
+class RegisterUserUseCase implements IRegisterUserUseCase {
+  async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
+    // 入力をドメインオブジェクトに変換（バリデーション含む）
+    const userName = UserName.create(input.name);      // 不正なら例外
+    const email = Email.create(input.email);           // 不正なら例外
+    const password = Password.create(input.password);  // 不正なら例外
+
+    // ビジネスロジック実行
+    const user = User.create(userName, email, password);
+    // ...
+  }
+}
+\`\`\`
+
+### Output DTOの設計
+
+\`\`\`typescript
+// application/usecases/RegisterUser/RegisterUserOutput.ts
+export interface RegisterUserOutput {
+  // プレゼンテーション層が必要とするデータ
+  userId: string;
+  name: string;
+  email: string;
+  createdAt: string;  // ISO 8601形式
+}
+
+// Use Case内でドメインオブジェクトからDTOに変換
+class RegisterUserUseCase {
+  async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
+    // ... ビジネスロジック ...
+
+    // DTOに変換して返す
+    return {
+      userId: user.id.value,
+      name: user.name.value,
+      email: user.email.value,
+      createdAt: user.createdAt.toISOString(),
+    };
+  }
+}
+\`\`\`
+
+## 本プロジェクトでの実装例
+
+### src/application/ の構造
+
+\`\`\`
+src/application/
+├── dto/              # Data Transfer Objects
+│   ├── CourseDto.ts
+│   ├── ChapterDto.ts
+│   └── LessonDto.ts
+├── services/         # アプリケーションサービス
+│   └── CourseApplicationService.ts
+└── usecases/         # ユースケース
+    ├── GetCourseUseCase.ts
+    └── GetLessonUseCase.ts
+\`\`\`
+
+### 実際のユースケース例
+
+\`\`\`typescript
+// application/usecases/GetCourseUseCase.ts
+export interface GetCourseInput {
+  courseId: string;
+}
+
+export interface GetCourseOutput {
+  id: string;
+  title: string;
+  description: string;
+  chapters: ChapterDto[];
+}
+
+export class GetCourseUseCase {
+  constructor(private courseRepository: ICourseRepository) {}
+
+  async execute(input: GetCourseInput): Promise<GetCourseOutput | null> {
+    // 1. IDを値オブジェクトに変換
+    const courseId = CourseId.create(input.courseId);
+
+    // 2. リポジトリから取得
+    const course = await this.courseRepository.findById(courseId);
+    if (!course) {
+      return null;
+    }
+
+    // 3. DTOに変換して返す
+    return {
+      id: course.id.value,
+      title: course.title,
+      description: course.description,
+      chapters: course.chapters.map(ch => ChapterDto.fromDomain(ch)),
+    };
+  }
+}
+\`\`\`
+
+### DTOの実装
+
+\`\`\`typescript
+// application/dto/ChapterDto.ts
+export class ChapterDto {
+  constructor(
+    public readonly id: string,
+    public readonly title: string,
+    public readonly order: number,
+    public readonly lessons: LessonDto[]
+  ) {}
+
+  static fromDomain(chapter: Chapter): ChapterDto {
+    return new ChapterDto(
+      chapter.id.value,
+      chapter.title,
+      chapter.order,
+      chapter.lessons.map(l => LessonDto.fromDomain(l))
+    );
+  }
+}
+
+// application/dto/LessonDto.ts
+export class LessonDto {
+  constructor(
+    public readonly id: string,
+    public readonly title: string,
+    public readonly order: number
+  ) {}
+
+  static fromDomain(lesson: Lesson): LessonDto {
+    return new LessonDto(
+      lesson.id.value,
+      lesson.title.value,
+      lesson.order
+    );
+  }
+}
+\`\`\`
+
+## ユースケースのテスト
+
+### テストの構造
+
+\`\`\`typescript
+// __tests__/application/usecases/GetCourseUseCase.test.ts
+describe('GetCourseUseCase', () => {
+  let useCase: GetCourseUseCase;
+  let mockRepository: ICourseRepository;
+
+  beforeEach(() => {
+    // モックリポジトリを準備
+    mockRepository = {
+      findById: jest.fn(),
+      findAll: jest.fn(),
+    };
+    useCase = new GetCourseUseCase(mockRepository);
+  });
+
+  describe('execute', () => {
+    it('should return course when found', async () => {
+      // Arrange
+      const course = Course.create({
+        id: CourseId.create('course-1'),
+        title: 'DDD入門',
+        description: 'DDDを学ぶコース',
+        chapters: [],
+      });
+      (mockRepository.findById as jest.Mock).mockResolvedValue(course);
+
+      // Act
+      const result = await useCase.execute({ courseId: 'course-1' });
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe('course-1');
+      expect(result?.title).toBe('DDD入門');
+    });
+
+    it('should return null when not found', async () => {
+      // Arrange
+      (mockRepository.findById as jest.Mock).mockResolvedValue(null);
+
+      // Act
+      const result = await useCase.execute({ courseId: 'not-exist' });
+
+      // Assert
+      expect(result).toBeNull();
+    });
+  });
+});
+\`\`\`
+
+### テストのベストプラクティス
+
+\`\`\`mermaid
+graph TB
+    subgraph "テストピラミッド"
+        U[Unit Tests<br/>ユースケース単体] --> I[Integration Tests<br/>リポジトリ連携]
+        I --> E[E2E Tests<br/>全体結合]
+    end
+
+    style U fill:#9f9
+    style I fill:#ff9
+    style E fill:#f99
+\`\`\`
+
+**ユースケーステストのポイント:**
+
+1. **モックを活用**: 外部依存をモック化
+2. **境界条件をテスト**: null、空配列、エラーケース
+3. **ビジネスルールをテスト**: 正常系と異常系
+4. **高速に実行**: データベース不要
+
+\`\`\`typescript
+// エラーケースのテスト
+it('should throw error when name is too short', async () => {
+  const useCase = new RegisterUserUseCase(mockRepository, mockEmailService);
+
+  await expect(
+    useCase.execute({ name: 'AB', email: 'test@example.com' })
+  ).rejects.toThrow('名前は3文字以上必要です');
+});
+
+// 重複チェックのテスト
+it('should throw error when email already exists', async () => {
+  (mockRepository.findByEmail as jest.Mock).mockResolvedValue(existingUser);
+
+  await expect(
+    useCase.execute({ name: '田中', email: 'existing@example.com' })
+  ).rejects.toThrow('このメールアドレスは既に登録されています');
+});
+\`\`\`
+
+## ユースケース設計のガイドライン
+
+### 単一責任
+
+\`\`\`typescript
+// ✅ 1つのユースケース = 1つの責務
+class RegisterUserUseCase { /* ... */ }
+class UpdateUserProfileUseCase { /* ... */ }
+class DeleteUserUseCase { /* ... */ }
+
+// ❌ 複数の責務を持つ
+class UserUseCase {
+  register() { /* ... */ }
+  update() { /* ... */ }
+  delete() { /* ... */ }
+}
+\`\`\`
+
+### 命名規則
+
+| パターン | 例 |
+|---|---|
+| **動詞 + 名詞 + UseCase** | RegisterUserUseCase |
+| **Get + 名詞 + UseCase** | GetCourseUseCase |
+| **Create + 名詞 + UseCase** | CreateOrderUseCase |
+
+## まとめ
+
+- **ユースケース**: アプリケーション固有のビジネスロジックをカプセル化
+- **入力境界/出力境界**: 外部との明確なインターフェース
+- **DTO**: ドメインオブジェクトを外部に漏らさない
+- **テスト**: モックを活用した高速なユニットテスト
+- **単一責任**: 1ユースケース = 1責務
+`),
+  order: 3,
+});
+
+export const chapter13Lessons = [lesson13_1, lesson13_2, lesson13_3];
