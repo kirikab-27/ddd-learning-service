@@ -1686,6 +1686,124 @@ const lesson10_2Questions: Question[] = [
   }),
 ];
 
+// Lesson 11-1: 仕様パターンとは（5問）
+const lesson11_1Questions: Question[] = [
+  Question.create({
+    id: 'q11-1-1',
+    text: '仕様パターンの主な目的は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースのクエリを最適化する', isCorrect: false },
+      { id: 'b', text: '複雑なビジネスルールの判定ロジックを独立したオブジェクトにカプセル化する', isCorrect: true },
+      { id: 'c', text: 'UIコンポーネントを生成する', isCorrect: false },
+      { id: 'd', text: 'オブジェクトの永続化を管理する', isCorrect: false },
+    ],
+    explanation: '仕様パターンは、あるオブジェクトが特定の条件を満たすかどうかを評価することだけを責務とした、独立したオブジェクトを作るパターンです。',
+  }),
+  Question.create({
+    id: 'q11-1-2',
+    text: 'ドメインロジックをアプリケーションサービスに書く問題点は？',
+    options: [
+      { id: 'a', text: 'コードの行数が増える', isCorrect: false },
+      { id: 'b', text: 'ドメインの重要なルールがアプリケーション層に漏洩する', isCorrect: true },
+      { id: 'c', text: 'パフォーマンスが悪化する', isCorrect: false },
+      { id: 'd', text: 'コンパイルエラーが発生する', isCorrect: false },
+    ],
+    explanation: 'ドメインロジックをアプリケーションサービスに書くと、ビジネスルールが散らばり、同じ判定が必要な場所で重複コードが生まれます。時間が経つと条件分岐だらけの「神メソッド」になりがちです。',
+  }),
+  Question.create({
+    id: 'q11-1-3',
+    text: 'エンティティにリポジトリを渡す設計の問題点は？',
+    options: [
+      { id: 'a', text: 'メモリ使用量が増える', isCorrect: false },
+      { id: 'b', text: 'ドメインモデルの純粋性が失われ、テストが複雑になる', isCorrect: true },
+      { id: 'c', text: 'コードが短くなりすぎる', isCorrect: false },
+      { id: 'd', text: '型エラーが発生する', isCorrect: false },
+    ],
+    explanation: 'エンティティにリポジトリを渡すと、ドメインモデルにインフラの都合（DB接続など）が入り込み、純粋性が失われます。テストにはモックが必要になり、複雑化します。',
+  }),
+  Question.create({
+    id: 'q11-1-4',
+    text: '仕様パターンの中心となるメソッドの名前は？',
+    options: [
+      { id: 'a', text: 'execute()', isCorrect: false },
+      { id: 'b', text: 'validate()', isCorrect: false },
+      { id: 'c', text: 'isSatisfiedBy()', isCorrect: true },
+      { id: 'd', text: 'check()', isCorrect: false },
+    ],
+    explanation: 'isSatisfiedBy()は仕様パターンの標準的なメソッド名で、「この候補がこの仕様を満たすか？」という意図を明確に表現します。',
+  }),
+  Question.create({
+    id: 'q11-1-5',
+    text: '仕様パターンを使うべきケースとして適切でないものは？',
+    options: [
+      { id: 'a', text: '複雑な判定ロジックがある場合', isCorrect: false },
+      { id: 'b', text: '判定に外部リソースへのアクセスが必要な場合', isCorrect: false },
+      { id: 'c', text: 'シンプルな単一条件の判定の場合', isCorrect: true },
+      { id: 'd', text: '同じ判定を複数の場所で使う場合', isCorrect: false },
+    ],
+    explanation: 'シンプルな単一条件（例: メンバー数 >= 30）は、エンティティのメソッドで十分です。仕様パターンは複雑なルールや外部依存がある場合に有効です。',
+  }),
+];
+
+// Lesson 11-2: 仕様の実装と合成（5問）
+const lesson11_2Questions: Question[] = [
+  Question.create({
+    id: 'q11-2-1',
+    text: 'CompositeSpecificationクラスが提供するメソッドとして正しいものは？',
+    options: [
+      { id: 'a', text: 'save(), load(), delete()', isCorrect: false },
+      { id: 'b', text: 'and(), or(), not()', isCorrect: true },
+      { id: 'c', text: 'create(), update(), remove()', isCorrect: false },
+      { id: 'd', text: 'get(), set(), clear()', isCorrect: false },
+    ],
+    explanation: 'CompositeSpecificationはand(), or(), not()メソッドを提供し、複数の仕様を論理演算で組み合わせることを可能にします。',
+  }),
+  Question.create({
+    id: 'q11-2-2',
+    text: '「プレミアム会員 OR VIP会員」という条件を仕様で表現する方法は？',
+    options: [
+      { id: 'a', text: 'premiumSpec.and(vipSpec)', isCorrect: false },
+      { id: 'b', text: 'premiumSpec.or(vipSpec)', isCorrect: true },
+      { id: 'c', text: 'premiumSpec.not(vipSpec)', isCorrect: false },
+      { id: 'd', text: 'premiumSpec.xor(vipSpec)', isCorrect: false },
+    ],
+    explanation: 'or()メソッドを使うと、どちらかの仕様を満たす場合にtrueを返す合成仕様を作成できます。',
+  }),
+  Question.create({
+    id: 'q11-2-3',
+    text: '仕様をリポジトリの検索条件として使う際の問題点は？',
+    options: [
+      { id: 'a', text: 'コードが複雑になる', isCorrect: false },
+      { id: 'b', text: '素朴に実装すると全件取得してフィルタリングするためパフォーマンスが悪い', isCorrect: true },
+      { id: 'c', text: 'インターフェースが増える', isCorrect: false },
+      { id: 'd', text: 'テストが書けなくなる', isCorrect: false },
+    ],
+    explanation: 'findBySpecification()を素朴に実装すると、全データをメモリに読み込んでからフィルタリングすることになり、大量データでは深刻なパフォーマンス問題になります。',
+  }),
+  Question.create({
+    id: 'q11-2-4',
+    text: '仕様パターンのパフォーマンス問題を解決するアプローチとして適切なものは？',
+    options: [
+      { id: 'a', text: '仕様パターンを使わない', isCorrect: false },
+      { id: 'b', text: 'CQRS（読み取り専用の最適化クエリ）を導入する', isCorrect: true },
+      { id: 'c', text: 'データベースを使わない', isCorrect: false },
+      { id: 'd', text: '全てのデータをキャッシュする', isCorrect: false },
+    ],
+    explanation: 'CQRS（Command Query Responsibility Segregation）では、読み取り処理に最適化された専用クエリを用意し、パフォーマンスを確保しながらドメインモデルの純粋性を保ちます。',
+  }),
+  Question.create({
+    id: 'q11-2-5',
+    text: 'ファーストクラスコレクションと仕様パターンを組み合わせるメリットは？',
+    options: [
+      { id: 'a', text: 'コードの行数が減る', isCorrect: false },
+      { id: 'b', text: '仕様クラスがリポジトリに依存せず純粋な判定機になる', isCorrect: true },
+      { id: 'c', text: 'パフォーマンスが向上する', isCorrect: false },
+      { id: 'd', text: 'データベース接続が不要になる', isCorrect: false },
+    ],
+    explanation: 'ファーストクラスコレクションに必要な情報を詰めて仕様に渡すと、仕様クラスは外部への問い合わせが不要になり、純粋な判定機としてテストも容易になります。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -1892,6 +2010,21 @@ export const sampleQuizzes: Quiz[] = [
     title: 'ファクトリの実装パターン - 理解度チェック',
     description: 'ファクトリの実装パターン、使い分け、判断基準についての理解度を確認するクイズです。',
     questions: lesson10_2Questions,
+  }),
+  // Chapter 11: 仕様パターン
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-11-1'),
+    lessonId: LessonId.create('lesson-11-1'),
+    title: '仕様パターンとは - 理解度チェック',
+    description: '仕様パターンの目的、責務分離、isSatisfiedByメソッドについての理解度を確認するクイズです。',
+    questions: lesson11_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-11-2'),
+    lessonId: LessonId.create('lesson-11-2'),
+    title: '仕様の実装と合成 - 理解度チェック',
+    description: '仕様の実装、AND/OR/NOT合成、パフォーマンスとのトレードオフについての理解度を確認するクイズです。',
+    questions: lesson11_2Questions,
   }),
 ];
 

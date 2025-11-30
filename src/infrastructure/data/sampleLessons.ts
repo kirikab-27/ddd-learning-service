@@ -6268,3 +6268,563 @@ graph TD
 });
 
 export const chapter10Lessons = [lesson10_1, lesson10_2];
+
+// =============================================================================
+// Chapter 11: 仕様パターン
+// =============================================================================
+
+// Lesson 11-1: 仕様パターンとは
+export const lesson11_1 = Lesson.create({
+  id: LessonId.create('lesson-11-1'),
+  title: LessonTitle.create('仕様パターンとは'),
+  content: MarkdownContent.create(`
+# 仕様パターンとは
+
+## 概要
+
+このレッスンでは、複雑なビジネスルールをカプセル化する**仕様（Specification）パターン**について学びます。
+仕様パターンは、あるオブジェクトが特定の条件を満たすかどうかを評価することだけを責務とした、
+独立したオブジェクトを作るという設計パターンです。
+
+## 複雑なビジネスルールの問題
+
+### シンプルなケース
+
+最初は簡単なルールから始まります：
+
+\`\`\`typescript
+class Circle {
+  private _members: UserId[] = [];
+
+  // サークルが満員かどうか
+  isFull(): boolean {
+    return this._members.length >= 30;
+  }
+}
+\`\`\`
+
+このコードはシンプルで、誰が見ても一目瞭然です。
+
+### 複雑なルールの追加
+
+しかし、ビジネス要件が追加されると話は変わります：
+
+> 「ただし、プレミアム会員が10人以上いれば、上限は50人に緩和される」
+
+この追加ルールを実装しようとすると、問題が発生します。
+
+\`\`\`mermaid
+graph TD
+    A[Circle.isFull?] --> B{プレミアム会員<br>10人以上?}
+    B -->|Yes| C[上限50人]
+    B -->|No| D[上限30人]
+    C --> E{メンバー数<br>判定}
+    D --> E
+
+    style A fill:#f9f,stroke:#333
+    style B fill:#ff9,stroke:#333
+\`\`\`
+
+**問題点**: サークルクラスは「メンバーのID」しか知りません。
+各メンバーがプレミアム会員かどうかという情報は持っていないのです。
+
+## どこにロジックを書くか問題
+
+### 解決策1: アプリケーションサービスに書く（NG）
+
+\`\`\`typescript
+// ❌ アプリケーションサービスにドメインロジックが漏れる
+class CircleApplicationService {
+  async canJoinCircle(circleId: CircleId, userId: UserId): Promise<boolean> {
+    const circle = await this.circleRepo.findById(circleId);
+    const members = await this.userRepo.findByIds(circle.memberIds);
+
+    // ❌ ドメインルールがアプリケーション層に漏洩！
+    const premiumCount = members.filter(m => m.isPremium).length;
+    const maxMembers = premiumCount >= 10 ? 50 : 30;
+
+    return circle.memberCount < maxMembers;
+  }
+}
+\`\`\`
+
+**問題点**:
+- 「何が満員なのか」というドメインの重要なルールがアプリケーション層に漏れ出している
+- 同じ判定が別の場所でも必要になったら、同じコードを書くことになる
+- 時間が経つと条件分岐だらけの「神メソッド」になりがち
+
+### 解決策2: エンティティにリポジトリを渡す（NG）
+
+\`\`\`typescript
+// ❌ ドメインモデルにインフラ依存が入り込む
+class Circle {
+  isFull(userRepo: IUserRepository): boolean {
+    // ❌ ドメインモデルがリポジトリに依存！
+    const members = userRepo.findByIds(this._memberIds);
+    const premiumCount = members.filter(m => m.isPremium).length;
+    const maxMembers = premiumCount >= 10 ? 50 : 30;
+
+    return this._members.length >= maxMembers;
+  }
+}
+\`\`\`
+
+**問題点**:
+- ドメインモデルの純粋性が失われる
+- データベースとのやり取りという「インフラの都合」がドメインに入り込む
+- テストが複雑になる（モックが必要）
+- 評価メソッドだらけの肥大化したクラスになりがち
+
+## 仕様パターンによる解決
+
+仕様パターンは、**判定ロジックを独立したオブジェクトに切り出す**ことで問題を解決します。
+
+### 仕様クラスの作成
+
+\`\`\`typescript
+// domain/specifications/CircleFullSpecification.ts
+export class CircleFullSpecification {
+  constructor(private userRepo: IUserRepository) {}
+
+  async isSatisfiedBy(circle: Circle): Promise<boolean> {
+    // プレミアム会員の数を取得
+    const members = await this.userRepo.findByIds(circle.memberIds);
+    const premiumCount = members.filter(m => m.isPremium).length;
+
+    // 上限を決定
+    const maxMembers = premiumCount >= 10 ? 50 : 30;
+
+    // 満員かどうかを判定
+    return circle.memberCount >= maxMembers;
+  }
+}
+\`\`\`
+
+### 使用例
+
+\`\`\`typescript
+// アプリケーションサービスでの使用
+class CircleApplicationService {
+  constructor(
+    private circleRepo: ICircleRepository,
+    private fullSpec: CircleFullSpecification
+  ) {}
+
+  async join(circleId: CircleId, userId: UserId): Promise<void> {
+    const circle = await this.circleRepo.findById(circleId);
+
+    // 仕様オブジェクトで判定
+    const isFull = await this.fullSpec.isSatisfiedBy(circle);
+    if (isFull) {
+      throw new CircleFullException();
+    }
+
+    circle.join(userId);
+    await this.circleRepo.save(circle);
+  }
+}
+\`\`\`
+
+### なぜ仕様パターンが良いのか
+
+\`\`\`mermaid
+graph TB
+    subgraph "仕様パターン適用後"
+        A[Circle] -->|純粋| B[メンバー管理<br>ビジネスロジック]
+        C[CircleFullSpecification] -->|判定責務| D[満員判定ロジック]
+        C -->|依存| E[IUserRepository]
+    end
+
+    subgraph "仕様パターン適用前"
+        F[Circle] -->|混在| G[メンバー管理]
+        F -->|混在| H[満員判定]
+        F -->|依存| I[IUserRepository]
+    end
+
+    style A fill:#9f9,stroke:#333
+    style C fill:#9f9,stroke:#333
+    style F fill:#f66,stroke:#333
+\`\`\`
+
+**メリット**:
+- **責務の分離**: Circleは純粋なままで、判定ロジックは仕様クラスに閉じ込められる
+- **意図の明確化**: \`CircleFullSpecification.isSatisfiedBy(circle)\` という一行で意図が明確
+- **再利用性**: 同じ判定が別の場所でも必要になっても、仕様クラスを使い回せる
+- **テスト容易性**: 仕様クラスを単独でテストできる
+
+## isSatisfiedBy() メソッドの基本形
+
+仕様パターンの中心となるのは \`isSatisfiedBy()\` メソッドです。
+
+\`\`\`typescript
+// 仕様の基本インターフェース
+interface ISpecification<T> {
+  isSatisfiedBy(candidate: T): boolean | Promise<boolean>;
+}
+
+// 実装例
+class CircleFullSpecification implements ISpecification<Circle> {
+  async isSatisfiedBy(circle: Circle): Promise<boolean> {
+    // 判定ロジック
+  }
+}
+\`\`\`
+
+### 命名規則
+
+| 仕様クラス名 | 判定内容 |
+|-------------|---------|
+| CircleFullSpecification | サークルが満員かどうか |
+| UserPremiumSpecification | ユーザーがプレミアム会員か |
+| OrderOverdueSpecification | 注文が期限切れかどうか |
+| CircleRecommendSpecification | おすすめサークルかどうか |
+
+## まとめ
+
+### 仕様パターンを使うべきケース
+
+- ✅ 複雑な判定ロジックがある
+- ✅ 判定に外部リソースへのアクセスが必要
+- ✅ 同じ判定を複数の場所で使う
+- ✅ エンティティの純粋性を保ちたい
+
+### 避けるべきアンチパターン
+
+- ❌ アプリケーションサービスにドメインロジックを書く
+- ❌ エンティティにリポジトリを渡す
+- ❌ 判定ロジックをあちこちに散らばらせる
+
+### 重要な原則
+
+- **判定ロジックのカプセル化**: 複雑なルールを独立したオブジェクトに閉じ込める
+- **責務の分離**: エンティティは本来の責務に集中し、判定は仕様に委ねる
+- **意図の明確化**: \`isSatisfiedBy()\` という命名で判定の意図を明示
+`),
+  order: 1,
+});
+
+// Lesson 11-2: 仕様の実装と合成
+export const lesson11_2 = Lesson.create({
+  id: LessonId.create('lesson-11-2'),
+  title: LessonTitle.create('仕様の実装と合成'),
+  content: MarkdownContent.create(`
+# 仕様の実装と合成
+
+## 概要
+
+このレッスンでは、仕様パターンの具体的な実装方法と、
+複数の仕様を組み合わせる**合成パターン**について学びます。
+
+## TypeScriptでの実装
+
+### 基本インターフェース
+
+\`\`\`typescript
+// domain/specifications/ISpecification.ts
+export interface ISpecification<T> {
+  isSatisfiedBy(candidate: T): boolean;
+  and(spec: ISpecification<T>): ISpecification<T>;
+  or(spec: ISpecification<T>): ISpecification<T>;
+  not(): ISpecification<T>;
+}
+\`\`\`
+
+### 抽象基底クラス
+
+\`\`\`typescript
+// domain/specifications/CompositeSpecification.ts
+export abstract class CompositeSpecification<T> implements ISpecification<T> {
+  abstract isSatisfiedBy(candidate: T): boolean;
+
+  and(spec: ISpecification<T>): ISpecification<T> {
+    return new AndSpecification(this, spec);
+  }
+
+  or(spec: ISpecification<T>): ISpecification<T> {
+    return new OrSpecification(this, spec);
+  }
+
+  not(): ISpecification<T> {
+    return new NotSpecification(this);
+  }
+}
+\`\`\`
+
+### 合成用のクラス
+
+\`\`\`typescript
+// AndSpecification: 両方の仕様を満たす
+class AndSpecification<T> extends CompositeSpecification<T> {
+  constructor(
+    private left: ISpecification<T>,
+    private right: ISpecification<T>
+  ) {
+    super();
+  }
+
+  isSatisfiedBy(candidate: T): boolean {
+    return this.left.isSatisfiedBy(candidate)
+        && this.right.isSatisfiedBy(candidate);
+  }
+}
+
+// OrSpecification: どちらかの仕様を満たす
+class OrSpecification<T> extends CompositeSpecification<T> {
+  constructor(
+    private left: ISpecification<T>,
+    private right: ISpecification<T>
+  ) {
+    super();
+  }
+
+  isSatisfiedBy(candidate: T): boolean {
+    return this.left.isSatisfiedBy(candidate)
+        || this.right.isSatisfiedBy(candidate);
+  }
+}
+
+// NotSpecification: 仕様を満たさない
+class NotSpecification<T> extends CompositeSpecification<T> {
+  constructor(private spec: ISpecification<T>) {
+    super();
+  }
+
+  isSatisfiedBy(candidate: T): boolean {
+    return !this.spec.isSatisfiedBy(candidate);
+  }
+}
+\`\`\`
+
+## AND/OR/NOT による仕様の合成
+
+### おすすめサークルの例
+
+\`\`\`typescript
+// 個別の仕様を定義
+class CircleCreatedRecentlySpecification extends CompositeSpecification<Circle> {
+  constructor(private daysAgo: number = 30) {
+    super();
+  }
+
+  isSatisfiedBy(circle: Circle): boolean {
+    const threshold = new Date();
+    threshold.setDate(threshold.getDate() - this.daysAgo);
+    return circle.createdAt >= threshold;
+  }
+}
+
+class CircleHasMinMembersSpecification extends CompositeSpecification<Circle> {
+  constructor(private minMembers: number = 10) {
+    super();
+  }
+
+  isSatisfiedBy(circle: Circle): boolean {
+    return circle.memberCount >= this.minMembers;
+  }
+}
+
+// 仕様を合成
+const recentSpec = new CircleCreatedRecentlySpecification(30);  // 30日以内
+const activeSpec = new CircleHasMinMembersSpecification(10);    // 10人以上
+
+// おすすめサークル = 設立1ヶ月以内 AND メンバー10人以上
+const recommendSpec = recentSpec.and(activeSpec);
+\`\`\`
+
+### 合成の可視化
+
+\`\`\`mermaid
+graph LR
+    A[recentSpec] --> C[AND]
+    B[activeSpec] --> C
+    C --> D[recommendSpec]
+
+    E[premiumSpec] --> G[OR]
+    F[vipSpec] --> G
+    G --> H[specialUserSpec]
+
+    I[bannedSpec] --> J[NOT]
+    J --> K[allowedSpec]
+
+    style C fill:#9f9,stroke:#333
+    style G fill:#99f,stroke:#333
+    style J fill:#f99,stroke:#333
+\`\`\`
+
+### 複雑な条件の表現
+
+\`\`\`typescript
+// 複雑な条件も読みやすく表現できる
+const eligibleSpec = premiumSpec
+  .or(vipSpec)
+  .and(bannedSpec.not());
+
+// 意味: (プレミアム OR VIP) AND BANされていない
+\`\`\`
+
+## リポジトリとの連携
+
+### 検索条件としての仕様
+
+\`\`\`typescript
+// domain/repositories/ICircleRepository.ts
+export interface ICircleRepository {
+  findById(id: CircleId): Promise<Circle | null>;
+  findBySpecification(spec: ISpecification<Circle>): Promise<Circle[]>;
+  save(circle: Circle): Promise<void>;
+}
+\`\`\`
+
+### 使用例
+
+\`\`\`typescript
+// アプリケーションサービス
+class CircleQueryService {
+  constructor(private circleRepo: ICircleRepository) {}
+
+  async findRecommendedCircles(): Promise<Circle[]> {
+    const recommendSpec = new CircleCreatedRecentlySpecification(30)
+      .and(new CircleHasMinMembersSpecification(10));
+
+    // 仕様オブジェクトを検索条件として渡す
+    return await this.circleRepo.findBySpecification(recommendSpec);
+  }
+}
+\`\`\`
+
+### パフォーマンスとのトレードオフ
+
+\`\`\`typescript
+// infrastructure/repositories/CircleRepositoryImpl.ts
+
+// ❌ 素朴な実装: 全件取得してフィルタリング
+class CircleRepositoryImpl implements ICircleRepository {
+  async findBySpecification(
+    spec: ISpecification<Circle>
+  ): Promise<Circle[]> {
+    // 全件取得（パフォーマンス問題！）
+    const allCircles = await this.findAll();
+
+    // メモリ上でフィルタリング
+    return allCircles.filter(c => spec.isSatisfiedBy(c));
+  }
+}
+
+// ✅ 最適化された実装: SQLに変換
+class CircleRepositoryImpl implements ICircleRepository {
+  async findBySpecification(
+    spec: ISpecification<Circle>
+  ): Promise<Circle[]> {
+    // 仕様をSQLに変換（高度な実装）
+    if (spec instanceof CircleCreatedRecentlySpecification) {
+      return await this.prisma.circle.findMany({
+        where: {
+          createdAt: { gte: threshold }
+        }
+      });
+    }
+    // ... 他の仕様も対応
+  }
+}
+\`\`\`
+
+**トレードオフ**:
+- **素朴な実装**: 柔軟だがパフォーマンスが悪い
+- **最適化実装**: 高速だが実装コストが高い
+
+### 実践的なアプローチ: CQRS
+
+データ量が多い場合は、読み取り専用の最適化されたクエリを用意します：
+
+\`\`\`typescript
+// 読み取り専用のクエリサービス
+class CircleQueryService {
+  async findRecommendedCircles(): Promise<CircleSummaryDto[]> {
+    // SQLで直接最適化されたクエリを発行
+    const result = await this.prisma.$queryRaw\`
+      SELECT c.id, c.name, c.member_count
+      FROM circles c
+      WHERE c.created_at >= NOW() - INTERVAL '30 days'
+        AND c.member_count >= 10
+      ORDER BY c.member_count DESC
+      LIMIT 20
+    \`;
+
+    return result.map(r => new CircleSummaryDto(r));
+  }
+}
+\`\`\`
+
+## ファーストクラスコレクションとの組み合わせ
+
+リポジトリへの依存を避けたい場合、必要な情報を**ファーストクラスコレクション**として渡します。
+
+\`\`\`typescript
+// ファーストクラスコレクション
+class CircleMembers {
+  constructor(private readonly members: User[]) {}
+
+  get premiumCount(): number {
+    return this.members.filter(m => m.isPremium).length;
+  }
+
+  get count(): number {
+    return this.members.length;
+  }
+}
+
+// 仕様クラス（リポジトリ不要）
+class CircleFullSpecification {
+  isSatisfiedBy(circle: Circle, members: CircleMembers): boolean {
+    const maxMembers = members.premiumCount >= 10 ? 50 : 30;
+    return members.count >= maxMembers;
+  }
+}
+
+// 使用例
+const members = new CircleMembers(await userRepo.findByIds(circle.memberIds));
+const isFull = fullSpec.isSatisfiedBy(circle, members);
+\`\`\`
+
+**メリット**:
+- 仕様クラスが純粋な判定機になる
+- テストが容易（モック不要）
+- 外部への問い合わせが不要
+
+## まとめ
+
+### 仕様パターンの実装ポイント
+
+| 要素 | 説明 |
+|------|------|
+| **ISpecification** | 基本インターフェース |
+| **CompositeSpecification** | and/or/notを提供する抽象クラス |
+| **具象仕様クラス** | 実際の判定ロジックを実装 |
+
+### 合成パターンの活用
+
+\`\`\`typescript
+// 読みやすい条件式
+const eligible = premiumSpec
+  .or(vipSpec)
+  .and(notBannedSpec);
+\`\`\`
+
+### パフォーマンスとの両立
+
+- 小規模データ: メモリ上でフィルタリング
+- 大規模データ: SQLへの変換 or CQRS
+
+### ベストプラクティス
+
+- ✅ 仕様の命名は明確に（〜Specification）
+- ✅ 単一責任: 1つの仕様は1つの判定のみ
+- ✅ 合成で複雑な条件を表現
+- ✅ パフォーマンスを考慮した実装選択
+
+**原則**: 仕様パターンは**ビジネスルールを表現力豊かに記述**し、**コードの意図を明確**にする
+`),
+  order: 2,
+});
+
+export const chapter11Lessons = [lesson11_1, lesson11_2];
