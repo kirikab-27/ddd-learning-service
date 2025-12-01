@@ -10739,3 +10739,2855 @@ graph TB
 });
 
 export const chapter15Lessons = [lesson15_1, lesson15_2, lesson15_3];
+
+// =============================================================================
+// Case Study 1: ECサイトの設計
+// =============================================================================
+
+// Lesson Case1-1: 商品・カタログドメイン
+const lessonCase1_1 = Lesson.create({
+  id: LessonId.create('lesson-case1-1'),
+  title: LessonTitle.create('商品・カタログドメイン'),
+  content: MarkdownContent.create(`
+# 商品・カタログドメイン
+
+ECサイトの中核となる「商品」と「カタログ」のドメインモデリングを学びます。
+
+## ECサイトにおける商品の概念
+
+\`\`\`mermaid
+graph TB
+    subgraph "商品ドメインの概念"
+        P[商品 Product]
+        P --> |持つ| PI[商品情報]
+        P --> |属する| C[カテゴリ]
+        P --> |持つ| PR[価格]
+        P --> |持つ| I[画像]
+        P --> |持つ| V[バリエーション]
+
+        PI --> N[商品名]
+        PI --> D[説明文]
+        PI --> SKU[SKUコード]
+
+        V --> S[サイズ]
+        V --> COL[カラー]
+    end
+\`\`\`
+
+## 商品エンティティの設計
+
+\`\`\`typescript
+// 値オブジェクト
+class ProductId {
+  private constructor(private readonly value: string) {}
+
+  static create(value: string): ProductId {
+    if (!value || value.trim().length === 0) {
+      throw new Error('商品IDは必須です');
+    }
+    return new ProductId(value);
+  }
+
+  getValue(): string {
+    return this.value;
+  }
+
+  equals(other: ProductId): boolean {
+    return this.value === other.value;
+  }
+}
+
+class SKU {
+  private constructor(private readonly value: string) {}
+
+  static create(value: string): SKU {
+    // SKU形式: カテゴリ-ブランド-連番 (例: SHIRT-NIKE-001)
+    const pattern = /^[A-Z]+-[A-Z]+-\\d{3}$/;
+    if (!pattern.test(value)) {
+      throw new Error('SKU形式が不正です');
+    }
+    return new SKU(value);
+  }
+
+  getValue(): string {
+    return this.value;
+  }
+}
+
+class Price {
+  private constructor(
+    private readonly amount: number,
+    private readonly currency: Currency
+  ) {}
+
+  static create(amount: number, currency: Currency): Price {
+    if (amount < 0) {
+      throw new Error('価格は0以上である必要があります');
+    }
+    return new Price(amount, currency);
+  }
+
+  getAmount(): number {
+    return this.amount;
+  }
+
+  getCurrency(): Currency {
+    return this.currency;
+  }
+
+  // 税込価格の計算
+  withTax(taxRate: number): Price {
+    const taxedAmount = Math.floor(this.amount * (1 + taxRate));
+    return new Price(taxedAmount, this.currency);
+  }
+
+  // 割引適用
+  applyDiscount(discountRate: number): Price {
+    if (discountRate < 0 || discountRate > 1) {
+      throw new Error('割引率は0〜1の範囲で指定してください');
+    }
+    const discountedAmount = Math.floor(this.amount * (1 - discountRate));
+    return new Price(discountedAmount, this.currency);
+  }
+}
+
+// 商品エンティティ
+class Product {
+  private constructor(
+    private readonly id: ProductId,
+    private name: ProductName,
+    private description: ProductDescription,
+    private sku: SKU,
+    private price: Price,
+    private categoryId: CategoryId,
+    private status: ProductStatus,
+    private variants: ProductVariant[]
+  ) {}
+
+  static create(params: CreateProductParams): Product {
+    return new Product(
+      params.id,
+      params.name,
+      params.description,
+      params.sku,
+      params.price,
+      params.categoryId,
+      ProductStatus.Draft, // 新規作成時は下書き状態
+      []
+    );
+  }
+
+  // 商品を公開する
+  publish(): void {
+    if (this.variants.length === 0) {
+      throw new Error('バリエーションが設定されていない商品は公開できません');
+    }
+    this.status = ProductStatus.Published;
+  }
+
+  // 商品を非公開にする
+  unpublish(): void {
+    this.status = ProductStatus.Unpublished;
+  }
+
+  // 価格を変更する
+  changePrice(newPrice: Price): void {
+    if (this.status === ProductStatus.Published) {
+      // 公開中の商品は価格変更に制約がある場合も
+      // ドメインルールとして表現
+    }
+    this.price = newPrice;
+  }
+
+  // バリエーションを追加する
+  addVariant(variant: ProductVariant): void {
+    const exists = this.variants.some(v => v.equals(variant));
+    if (exists) {
+      throw new Error('同じバリエーションが既に存在します');
+    }
+    this.variants.push(variant);
+  }
+}
+\`\`\`
+
+## カタログの集約設計
+
+\`\`\`mermaid
+graph TB
+    subgraph "カタログ集約"
+        CAT[Catalog 集約ルート]
+        CAT --> |管理| CE[CatalogEntry]
+        CE --> |参照| PID[ProductId]
+        CE --> |持つ| DP[表示価格]
+        CE --> |持つ| FT[特集タグ]
+        CE --> |持つ| RK[表示順位]
+    end
+
+    subgraph "商品集約"
+        P[Product 集約ルート]
+        P --> |持つ| V[Variant]
+        P --> |持つ| IMG[Image]
+    end
+
+    CAT -.->|ProductIdで参照| P
+\`\`\`
+
+\`\`\`typescript
+// カタログエントリー（カタログ集約内のエンティティ）
+class CatalogEntry {
+  constructor(
+    private readonly productId: ProductId,
+    private displayPrice: Price,
+    private rank: number,
+    private featured: boolean,
+    private tags: string[]
+  ) {}
+
+  // 特集商品に設定
+  markAsFeatured(): void {
+    this.featured = true;
+  }
+
+  // 表示順位を変更
+  changeRank(newRank: number): void {
+    if (newRank < 1) {
+      throw new Error('表示順位は1以上である必要があります');
+    }
+    this.rank = newRank;
+  }
+}
+
+// カタログ集約
+class Catalog {
+  private constructor(
+    private readonly id: CatalogId,
+    private name: CatalogName,
+    private entries: CatalogEntry[],
+    private publishedAt: Date | null
+  ) {}
+
+  static create(id: CatalogId, name: CatalogName): Catalog {
+    return new Catalog(id, name, [], null);
+  }
+
+  // 商品をカタログに追加
+  addProduct(productId: ProductId, displayPrice: Price): void {
+    const exists = this.entries.some(
+      e => e.getProductId().equals(productId)
+    );
+    if (exists) {
+      throw new Error('この商品は既にカタログに登録されています');
+    }
+
+    const entry = new CatalogEntry(
+      productId,
+      displayPrice,
+      this.entries.length + 1,
+      false,
+      []
+    );
+    this.entries.push(entry);
+  }
+
+  // カタログを公開
+  publish(): void {
+    if (this.entries.length === 0) {
+      throw new Error('商品が登録されていないカタログは公開できません');
+    }
+    this.publishedAt = new Date();
+  }
+
+  // 特集商品の取得
+  getFeaturedProducts(): CatalogEntry[] {
+    return this.entries
+      .filter(e => e.isFeatured())
+      .sort((a, b) => a.getRank() - b.getRank());
+  }
+}
+\`\`\`
+
+## カテゴリの階層構造
+
+\`\`\`typescript
+// カテゴリ（値オブジェクトとして扱う場合）
+class Category {
+  private constructor(
+    private readonly id: CategoryId,
+    private readonly name: string,
+    private readonly parentId: CategoryId | null,
+    private readonly level: number
+  ) {}
+
+  static createRoot(id: CategoryId, name: string): Category {
+    return new Category(id, name, null, 0);
+  }
+
+  static createChild(
+    id: CategoryId,
+    name: string,
+    parent: Category
+  ): Category {
+    return new Category(id, name, parent.id, parent.level + 1);
+  }
+
+  isRoot(): boolean {
+    return this.parentId === null;
+  }
+
+  // カテゴリパスの生成（パンくずリスト用）
+  // 例: "ファッション > メンズ > トップス"
+  getPath(categoryRepository: CategoryRepository): string {
+    if (this.isRoot()) {
+      return this.name;
+    }
+    const parent = categoryRepository.findById(this.parentId!);
+    return \`\${parent.getPath(categoryRepository)} > \${this.name}\`;
+  }
+}
+\`\`\`
+
+## 商品検索の仕様パターン
+
+\`\`\`typescript
+// 商品検索の仕様
+interface ProductSpecification {
+  isSatisfiedBy(product: Product): boolean;
+}
+
+class PriceRangeSpecification implements ProductSpecification {
+  constructor(
+    private readonly minPrice: number,
+    private readonly maxPrice: number
+  ) {}
+
+  isSatisfiedBy(product: Product): boolean {
+    const price = product.getPrice().getAmount();
+    return price >= this.minPrice && price <= this.maxPrice;
+  }
+}
+
+class CategorySpecification implements ProductSpecification {
+  constructor(private readonly categoryId: CategoryId) {}
+
+  isSatisfiedBy(product: Product): boolean {
+    return product.getCategoryId().equals(this.categoryId);
+  }
+}
+
+class InStockSpecification implements ProductSpecification {
+  isSatisfiedBy(product: Product): boolean {
+    return product.getVariants().some(v => v.getStock() > 0);
+  }
+}
+
+// 複合仕様
+class AndSpecification implements ProductSpecification {
+  constructor(
+    private readonly left: ProductSpecification,
+    private readonly right: ProductSpecification
+  ) {}
+
+  isSatisfiedBy(product: Product): boolean {
+    return this.left.isSatisfiedBy(product)
+        && this.right.isSatisfiedBy(product);
+  }
+}
+
+// 使用例
+const searchSpec = new AndSpecification(
+  new PriceRangeSpecification(1000, 5000),
+  new AndSpecification(
+    new CategorySpecification(CategoryId.create('tops')),
+    new InStockSpecification()
+  )
+);
+\`\`\`
+
+## まとめ
+
+- **商品エンティティ**: ProductIdで識別、SKU・価格・バリエーションを持つ
+- **カタログ集約**: 商品の表示・販売情報を管理（ProductIdで参照）
+- **カテゴリ**: 階層構造を持つ値オブジェクト
+- **仕様パターン**: 複雑な検索条件をドメインオブジェクトとして表現
+- **集約の分離**: 商品マスタとカタログ情報は別集約として設計
+`),
+  order: 1,
+});
+
+// Lesson Case1-2: ユーザー・会員ドメイン
+const lessonCase1_2 = Lesson.create({
+  id: LessonId.create('lesson-case1-2'),
+  title: LessonTitle.create('ユーザー・会員ドメイン'),
+  content: MarkdownContent.create(`
+# ユーザー・会員ドメイン
+
+ECサイトにおける「ユーザー」と「会員」のドメインモデリングを学びます。
+
+## ユーザーと会員の区別
+
+\`\`\`mermaid
+graph TB
+    subgraph "ユーザーの種類"
+        V[訪問者 Visitor]
+        G[ゲスト Guest]
+        M[会員 Member]
+
+        V -->|会員登録| M
+        V -->|ゲスト購入| G
+        G -->|会員登録| M
+    end
+
+    subgraph "会員ランク"
+        M --> R[Regular]
+        M --> S[Silver]
+        M --> GO[Gold]
+        M --> P[Platinum]
+    end
+\`\`\`
+
+## 会員エンティティの設計
+
+\`\`\`typescript
+// 会員ID
+class MemberId {
+  private constructor(private readonly value: string) {}
+
+  static create(value: string): MemberId {
+    return new MemberId(value);
+  }
+
+  static generate(): MemberId {
+    return new MemberId(crypto.randomUUID());
+  }
+
+  getValue(): string {
+    return this.value;
+  }
+
+  equals(other: MemberId): boolean {
+    return this.value === other.value;
+  }
+}
+
+// メールアドレス（値オブジェクト）
+class EmailAddress {
+  private constructor(private readonly value: string) {}
+
+  static create(value: string): EmailAddress {
+    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    if (!emailRegex.test(value)) {
+      throw new Error('無効なメールアドレス形式です');
+    }
+    return new EmailAddress(value.toLowerCase());
+  }
+
+  getValue(): string {
+    return this.value;
+  }
+
+  getDomain(): string {
+    return this.value.split('@')[1];
+  }
+}
+
+// 会員ランク（値オブジェクト）
+class MemberRank {
+  private static readonly THRESHOLDS = {
+    REGULAR: 0,
+    SILVER: 10000,
+    GOLD: 50000,
+    PLATINUM: 100000,
+  };
+
+  private constructor(
+    private readonly rank: 'REGULAR' | 'SILVER' | 'GOLD' | 'PLATINUM'
+  ) {}
+
+  static Regular = new MemberRank('REGULAR');
+  static Silver = new MemberRank('SILVER');
+  static Gold = new MemberRank('GOLD');
+  static Platinum = new MemberRank('PLATINUM');
+
+  // 累計購入金額からランクを決定
+  static fromTotalPurchase(amount: number): MemberRank {
+    if (amount >= this.THRESHOLDS.PLATINUM) return MemberRank.Platinum;
+    if (amount >= this.THRESHOLDS.GOLD) return MemberRank.Gold;
+    if (amount >= this.THRESHOLDS.SILVER) return MemberRank.Silver;
+    return MemberRank.Regular;
+  }
+
+  // 割引率を取得
+  getDiscountRate(): number {
+    switch (this.rank) {
+      case 'PLATINUM': return 0.10;
+      case 'GOLD': return 0.07;
+      case 'SILVER': return 0.05;
+      default: return 0;
+    }
+  }
+
+  // ポイント還元率を取得
+  getPointRate(): number {
+    switch (this.rank) {
+      case 'PLATINUM': return 0.05;
+      case 'GOLD': return 0.03;
+      case 'SILVER': return 0.02;
+      default: return 0.01;
+    }
+  }
+}
+
+// 会員エンティティ
+class Member {
+  private constructor(
+    private readonly id: MemberId,
+    private email: EmailAddress,
+    private name: MemberName,
+    private rank: MemberRank,
+    private totalPurchaseAmount: number,
+    private points: Point,
+    private addresses: ShippingAddress[],
+    private registeredAt: Date
+  ) {}
+
+  static register(
+    id: MemberId,
+    email: EmailAddress,
+    name: MemberName
+  ): Member {
+    return new Member(
+      id,
+      email,
+      name,
+      MemberRank.Regular,
+      0,
+      Point.zero(),
+      [],
+      new Date()
+    );
+  }
+
+  // 購入を記録してランクを更新
+  recordPurchase(amount: number): void {
+    this.totalPurchaseAmount += amount;
+    this.rank = MemberRank.fromTotalPurchase(this.totalPurchaseAmount);
+
+    // ポイント付与
+    const earnedPoints = Math.floor(amount * this.rank.getPointRate());
+    this.points = this.points.add(earnedPoints);
+  }
+
+  // ポイントを使用
+  usePoints(amount: number): void {
+    this.points = this.points.subtract(amount);
+  }
+
+  // 配送先住所を追加
+  addShippingAddress(address: ShippingAddress): void {
+    if (this.addresses.length >= 5) {
+      throw new Error('配送先住所は最大5件までです');
+    }
+    this.addresses.push(address);
+  }
+
+  // デフォルト配送先を設定
+  setDefaultAddress(addressId: AddressId): void {
+    const address = this.addresses.find(a => a.getId().equals(addressId));
+    if (!address) {
+      throw new Error('指定された住所が見つかりません');
+    }
+    this.addresses.forEach(a => a.unsetDefault());
+    address.setAsDefault();
+  }
+
+  // 会員割引を適用した価格を計算
+  calculateDiscountedPrice(originalPrice: Price): Price {
+    return originalPrice.applyDiscount(this.rank.getDiscountRate());
+  }
+}
+\`\`\`
+
+## ポイントの値オブジェクト
+
+\`\`\`typescript
+class Point {
+  private constructor(private readonly value: number) {}
+
+  static zero(): Point {
+    return new Point(0);
+  }
+
+  static create(value: number): Point {
+    if (value < 0) {
+      throw new Error('ポイントは0以上である必要があります');
+    }
+    return new Point(value);
+  }
+
+  getValue(): number {
+    return this.value;
+  }
+
+  add(amount: number): Point {
+    return new Point(this.value + amount);
+  }
+
+  subtract(amount: number): Point {
+    if (this.value < amount) {
+      throw new Error('ポイントが不足しています');
+    }
+    return new Point(this.value - amount);
+  }
+
+  // 金額に換算（1ポイント = 1円）
+  toMoney(): Price {
+    return Price.create(this.value, Currency.JPY);
+  }
+}
+\`\`\`
+
+## 配送先住所の値オブジェクト
+
+\`\`\`typescript
+class ShippingAddress {
+  private constructor(
+    private readonly id: AddressId,
+    private readonly postalCode: PostalCode,
+    private readonly prefecture: Prefecture,
+    private readonly city: string,
+    private readonly street: string,
+    private readonly building: string | null,
+    private readonly recipientName: string,
+    private readonly phoneNumber: PhoneNumber,
+    private isDefault: boolean
+  ) {}
+
+  static create(params: CreateAddressParams): ShippingAddress {
+    return new ShippingAddress(
+      AddressId.generate(),
+      params.postalCode,
+      params.prefecture,
+      params.city,
+      params.street,
+      params.building,
+      params.recipientName,
+      params.phoneNumber,
+      false
+    );
+  }
+
+  // 配送可能かチェック
+  isDeliverable(): boolean {
+    // 離島など配送不可エリアのチェック
+    return !this.prefecture.isRemoteIsland();
+  }
+
+  // 送料を計算
+  calculateShippingFee(basePrice: Price): Price {
+    return this.prefecture.getShippingFee(basePrice);
+  }
+
+  // フォーマットされた住所文字列
+  format(): string {
+    const building = this.building ? \` \${this.building}\` : '';
+    return \`〒\${this.postalCode.format()} \${this.prefecture.getName()}\${this.city}\${this.street}\${building}\`;
+  }
+
+  setAsDefault(): void {
+    this.isDefault = true;
+  }
+
+  unsetDefault(): void {
+    this.isDefault = false;
+  }
+}
+
+// 郵便番号
+class PostalCode {
+  private constructor(private readonly value: string) {}
+
+  static create(value: string): PostalCode {
+    const cleaned = value.replace(/-/g, '');
+    if (!/^\\d{7}$/.test(cleaned)) {
+      throw new Error('郵便番号は7桁の数字である必要があります');
+    }
+    return new PostalCode(cleaned);
+  }
+
+  format(): string {
+    return \`\${this.value.slice(0, 3)}-\${this.value.slice(3)}\`;
+  }
+}
+\`\`\`
+
+## 認証とアイデンティティの分離
+
+\`\`\`mermaid
+graph LR
+    subgraph "認証コンテキスト"
+        UA[UserAccount]
+        UA --> |持つ| CRED[Credentials]
+        CRED --> PW[Password]
+        CRED --> OAuth[OAuth連携]
+    end
+
+    subgraph "会員コンテキスト"
+        M[Member]
+        M --> |持つ| PROF[Profile]
+        M --> |持つ| ADDR[Addresses]
+    end
+
+    UA -.->|MemberIdで紐付け| M
+\`\`\`
+
+\`\`\`typescript
+// 認証コンテキストのユーザーアカウント
+class UserAccount {
+  private constructor(
+    private readonly id: UserId,
+    private readonly memberId: MemberId, // 会員コンテキストへの参照
+    private email: EmailAddress,
+    private passwordHash: PasswordHash,
+    private oauthConnections: OAuthConnection[],
+    private lastLoginAt: Date | null
+  ) {}
+
+  // パスワードでログイン
+  login(password: string): AuthToken {
+    if (!this.passwordHash.verify(password)) {
+      throw new AuthenticationError('パスワードが正しくありません');
+    }
+    this.lastLoginAt = new Date();
+    return AuthToken.generate(this.id);
+  }
+
+  // OAuth連携でログイン
+  loginWithOAuth(provider: OAuthProvider, token: string): AuthToken {
+    const connection = this.oauthConnections.find(
+      c => c.getProvider() === provider
+    );
+    if (!connection) {
+      throw new AuthenticationError('OAuth連携が設定されていません');
+    }
+    this.lastLoginAt = new Date();
+    return AuthToken.generate(this.id);
+  }
+
+  // パスワード変更
+  changePassword(currentPassword: string, newPassword: string): void {
+    if (!this.passwordHash.verify(currentPassword)) {
+      throw new AuthenticationError('現在のパスワードが正しくありません');
+    }
+    this.passwordHash = PasswordHash.create(newPassword);
+  }
+}
+\`\`\`
+
+## まとめ
+
+- **会員エンティティ**: MemberIdで識別、ランク・ポイント・住所を管理
+- **会員ランク**: 累計購入金額に基づく値オブジェクト、割引・ポイント率を持つ
+- **ポイント**: 不変の値オブジェクト、残高不足はドメインエラー
+- **配送先住所**: 複合的な値オブジェクト、配送可否・送料計算のロジックを持つ
+- **認証の分離**: 認証と会員情報は別コンテキストとして設計
+`),
+  order: 2,
+});
+
+// Lesson Case1-3: カート・注文ドメイン
+const lessonCase1_3 = Lesson.create({
+  id: LessonId.create('lesson-case1-3'),
+  title: LessonTitle.create('カート・注文ドメイン'),
+  content: MarkdownContent.create(`
+# カート・注文ドメイン
+
+ECサイトの中核である「カート」と「注文」のドメインモデリングを学びます。
+
+## カートと注文のライフサイクル
+
+\`\`\`mermaid
+stateDiagram-v2
+    [*] --> カート作成
+    カート作成 --> 商品追加
+    商品追加 --> 商品追加: 追加/削除
+    商品追加 --> 注文確定
+    注文確定 --> 決済処理
+    決済処理 --> 注文完了
+    決済処理 --> 決済失敗
+    決済失敗 --> 決済処理: リトライ
+    注文完了 --> [*]
+\`\`\`
+
+## カート集約の設計
+
+\`\`\`typescript
+// カートアイテム（カート集約内のエンティティ）
+class CartItem {
+  private constructor(
+    private readonly id: CartItemId,
+    private readonly productId: ProductId,
+    private readonly variantId: VariantId,
+    private readonly productName: string,
+    private readonly unitPrice: Price,
+    private quantity: Quantity
+  ) {}
+
+  static create(params: AddCartItemParams): CartItem {
+    return new CartItem(
+      CartItemId.generate(),
+      params.productId,
+      params.variantId,
+      params.productName,
+      params.unitPrice,
+      Quantity.create(params.quantity)
+    );
+  }
+
+  // 数量を変更
+  changeQuantity(newQuantity: number): void {
+    this.quantity = Quantity.create(newQuantity);
+  }
+
+  // 小計を計算
+  getSubtotal(): Price {
+    return this.unitPrice.multiply(this.quantity.getValue());
+  }
+
+  // 同じ商品バリエーションかチェック
+  isSameVariant(productId: ProductId, variantId: VariantId): boolean {
+    return this.productId.equals(productId)
+        && this.variantId.equals(variantId);
+  }
+}
+
+// 数量（値オブジェクト）
+class Quantity {
+  private static readonly MAX = 99;
+
+  private constructor(private readonly value: number) {}
+
+  static create(value: number): Quantity {
+    if (value < 1) {
+      throw new Error('数量は1以上である必要があります');
+    }
+    if (value > this.MAX) {
+      throw new Error(\`数量は\${this.MAX}以下である必要があります\`);
+    }
+    if (!Number.isInteger(value)) {
+      throw new Error('数量は整数である必要があります');
+    }
+    return new Quantity(value);
+  }
+
+  getValue(): number {
+    return this.value;
+  }
+
+  add(other: Quantity): Quantity {
+    return Quantity.create(this.value + other.value);
+  }
+}
+
+// カート集約
+class Cart {
+  private constructor(
+    private readonly id: CartId,
+    private readonly ownerId: MemberId | null, // ゲストの場合はnull
+    private items: CartItem[],
+    private appliedCoupon: Coupon | null,
+    private createdAt: Date,
+    private updatedAt: Date
+  ) {}
+
+  static create(ownerId: MemberId | null): Cart {
+    return new Cart(
+      CartId.generate(),
+      ownerId,
+      [],
+      null,
+      new Date(),
+      new Date()
+    );
+  }
+
+  // 商品を追加
+  addItem(params: AddCartItemParams): void {
+    const existingItem = this.items.find(
+      item => item.isSameVariant(params.productId, params.variantId)
+    );
+
+    if (existingItem) {
+      // 同じ商品が既にある場合は数量を加算
+      const newQuantity = existingItem.getQuantity().getValue() + params.quantity;
+      existingItem.changeQuantity(newQuantity);
+    } else {
+      // 新しい商品を追加
+      if (this.items.length >= 50) {
+        throw new Error('カートに追加できる商品は最大50種類です');
+      }
+      this.items.push(CartItem.create(params));
+    }
+    this.updatedAt = new Date();
+  }
+
+  // 商品を削除
+  removeItem(itemId: CartItemId): void {
+    const index = this.items.findIndex(item => item.getId().equals(itemId));
+    if (index === -1) {
+      throw new Error('指定された商品がカートにありません');
+    }
+    this.items.splice(index, 1);
+    this.updatedAt = new Date();
+  }
+
+  // クーポンを適用
+  applyCoupon(coupon: Coupon): void {
+    if (!coupon.isValid()) {
+      throw new Error('このクーポンは使用できません');
+    }
+    if (!coupon.isApplicable(this.getSubtotal())) {
+      throw new Error('このクーポンの適用条件を満たしていません');
+    }
+    this.appliedCoupon = coupon;
+  }
+
+  // 小計（税抜・割引前）
+  getSubtotal(): Price {
+    return this.items.reduce(
+      (total, item) => total.add(item.getSubtotal()),
+      Price.zero(Currency.JPY)
+    );
+  }
+
+  // 割引額
+  getDiscount(): Price {
+    if (!this.appliedCoupon) {
+      return Price.zero(Currency.JPY);
+    }
+    return this.appliedCoupon.calculateDiscount(this.getSubtotal());
+  }
+
+  // 注文に変換
+  toOrder(
+    shippingAddress: ShippingAddress,
+    paymentMethod: PaymentMethod
+  ): Order {
+    if (this.items.length === 0) {
+      throw new Error('カートが空です');
+    }
+
+    return Order.create({
+      cartId: this.id,
+      memberId: this.ownerId,
+      items: this.items.map(item => item.toOrderLine()),
+      shippingAddress,
+      paymentMethod,
+      subtotal: this.getSubtotal(),
+      discount: this.getDiscount(),
+      couponCode: this.appliedCoupon?.getCode() ?? null,
+    });
+  }
+}
+\`\`\`
+
+## 注文集約の設計
+
+\`\`\`mermaid
+graph TB
+    subgraph "注文集約"
+        O[Order 集約ルート]
+        O --> |持つ| OL[OrderLine]
+        O --> |持つ| OS[OrderStatus]
+        O --> |持つ| SA[ShippingAddress]
+        O --> |持つ| PM[PaymentInfo]
+        O --> |持つ| OP[OrderPrice]
+
+        OL --> |参照| PID[ProductId]
+        OL --> |持つ| UP[単価]
+        OL --> |持つ| QT[数量]
+    end
+\`\`\`
+
+\`\`\`typescript
+// 注文ステータス
+enum OrderStatus {
+  Pending = 'PENDING',           // 注文受付
+  PaymentProcessing = 'PAYMENT_PROCESSING', // 決済処理中
+  Paid = 'PAID',                 // 決済完了
+  Preparing = 'PREPARING',       // 出荷準備中
+  Shipped = 'SHIPPED',           // 出荷済み
+  Delivered = 'DELIVERED',       // 配送完了
+  Cancelled = 'CANCELLED',       // キャンセル
+  Refunded = 'REFUNDED',         // 返金済み
+}
+
+// 注文明細（注文集約内の値オブジェクト）
+class OrderLine {
+  private constructor(
+    private readonly productId: ProductId,
+    private readonly variantId: VariantId,
+    private readonly productName: string,
+    private readonly unitPrice: Price,
+    private readonly quantity: Quantity
+  ) {}
+
+  static create(params: CreateOrderLineParams): OrderLine {
+    return new OrderLine(
+      params.productId,
+      params.variantId,
+      params.productName,
+      params.unitPrice,
+      params.quantity
+    );
+  }
+
+  getSubtotal(): Price {
+    return this.unitPrice.multiply(this.quantity.getValue());
+  }
+}
+
+// 注文金額（値オブジェクト）
+class OrderPrice {
+  private constructor(
+    private readonly subtotal: Price,      // 小計（税抜）
+    private readonly discount: Price,       // 割引額
+    private readonly shippingFee: Price,    // 送料
+    private readonly tax: Price,            // 消費税
+    private readonly total: Price           // 合計
+  ) {}
+
+  static calculate(
+    subtotal: Price,
+    discount: Price,
+    shippingFee: Price,
+    taxRate: number
+  ): OrderPrice {
+    const discounted = subtotal.subtract(discount);
+    const taxable = discounted.add(shippingFee);
+    const tax = taxable.multiply(taxRate);
+    const total = taxable.add(tax);
+
+    return new OrderPrice(subtotal, discount, shippingFee, tax, total);
+  }
+
+  getTotal(): Price {
+    return this.total;
+  }
+}
+
+// 注文集約
+class Order {
+  private constructor(
+    private readonly id: OrderId,
+    private readonly orderNumber: OrderNumber,
+    private readonly memberId: MemberId | null,
+    private readonly lines: OrderLine[],
+    private readonly shippingAddress: ShippingAddress,
+    private readonly paymentMethod: PaymentMethod,
+    private readonly price: OrderPrice,
+    private readonly couponCode: string | null,
+    private status: OrderStatus,
+    private readonly orderedAt: Date,
+    private paidAt: Date | null,
+    private shippedAt: Date | null,
+    private deliveredAt: Date | null
+  ) {}
+
+  static create(params: CreateOrderParams): Order {
+    const shippingFee = params.shippingAddress.calculateShippingFee(
+      params.subtotal
+    );
+    const price = OrderPrice.calculate(
+      params.subtotal,
+      params.discount,
+      shippingFee,
+      0.10 // 消費税率10%
+    );
+
+    return new Order(
+      OrderId.generate(),
+      OrderNumber.generate(),
+      params.memberId,
+      params.items,
+      params.shippingAddress,
+      params.paymentMethod,
+      price,
+      params.couponCode,
+      OrderStatus.Pending,
+      new Date(),
+      null,
+      null,
+      null
+    );
+  }
+
+  // 決済処理を開始
+  startPayment(): void {
+    if (this.status !== OrderStatus.Pending) {
+      throw new Error('この注文は決済処理を開始できません');
+    }
+    this.status = OrderStatus.PaymentProcessing;
+  }
+
+  // 決済完了
+  markAsPaid(transactionId: TransactionId): void {
+    if (this.status !== OrderStatus.PaymentProcessing) {
+      throw new Error('決済処理中ではありません');
+    }
+    this.status = OrderStatus.Paid;
+    this.paidAt = new Date();
+  }
+
+  // 出荷
+  ship(trackingNumber: TrackingNumber): void {
+    if (this.status !== OrderStatus.Preparing) {
+      throw new Error('出荷準備が完了していません');
+    }
+    this.status = OrderStatus.Shipped;
+    this.shippedAt = new Date();
+  }
+
+  // キャンセル
+  cancel(): void {
+    const cancellableStatuses = [
+      OrderStatus.Pending,
+      OrderStatus.PaymentProcessing,
+      OrderStatus.Paid,
+    ];
+
+    if (!cancellableStatuses.includes(this.status)) {
+      throw new Error('この注文はキャンセルできません');
+    }
+    this.status = OrderStatus.Cancelled;
+  }
+
+  // キャンセル可能かチェック
+  isCancellable(): boolean {
+    return [
+      OrderStatus.Pending,
+      OrderStatus.PaymentProcessing,
+      OrderStatus.Paid,
+    ].includes(this.status);
+  }
+}
+
+// 注文番号（値オブジェクト）
+class OrderNumber {
+  private constructor(private readonly value: string) {}
+
+  static generate(): OrderNumber {
+    // 形式: YYYYMMDD-XXXXX (例: 20240115-A1B2C)
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const random = Math.random().toString(36).substring(2, 7).toUpperCase();
+    return new OrderNumber(\`\${dateStr}-\${random}\`);
+  }
+
+  getValue(): string {
+    return this.value;
+  }
+}
+\`\`\`
+
+## まとめ
+
+- **カート集約**: 一時的な購入意図を管理、商品の追加・削除・クーポン適用
+- **注文集約**: 確定した購入を管理、ステータス遷移をドメインルールで制御
+- **値オブジェクト**: 数量・注文金額・注文番号を不変オブジェクトとして設計
+- **状態遷移**: OrderStatusによる明確なライフサイクル管理
+- **ドメインルール**: キャンセル可否などのビジネスルールをエンティティに実装
+`),
+  order: 3,
+});
+
+// Lesson Case1-4: 決済ドメイン
+const lessonCase1_4 = Lesson.create({
+  id: LessonId.create('lesson-case1-4'),
+  title: LessonTitle.create('決済ドメイン'),
+  content: MarkdownContent.create(`
+# 決済ドメイン
+
+ECサイトにおける「決済」のドメインモデリングと外部サービス連携を学びます。
+
+## 決済の概念モデル
+
+\`\`\`mermaid
+graph TB
+    subgraph "決済ドメイン"
+        P[Payment]
+        P --> |持つ| PM[PaymentMethod]
+        P --> |持つ| PS[PaymentStatus]
+        P --> |生成| T[Transaction]
+
+        PM --> CC[CreditCard]
+        PM --> BT[BankTransfer]
+        PM --> COD[代金引換]
+        PM --> CV[コンビニ払い]
+
+        T --> |持つ| TID[TransactionId]
+        T --> |持つ| TS[TransactionStatus]
+    end
+\`\`\`
+
+## 決済方法の設計
+
+\`\`\`typescript
+// 決済方法の基底クラス
+abstract class PaymentMethod {
+  abstract getType(): PaymentMethodType;
+  abstract validate(): void;
+  abstract getDisplayName(): string;
+}
+
+// クレジットカード
+class CreditCardPayment extends PaymentMethod {
+  private constructor(
+    private readonly cardNumber: MaskedCardNumber,
+    private readonly cardHolderName: string,
+    private readonly expiryMonth: number,
+    private readonly expiryYear: number,
+    private readonly cardBrand: CardBrand
+  ) {
+    super();
+  }
+
+  static create(params: CreditCardParams): CreditCardPayment {
+    // カード番号の検証（Luhnアルゴリズム）
+    if (!this.isValidCardNumber(params.cardNumber)) {
+      throw new Error('無効なカード番号です');
+    }
+
+    // 有効期限の検証
+    if (this.isExpired(params.expiryMonth, params.expiryYear)) {
+      throw new Error('カードの有効期限が切れています');
+    }
+
+    return new CreditCardPayment(
+      MaskedCardNumber.create(params.cardNumber),
+      params.cardHolderName,
+      params.expiryMonth,
+      params.expiryYear,
+      CardBrand.detect(params.cardNumber)
+    );
+  }
+
+  private static isValidCardNumber(number: string): boolean {
+    // Luhnアルゴリズムによる検証
+    const digits = number.replace(/\\D/g, '');
+    let sum = 0;
+    let isEven = false;
+
+    for (let i = digits.length - 1; i >= 0; i--) {
+      let digit = parseInt(digits[i], 10);
+      if (isEven) {
+        digit *= 2;
+        if (digit > 9) digit -= 9;
+      }
+      sum += digit;
+      isEven = !isEven;
+    }
+
+    return sum % 10 === 0;
+  }
+
+  private static isExpired(month: number, year: number): boolean {
+    const now = new Date();
+    const expiry = new Date(year, month - 1);
+    return expiry < now;
+  }
+
+  getType(): PaymentMethodType {
+    return PaymentMethodType.CreditCard;
+  }
+
+  validate(): void {
+    // 追加のビジネスルール検証
+  }
+
+  getDisplayName(): string {
+    return \`\${this.cardBrand.getName()} **** \${this.cardNumber.getLast4()}\`;
+  }
+}
+
+// マスク済みカード番号
+class MaskedCardNumber {
+  private constructor(
+    private readonly last4: string,
+    private readonly maskedFull: string
+  ) {}
+
+  static create(fullNumber: string): MaskedCardNumber {
+    const cleaned = fullNumber.replace(/\\D/g, '');
+    const last4 = cleaned.slice(-4);
+    const maskedFull = '**** **** **** ' + last4;
+    return new MaskedCardNumber(last4, maskedFull);
+  }
+
+  getLast4(): string {
+    return this.last4;
+  }
+
+  getMasked(): string {
+    return this.maskedFull;
+  }
+}
+
+// カードブランド
+class CardBrand {
+  private constructor(
+    private readonly brand: 'VISA' | 'MASTERCARD' | 'AMEX' | 'JCB'
+  ) {}
+
+  static detect(cardNumber: string): CardBrand {
+    const cleaned = cardNumber.replace(/\\D/g, '');
+
+    if (cleaned.startsWith('4')) return new CardBrand('VISA');
+    if (cleaned.startsWith('5')) return new CardBrand('MASTERCARD');
+    if (cleaned.startsWith('34') || cleaned.startsWith('37')) {
+      return new CardBrand('AMEX');
+    }
+    if (cleaned.startsWith('35')) return new CardBrand('JCB');
+
+    throw new Error('対応していないカードブランドです');
+  }
+
+  getName(): string {
+    return this.brand;
+  }
+}
+\`\`\`
+
+## 決済処理の設計
+
+\`\`\`typescript
+// 決済ステータス
+enum PaymentStatus {
+  Pending = 'PENDING',
+  Processing = 'PROCESSING',
+  Authorized = 'AUTHORIZED',
+  Captured = 'CAPTURED',
+  Failed = 'FAILED',
+  Cancelled = 'CANCELLED',
+  Refunded = 'REFUNDED',
+}
+
+// 決済エンティティ
+class Payment {
+  private constructor(
+    private readonly id: PaymentId,
+    private readonly orderId: OrderId,
+    private readonly amount: Price,
+    private readonly method: PaymentMethod,
+    private status: PaymentStatus,
+    private transactions: Transaction[],
+    private readonly createdAt: Date
+  ) {}
+
+  static create(orderId: OrderId, amount: Price, method: PaymentMethod): Payment {
+    method.validate();
+
+    return new Payment(
+      PaymentId.generate(),
+      orderId,
+      amount,
+      method,
+      PaymentStatus.Pending,
+      [],
+      new Date()
+    );
+  }
+
+  // オーソリ（与信枠確保）
+  authorize(gateway: PaymentGateway): AuthorizationResult {
+    if (this.status !== PaymentStatus.Pending) {
+      throw new Error('この決済はオーソリできません');
+    }
+
+    this.status = PaymentStatus.Processing;
+
+    const result = gateway.authorize(this);
+
+    if (result.isSuccess()) {
+      this.status = PaymentStatus.Authorized;
+      this.transactions.push(
+        Transaction.createAuthorization(result.getTransactionId())
+      );
+    } else {
+      this.status = PaymentStatus.Failed;
+    }
+
+    return result;
+  }
+
+  // キャプチャ（実際の請求）
+  capture(gateway: PaymentGateway): CaptureResult {
+    if (this.status !== PaymentStatus.Authorized) {
+      throw new Error('オーソリされていない決済はキャプチャできません');
+    }
+
+    const authTransaction = this.transactions.find(
+      t => t.getType() === TransactionType.Authorization
+    );
+
+    const result = gateway.capture(authTransaction!.getId());
+
+    if (result.isSuccess()) {
+      this.status = PaymentStatus.Captured;
+      this.transactions.push(
+        Transaction.createCapture(result.getTransactionId())
+      );
+    }
+
+    return result;
+  }
+
+  // 返金
+  refund(gateway: PaymentGateway, amount?: Price): RefundResult {
+    if (this.status !== PaymentStatus.Captured) {
+      throw new Error('キャプチャされていない決済は返金できません');
+    }
+
+    const refundAmount = amount ?? this.amount;
+
+    if (refundAmount.isGreaterThan(this.amount)) {
+      throw new Error('返金額が決済額を超えています');
+    }
+
+    const result = gateway.refund(this.id, refundAmount);
+
+    if (result.isSuccess()) {
+      this.status = PaymentStatus.Refunded;
+      this.transactions.push(
+        Transaction.createRefund(result.getTransactionId(), refundAmount)
+      );
+    }
+
+    return result;
+  }
+}
+
+// トランザクション
+class Transaction {
+  private constructor(
+    private readonly id: TransactionId,
+    private readonly type: TransactionType,
+    private readonly amount: Price | null,
+    private readonly timestamp: Date
+  ) {}
+
+  static createAuthorization(id: TransactionId): Transaction {
+    return new Transaction(id, TransactionType.Authorization, null, new Date());
+  }
+
+  static createCapture(id: TransactionId): Transaction {
+    return new Transaction(id, TransactionType.Capture, null, new Date());
+  }
+
+  static createRefund(id: TransactionId, amount: Price): Transaction {
+    return new Transaction(id, TransactionType.Refund, amount, new Date());
+  }
+}
+\`\`\`
+
+## 決済ゲートウェイとの連携
+
+\`\`\`mermaid
+sequenceDiagram
+    participant O as Order
+    participant P as Payment
+    participant G as PaymentGateway
+    participant E as External API
+
+    O->>P: 決済作成
+    P->>G: authorize()
+    G->>E: APIリクエスト
+    E-->>G: オーソリ結果
+    G-->>P: AuthorizationResult
+
+    Note over O,P: 出荷時
+    O->>P: capture()
+    P->>G: capture()
+    G->>E: APIリクエスト
+    E-->>G: キャプチャ結果
+    G-->>P: CaptureResult
+\`\`\`
+
+\`\`\`typescript
+// 決済ゲートウェイインターフェース（ポート）
+interface PaymentGateway {
+  authorize(payment: Payment): AuthorizationResult;
+  capture(transactionId: TransactionId): CaptureResult;
+  refund(paymentId: PaymentId, amount: Price): RefundResult;
+  getTransaction(transactionId: TransactionId): Transaction;
+}
+
+// Stripe実装（アダプター）
+class StripePaymentGateway implements PaymentGateway {
+  constructor(private readonly stripeClient: StripeClient) {}
+
+  authorize(payment: Payment): AuthorizationResult {
+    try {
+      const paymentIntent = this.stripeClient.paymentIntents.create({
+        amount: payment.getAmount().getAmountInCents(),
+        currency: payment.getAmount().getCurrency().toLowerCase(),
+        capture_method: 'manual', // オーソリのみ
+        metadata: {
+          orderId: payment.getOrderId().getValue(),
+        },
+      });
+
+      return AuthorizationResult.success(
+        TransactionId.create(paymentIntent.id)
+      );
+    } catch (error) {
+      return AuthorizationResult.failure(error.message);
+    }
+  }
+
+  capture(transactionId: TransactionId): CaptureResult {
+    try {
+      const paymentIntent = this.stripeClient.paymentIntents.capture(
+        transactionId.getValue()
+      );
+
+      return CaptureResult.success(
+        TransactionId.create(paymentIntent.id)
+      );
+    } catch (error) {
+      return CaptureResult.failure(error.message);
+    }
+  }
+
+  refund(paymentId: PaymentId, amount: Price): RefundResult {
+    // 返金処理の実装
+  }
+}
+\`\`\`
+
+## まとめ
+
+- **決済方法**: クレジットカード等をポリモーフィズムで設計
+- **決済エンティティ**: ステータス管理とトランザクション履歴を持つ
+- **オーソリ/キャプチャ**: 2段階の決済フローをドメインルールで表現
+- **決済ゲートウェイ**: 外部APIとの連携をポート＆アダプターで抽象化
+- **セキュリティ**: カード番号のマスキング、検証ロジックをドメインに実装
+`),
+  order: 4,
+});
+
+// Lesson Case1-5: 在庫ドメイン
+const lessonCase1_5 = Lesson.create({
+  id: LessonId.create('lesson-case1-5'),
+  title: LessonTitle.create('在庫ドメイン'),
+  content: MarkdownContent.create(`
+# 在庫ドメイン
+
+ECサイトにおける「在庫」のドメインモデリングと整合性の保証を学びます。
+
+## 在庫管理の概念
+
+\`\`\`mermaid
+graph TB
+    subgraph "在庫ドメイン"
+        I[Inventory]
+        I --> |持つ| PS[PhysicalStock 実在庫]
+        I --> |持つ| RS[ReservedStock 引当在庫]
+        I --> |持つ| AS[AvailableStock 販売可能在庫]
+
+        AS --> |計算| CAL[実在庫 - 引当在庫]
+
+        I --> |記録| IM[InventoryMovement]
+        IM --> |種別| IN[入庫]
+        IM --> |種別| OUT[出庫]
+        IM --> |種別| RES[引当]
+        IM --> |種別| REL[引当解除]
+    end
+\`\`\`
+
+## 在庫集約の設計
+
+\`\`\`typescript
+// 在庫数量（値オブジェクト）
+class StockQuantity {
+  private constructor(private readonly value: number) {}
+
+  static create(value: number): StockQuantity {
+    if (value < 0) {
+      throw new Error('在庫数量は0以上である必要があります');
+    }
+    if (!Number.isInteger(value)) {
+      throw new Error('在庫数量は整数である必要があります');
+    }
+    return new StockQuantity(value);
+  }
+
+  static zero(): StockQuantity {
+    return new StockQuantity(0);
+  }
+
+  getValue(): number {
+    return this.value;
+  }
+
+  add(quantity: number): StockQuantity {
+    return StockQuantity.create(this.value + quantity);
+  }
+
+  subtract(quantity: number): StockQuantity {
+    return StockQuantity.create(this.value - quantity);
+  }
+
+  isZero(): boolean {
+    return this.value === 0;
+  }
+
+  isGreaterThanOrEqual(quantity: number): boolean {
+    return this.value >= quantity;
+  }
+}
+
+// 在庫エンティティ
+class Inventory {
+  private constructor(
+    private readonly id: InventoryId,
+    private readonly productId: ProductId,
+    private readonly variantId: VariantId,
+    private readonly warehouseId: WarehouseId,
+    private physicalStock: StockQuantity,      // 実在庫
+    private reservedStock: StockQuantity,       // 引当在庫
+    private movements: InventoryMovement[]
+  ) {}
+
+  static create(
+    productId: ProductId,
+    variantId: VariantId,
+    warehouseId: WarehouseId
+  ): Inventory {
+    return new Inventory(
+      InventoryId.generate(),
+      productId,
+      variantId,
+      warehouseId,
+      StockQuantity.zero(),
+      StockQuantity.zero(),
+      []
+    );
+  }
+
+  // 販売可能在庫を計算
+  getAvailableStock(): StockQuantity {
+    return this.physicalStock.subtract(this.reservedStock.getValue());
+  }
+
+  // 入庫
+  receive(quantity: number, reason: string): void {
+    if (quantity <= 0) {
+      throw new Error('入庫数量は1以上である必要があります');
+    }
+
+    this.physicalStock = this.physicalStock.add(quantity);
+    this.movements.push(
+      InventoryMovement.createReceive(quantity, reason)
+    );
+  }
+
+  // 在庫引当（注文確定時）
+  reserve(orderId: OrderId, quantity: number): void {
+    const available = this.getAvailableStock();
+
+    if (!available.isGreaterThanOrEqual(quantity)) {
+      throw new InsufficientStockError(
+        this.productId,
+        quantity,
+        available.getValue()
+      );
+    }
+
+    this.reservedStock = this.reservedStock.add(quantity);
+    this.movements.push(
+      InventoryMovement.createReserve(orderId, quantity)
+    );
+  }
+
+  // 引当解除（注文キャンセル時）
+  releaseReservation(orderId: OrderId, quantity: number): void {
+    this.reservedStock = this.reservedStock.subtract(quantity);
+    this.movements.push(
+      InventoryMovement.createRelease(orderId, quantity)
+    );
+  }
+
+  // 出庫（出荷時）
+  ship(orderId: OrderId, quantity: number): void {
+    // 引当済みの在庫から出庫
+    this.reservedStock = this.reservedStock.subtract(quantity);
+    this.physicalStock = this.physicalStock.subtract(quantity);
+    this.movements.push(
+      InventoryMovement.createShip(orderId, quantity)
+    );
+  }
+
+  // 在庫切れかどうか
+  isOutOfStock(): boolean {
+    return this.getAvailableStock().isZero();
+  }
+
+  // 在庫僅少かどうか（閾値以下）
+  isLowStock(threshold: number = 5): boolean {
+    return this.getAvailableStock().getValue() <= threshold;
+  }
+}
+
+// 在庫移動履歴
+class InventoryMovement {
+  private constructor(
+    private readonly id: MovementId,
+    private readonly type: MovementType,
+    private readonly quantity: number,
+    private readonly orderId: OrderId | null,
+    private readonly reason: string | null,
+    private readonly timestamp: Date
+  ) {}
+
+  static createReceive(quantity: number, reason: string): InventoryMovement {
+    return new InventoryMovement(
+      MovementId.generate(),
+      MovementType.Receive,
+      quantity,
+      null,
+      reason,
+      new Date()
+    );
+  }
+
+  static createReserve(orderId: OrderId, quantity: number): InventoryMovement {
+    return new InventoryMovement(
+      MovementId.generate(),
+      MovementType.Reserve,
+      quantity,
+      orderId,
+      null,
+      new Date()
+    );
+  }
+
+  static createRelease(orderId: OrderId, quantity: number): InventoryMovement {
+    return new InventoryMovement(
+      MovementId.generate(),
+      MovementType.Release,
+      quantity,
+      orderId,
+      null,
+      new Date()
+    );
+  }
+
+  static createShip(orderId: OrderId, quantity: number): InventoryMovement {
+    return new InventoryMovement(
+      MovementId.generate(),
+      MovementType.Ship,
+      quantity,
+      orderId,
+      null,
+      new Date()
+    );
+  }
+}
+
+enum MovementType {
+  Receive = 'RECEIVE',    // 入庫
+  Reserve = 'RESERVE',    // 引当
+  Release = 'RELEASE',    // 引当解除
+  Ship = 'SHIP',          // 出庫
+  Adjust = 'ADJUST',      // 棚卸調整
+}
+\`\`\`
+
+## 在庫不足エラー
+
+\`\`\`typescript
+// ドメインエラー
+class InsufficientStockError extends Error {
+  constructor(
+    public readonly productId: ProductId,
+    public readonly requestedQuantity: number,
+    public readonly availableQuantity: number
+  ) {
+    super(
+      \`在庫が不足しています。要求: \${requestedQuantity}, 利用可能: \${availableQuantity}\`
+    );
+    this.name = 'InsufficientStockError';
+  }
+}
+\`\`\`
+
+## 複数倉庫の在庫管理
+
+\`\`\`mermaid
+graph TB
+    subgraph "倉庫A"
+        IA[Inventory A]
+        IA --> |実在庫| 100
+        IA --> |引当| 20
+        IA --> |販売可能| 80
+    end
+
+    subgraph "倉庫B"
+        IB[Inventory B]
+        IB --> |実在庫| 50
+        IB --> |引当| 10
+        IB --> |販売可能| 40
+    end
+
+    subgraph "統合ビュー"
+        T[TotalAvailable]
+        T --> |合計| 120
+    end
+
+    IA --> T
+    IB --> T
+\`\`\`
+
+\`\`\`typescript
+// 在庫ドメインサービス
+class InventoryService {
+  constructor(
+    private readonly inventoryRepository: InventoryRepository
+  ) {}
+
+  // 商品の総販売可能在庫を取得
+  getTotalAvailableStock(
+    productId: ProductId,
+    variantId: VariantId
+  ): StockQuantity {
+    const inventories = this.inventoryRepository.findByProductVariant(
+      productId,
+      variantId
+    );
+
+    return inventories.reduce(
+      (total, inv) => total.add(inv.getAvailableStock().getValue()),
+      StockQuantity.zero()
+    );
+  }
+
+  // 最適な倉庫から在庫を引き当て
+  reserveFromOptimalWarehouse(
+    productId: ProductId,
+    variantId: VariantId,
+    orderId: OrderId,
+    quantity: number,
+    shippingAddress: ShippingAddress
+  ): Inventory {
+    const inventories = this.inventoryRepository.findByProductVariant(
+      productId,
+      variantId
+    );
+
+    // 配送先に最も近い倉庫から引き当てる
+    const sorted = inventories
+      .filter(inv => inv.getAvailableStock().isGreaterThanOrEqual(quantity))
+      .sort((a, b) => {
+        const distA = this.calculateDistance(a.getWarehouseId(), shippingAddress);
+        const distB = this.calculateDistance(b.getWarehouseId(), shippingAddress);
+        return distA - distB;
+      });
+
+    if (sorted.length === 0) {
+      throw new InsufficientStockError(productId, quantity, 0);
+    }
+
+    const selectedInventory = sorted[0];
+    selectedInventory.reserve(orderId, quantity);
+
+    return selectedInventory;
+  }
+}
+\`\`\`
+
+## まとめ
+
+- **在庫の3つの概念**: 実在庫、引当在庫、販売可能在庫
+- **在庫集約**: 在庫数量と移動履歴を管理、ビジネスルールを実装
+- **引当と出庫**: 注文確定時に引当、出荷時に出庫の2段階処理
+- **ドメインエラー**: 在庫不足を専用エラークラスで表現
+- **複数倉庫**: ドメインサービスで最適な引当先を決定
+`),
+  order: 5,
+});
+
+// Lesson Case1-6: 配送ドメイン
+const lessonCase1_6 = Lesson.create({
+  id: LessonId.create('lesson-case1-6'),
+  title: LessonTitle.create('配送ドメイン'),
+  content: MarkdownContent.create(`
+# 配送ドメイン
+
+ECサイトにおける「配送」のドメインモデリングと外部サービス連携を学びます。
+
+## 配送のライフサイクル
+
+\`\`\`mermaid
+stateDiagram-v2
+    [*] --> 出荷準備中
+    出荷準備中 --> ピッキング中
+    ピッキング中 --> 梱包完了
+    梱包完了 --> 集荷待ち
+    集荷待ち --> 配送中
+    配送中 --> 配達完了
+    配送中 --> 配達不在
+    配達不在 --> 再配達予約
+    再配達予約 --> 配送中
+    配達完了 --> [*]
+\`\`\`
+
+## 配送集約の設計
+
+\`\`\`typescript
+// 配送ステータス
+enum ShipmentStatus {
+  Preparing = 'PREPARING',       // 出荷準備中
+  Picking = 'PICKING',           // ピッキング中
+  Packed = 'PACKED',             // 梱包完了
+  AwaitingPickup = 'AWAITING_PICKUP', // 集荷待ち
+  InTransit = 'IN_TRANSIT',      // 配送中
+  OutForDelivery = 'OUT_FOR_DELIVERY', // 配達中
+  Delivered = 'DELIVERED',       // 配達完了
+  AttemptedDelivery = 'ATTEMPTED', // 配達不在
+  Returned = 'RETURNED',         // 返送済み
+}
+
+// 追跡番号（値オブジェクト）
+class TrackingNumber {
+  private constructor(
+    private readonly value: string,
+    private readonly carrier: Carrier
+  ) {}
+
+  static create(value: string, carrier: Carrier): TrackingNumber {
+    if (!carrier.isValidTrackingNumber(value)) {
+      throw new Error('無効な追跡番号形式です');
+    }
+    return new TrackingNumber(value, carrier);
+  }
+
+  getValue(): string {
+    return this.value;
+  }
+
+  getTrackingUrl(): string {
+    return this.carrier.getTrackingUrl(this.value);
+  }
+}
+
+// 配送業者
+class Carrier {
+  private constructor(
+    private readonly code: string,
+    private readonly name: string,
+    private readonly trackingUrlTemplate: string,
+    private readonly trackingNumberPattern: RegExp
+  ) {}
+
+  static readonly Yamato = new Carrier(
+    'YAMATO',
+    'ヤマト運輸',
+    'https://toi.kuronekoyamato.co.jp/cgi-bin/tneko?number={number}',
+    /^\\d{12}$/
+  );
+
+  static readonly Sagawa = new Carrier(
+    'SAGAWA',
+    '佐川急便',
+    'https://k2k.sagawa-exp.co.jp/p/web/okurijosearch.do?okurijoNo={number}',
+    /^\\d{12}$/
+  );
+
+  static readonly JapanPost = new Carrier(
+    'JAPAN_POST',
+    '日本郵便',
+    'https://trackings.post.japanpost.jp/services/srv/search?requestNo1={number}',
+    /^\\d{11,13}$/
+  );
+
+  isValidTrackingNumber(number: string): boolean {
+    return this.trackingNumberPattern.test(number);
+  }
+
+  getTrackingUrl(number: string): string {
+    return this.trackingUrlTemplate.replace('{number}', number);
+  }
+}
+
+// 配送エンティティ
+class Shipment {
+  private constructor(
+    private readonly id: ShipmentId,
+    private readonly orderId: OrderId,
+    private readonly shippingAddress: ShippingAddress,
+    private readonly carrier: Carrier,
+    private trackingNumber: TrackingNumber | null,
+    private status: ShipmentStatus,
+    private events: ShipmentEvent[],
+    private estimatedDeliveryDate: Date | null,
+    private actualDeliveryDate: Date | null
+  ) {}
+
+  static create(
+    orderId: OrderId,
+    shippingAddress: ShippingAddress,
+    carrier: Carrier
+  ): Shipment {
+    return new Shipment(
+      ShipmentId.generate(),
+      orderId,
+      shippingAddress,
+      carrier,
+      null,
+      ShipmentStatus.Preparing,
+      [ShipmentEvent.create(ShipmentStatus.Preparing, '出荷準備を開始しました')],
+      null,
+      null
+    );
+  }
+
+  // ピッキング開始
+  startPicking(): void {
+    this.transitionTo(ShipmentStatus.Picking, 'ピッキングを開始しました');
+  }
+
+  // 梱包完了
+  pack(packageInfo: PackageInfo): void {
+    this.transitionTo(ShipmentStatus.Packed, '梱包が完了しました');
+  }
+
+  // 追跡番号を設定して出荷
+  ship(trackingNumber: TrackingNumber, estimatedDeliveryDate: Date): void {
+    if (this.status !== ShipmentStatus.Packed) {
+      throw new Error('梱包が完了していません');
+    }
+
+    this.trackingNumber = trackingNumber;
+    this.estimatedDeliveryDate = estimatedDeliveryDate;
+    this.transitionTo(ShipmentStatus.AwaitingPickup, '集荷待ちです');
+  }
+
+  // 配送状況を更新（外部APIからの情報）
+  updateFromCarrier(status: ShipmentStatus, description: string): void {
+    this.transitionTo(status, description);
+
+    if (status === ShipmentStatus.Delivered) {
+      this.actualDeliveryDate = new Date();
+    }
+  }
+
+  // 配達完了
+  markAsDelivered(): void {
+    this.transitionTo(ShipmentStatus.Delivered, '配達が完了しました');
+    this.actualDeliveryDate = new Date();
+  }
+
+  private transitionTo(newStatus: ShipmentStatus, description: string): void {
+    // ステータス遷移の検証
+    if (!this.canTransitionTo(newStatus)) {
+      throw new Error(\`\${this.status}から\${newStatus}への遷移はできません\`);
+    }
+
+    this.status = newStatus;
+    this.events.push(ShipmentEvent.create(newStatus, description));
+  }
+
+  private canTransitionTo(newStatus: ShipmentStatus): boolean {
+    const allowedTransitions: Record<ShipmentStatus, ShipmentStatus[]> = {
+      [ShipmentStatus.Preparing]: [ShipmentStatus.Picking],
+      [ShipmentStatus.Picking]: [ShipmentStatus.Packed],
+      [ShipmentStatus.Packed]: [ShipmentStatus.AwaitingPickup],
+      [ShipmentStatus.AwaitingPickup]: [ShipmentStatus.InTransit],
+      [ShipmentStatus.InTransit]: [
+        ShipmentStatus.OutForDelivery,
+        ShipmentStatus.Delivered,
+      ],
+      [ShipmentStatus.OutForDelivery]: [
+        ShipmentStatus.Delivered,
+        ShipmentStatus.AttemptedDelivery,
+      ],
+      [ShipmentStatus.AttemptedDelivery]: [
+        ShipmentStatus.InTransit,
+        ShipmentStatus.Returned,
+      ],
+      [ShipmentStatus.Delivered]: [],
+      [ShipmentStatus.Returned]: [],
+    };
+
+    return allowedTransitions[this.status].includes(newStatus);
+  }
+
+  // 配送遅延かどうか
+  isDelayed(): boolean {
+    if (!this.estimatedDeliveryDate || this.actualDeliveryDate) {
+      return false;
+    }
+    return new Date() > this.estimatedDeliveryDate;
+  }
+}
+
+// 配送イベント
+class ShipmentEvent {
+  private constructor(
+    private readonly status: ShipmentStatus,
+    private readonly description: string,
+    private readonly timestamp: Date
+  ) {}
+
+  static create(status: ShipmentStatus, description: string): ShipmentEvent {
+    return new ShipmentEvent(status, description, new Date());
+  }
+}
+\`\`\`
+
+## 送料計算サービス
+
+\`\`\`typescript
+// 送料計算ドメインサービス
+class ShippingFeeCalculator {
+  private static readonly BASE_FEE = 500;
+  private static readonly FREE_SHIPPING_THRESHOLD = 5000;
+
+  // 地域別追加料金
+  private static readonly REGIONAL_FEES: Record<string, number> = {
+    '北海道': 300,
+    '沖縄県': 500,
+    // 離島は別途
+  };
+
+  calculate(
+    subtotal: Price,
+    address: ShippingAddress,
+    packageSize: PackageSize
+  ): Price {
+    // 送料無料条件をチェック
+    if (subtotal.getAmount() >= ShippingFeeCalculator.FREE_SHIPPING_THRESHOLD) {
+      return Price.zero(Currency.JPY);
+    }
+
+    // 基本送料
+    let fee = ShippingFeeCalculator.BASE_FEE;
+
+    // 地域別追加料金
+    const prefecture = address.getPrefecture().getName();
+    const regionalFee = ShippingFeeCalculator.REGIONAL_FEES[prefecture] ?? 0;
+    fee += regionalFee;
+
+    // サイズ別追加料金
+    fee += packageSize.getAdditionalFee();
+
+    // 離島チェック
+    if (address.isRemoteIsland()) {
+      fee += 1000;
+    }
+
+    return Price.create(fee, Currency.JPY);
+  }
+}
+
+// 荷物サイズ
+class PackageSize {
+  private constructor(
+    private readonly size: 'S' | 'M' | 'L' | 'XL'
+  ) {}
+
+  static Small = new PackageSize('S');
+  static Medium = new PackageSize('M');
+  static Large = new PackageSize('L');
+  static ExtraLarge = new PackageSize('XL');
+
+  getAdditionalFee(): number {
+    switch (this.size) {
+      case 'S': return 0;
+      case 'M': return 200;
+      case 'L': return 500;
+      case 'XL': return 1000;
+    }
+  }
+}
+\`\`\`
+
+## 配送業者との連携
+
+\`\`\`typescript
+// 配送業者連携インターフェース（ポート）
+interface CarrierGateway {
+  createShipment(shipment: Shipment): TrackingNumber;
+  getTrackingInfo(trackingNumber: TrackingNumber): TrackingInfo;
+  scheduleRedelivery(trackingNumber: TrackingNumber, date: Date): void;
+}
+
+// 追跡情報
+class TrackingInfo {
+  constructor(
+    public readonly status: ShipmentStatus,
+    public readonly currentLocation: string,
+    public readonly events: TrackingEvent[],
+    public readonly estimatedDelivery: Date | null
+  ) {}
+}
+\`\`\`
+
+## まとめ
+
+- **配送集約**: ステータス遷移をドメインルールで制御
+- **追跡番号**: 配送業者ごとの形式を値オブジェクトで検証
+- **配送業者**: キャリアごとの追跡URL生成ロジックを保持
+- **送料計算**: 地域・サイズ・送料無料条件をドメインサービスで実装
+- **外部連携**: 配送業者APIをポート＆アダプターで抽象化
+`),
+  order: 6,
+});
+
+// Lesson Case1-7: 境界づけられたコンテキストの分割
+const lessonCase1_7 = Lesson.create({
+  id: LessonId.create('lesson-case1-7'),
+  title: LessonTitle.create('境界づけられたコンテキストの分割'),
+  content: MarkdownContent.create(`
+# 境界づけられたコンテキストの分割
+
+ECサイトを構成する各ドメインを境界づけられたコンテキストとして分割する方法を学びます。
+
+## ECサイトのコンテキストマップ
+
+\`\`\`mermaid
+graph TB
+    subgraph "カタログコンテキスト"
+        PC[Product Catalog]
+        PC --> |管理| PRD[商品情報]
+        PC --> |管理| CAT[カテゴリ]
+        PC --> |管理| PRC[価格]
+    end
+
+    subgraph "注文コンテキスト"
+        ORD[Order]
+        ORD --> |管理| CART[カート]
+        ORD --> |管理| ORDER[注文]
+        ORD --> |管理| OL[注文明細]
+    end
+
+    subgraph "在庫コンテキスト"
+        INV[Inventory]
+        INV --> |管理| STK[在庫]
+        INV --> |管理| WH[倉庫]
+    end
+
+    subgraph "決済コンテキスト"
+        PAY[Payment]
+        PAY --> |管理| PMT[決済]
+        PAY --> |管理| TXN[トランザクション]
+    end
+
+    subgraph "配送コンテキスト"
+        SHP[Shipping]
+        SHP --> |管理| SHIP[配送]
+        SHP --> |管理| TRK[追跡]
+    end
+
+    subgraph "会員コンテキスト"
+        MBR[Member]
+        MBR --> |管理| MEMBER[会員情報]
+        MBR --> |管理| POINT[ポイント]
+    end
+
+    ORD -->|ProductIdで参照| PC
+    ORD -->|在庫確認・引当| INV
+    ORD -->|決済依頼| PAY
+    ORD -->|配送依頼| SHP
+    ORD -->|会員情報参照| MBR
+\`\`\`
+
+## 各コンテキストの責務
+
+\`\`\`typescript
+// カタログコンテキストの商品
+// 責務: 商品情報の管理、検索、表示
+namespace CatalogContext {
+  class Product {
+    constructor(
+      public readonly id: ProductId,
+      public readonly name: string,
+      public readonly description: string,
+      public readonly price: Price,
+      public readonly categoryId: CategoryId,
+      public readonly images: ProductImage[],
+      public readonly variants: ProductVariant[]
+    ) {}
+
+    // カタログとしての振る舞い
+    getDisplayPrice(): Price { /* ... */ }
+    isAvailableForSale(): boolean { /* ... */ }
+  }
+}
+
+// 注文コンテキストの商品情報（値オブジェクト）
+// 責務: 注文時点の商品スナップショット
+namespace OrderContext {
+  class OrderedProduct {
+    constructor(
+      public readonly productId: ProductId,  // 参照用
+      public readonly name: string,          // スナップショット
+      public readonly unitPrice: Price,      // 注文時点の価格
+      public readonly variantInfo: string    // バリエーション情報
+    ) {}
+  }
+}
+
+// 在庫コンテキストの商品（識別子のみ）
+// 責務: 在庫数量の管理
+namespace InventoryContext {
+  class StockItem {
+    constructor(
+      public readonly productId: ProductId,
+      public readonly variantId: VariantId,
+      public readonly warehouseId: WarehouseId,
+      private quantity: StockQuantity
+    ) {}
+
+    // 在庫としての振る舞いのみ
+    reserve(quantity: number): void { /* ... */ }
+    release(quantity: number): void { /* ... */ }
+  }
+}
+\`\`\`
+
+## コンテキスト間の関係パターン
+
+\`\`\`mermaid
+graph LR
+    subgraph "上流 Upstream"
+        CAT[カタログ]
+    end
+
+    subgraph "下流 Downstream"
+        ORD[注文]
+        INV[在庫]
+    end
+
+    CAT -->|Published Language| ORD
+    CAT -->|Conformist| INV
+
+    subgraph "パートナーシップ"
+        PAY[決済]
+        SHP[配送]
+    end
+
+    ORD <-->|Partnership| PAY
+    ORD <-->|Partnership| SHP
+\`\`\`
+
+\`\`\`typescript
+// Published Language: カタログが公開する商品情報のDTO
+namespace CatalogContext {
+  // 他のコンテキストに公開するDTO
+  export interface ProductDTO {
+    id: string;
+    name: string;
+    price: {
+      amount: number;
+      currency: string;
+    };
+    variants: VariantDTO[];
+    availableForSale: boolean;
+  }
+
+  // 変換サービス
+  export class ProductDTOAssembler {
+    toDTO(product: Product): ProductDTO {
+      return {
+        id: product.id.getValue(),
+        name: product.name,
+        price: {
+          amount: product.price.getAmount(),
+          currency: product.price.getCurrency(),
+        },
+        variants: product.variants.map(v => this.variantToDTO(v)),
+        availableForSale: product.isAvailableForSale(),
+      };
+    }
+  }
+}
+
+// 注文コンテキストでの腐敗防止層
+namespace OrderContext {
+  // カタログコンテキストのDTOを変換
+  class CatalogAntiCorruptionLayer {
+    constructor(
+      private readonly catalogClient: CatalogClient
+    ) {}
+
+    async getProductForOrder(productId: ProductId): Promise<OrderedProduct> {
+      // 外部コンテキストからDTO取得
+      const dto = await this.catalogClient.getProduct(productId.getValue());
+
+      // 自コンテキストのモデルに変換
+      return new OrderedProduct(
+        ProductId.create(dto.id),
+        dto.name,
+        Price.create(dto.price.amount, dto.price.currency as Currency),
+        '' // バリエーション情報は別途取得
+      );
+    }
+  }
+}
+\`\`\`
+
+## ドメインイベントによる連携
+
+\`\`\`mermaid
+sequenceDiagram
+    participant OC as 注文コンテキスト
+    participant IC as 在庫コンテキスト
+    participant PC as 決済コンテキスト
+    participant SC as 配送コンテキスト
+    participant MC as 会員コンテキスト
+
+    OC->>OC: 注文確定
+    OC-->>IC: OrderPlacedEvent
+    IC->>IC: 在庫引当
+
+    OC-->>PC: PaymentRequestedEvent
+    PC->>PC: 決済処理
+    PC-->>OC: PaymentCompletedEvent
+
+    OC->>OC: 決済完了
+    OC-->>SC: ShipmentRequestedEvent
+    SC->>SC: 配送作成
+
+    SC-->>OC: ShipmentDeliveredEvent
+    OC-->>MC: OrderCompletedEvent
+    MC->>MC: ポイント付与
+\`\`\`
+
+\`\`\`typescript
+// ドメインイベント定義
+namespace OrderContext {
+  export class OrderPlacedEvent implements DomainEvent {
+    readonly eventType = 'order.placed';
+    readonly occurredAt = new Date();
+
+    constructor(
+      public readonly orderId: string,
+      public readonly memberId: string | null,
+      public readonly items: OrderItemDTO[],
+      public readonly totalAmount: number
+    ) {}
+  }
+
+  export class PaymentCompletedEvent implements DomainEvent {
+    readonly eventType = 'payment.completed';
+    readonly occurredAt = new Date();
+
+    constructor(
+      public readonly orderId: string,
+      public readonly paymentId: string,
+      public readonly amount: number
+    ) {}
+  }
+}
+
+// イベントハンドラ（在庫コンテキスト）
+namespace InventoryContext {
+  class OrderPlacedEventHandler {
+    constructor(
+      private readonly inventoryService: InventoryService
+    ) {}
+
+    async handle(event: OrderPlacedEvent): Promise<void> {
+      for (const item of event.items) {
+        await this.inventoryService.reserve(
+          ProductId.create(item.productId),
+          VariantId.create(item.variantId),
+          OrderId.create(event.orderId),
+          item.quantity
+        );
+      }
+    }
+  }
+}
+
+// イベントハンドラ（会員コンテキスト）
+namespace MemberContext {
+  class OrderCompletedEventHandler {
+    constructor(
+      private readonly memberService: MemberService
+    ) {}
+
+    async handle(event: OrderCompletedEvent): Promise<void> {
+      if (!event.memberId) return; // ゲスト注文は対象外
+
+      await this.memberService.addPurchasePoints(
+        MemberId.create(event.memberId),
+        event.totalAmount
+      );
+    }
+  }
+}
+\`\`\`
+
+## まとめ
+
+- **コンテキスト分割**: カタログ・注文・在庫・決済・配送・会員の6コンテキスト
+- **責務の明確化**: 各コンテキストは自身の関心事のみを管理
+- **関係パターン**: Published Language、Conformist、Partnershipを適用
+- **腐敗防止層**: 他コンテキストのモデルを自コンテキストに変換
+- **イベント駆動**: ドメインイベントによる疎結合な連携
+`),
+  order: 7,
+});
+
+// Lesson Case1-8: コンテキスト間の統合パターン
+const lessonCase1_8 = Lesson.create({
+  id: LessonId.create('lesson-case1-8'),
+  title: LessonTitle.create('コンテキスト間の統合パターン'),
+  content: MarkdownContent.create(`
+# コンテキスト間の統合パターン
+
+ECサイトにおける複数コンテキストの統合方法とトランザクション管理を学びます。
+
+## 統合パターンの選択
+
+\`\`\`mermaid
+graph TB
+    subgraph "同期的統合"
+        S1[REST API呼び出し]
+        S2[gRPC]
+        S3[GraphQL Federation]
+    end
+
+    subgraph "非同期統合"
+        A1[メッセージキュー]
+        A2[イベントバス]
+        A3[Pub/Sub]
+    end
+
+    subgraph "データ統合"
+        D1[共有データベース]
+        D2[データレプリケーション]
+        D3[CQRS Read Model]
+    end
+\`\`\`
+
+## Sagaパターンによる分散トランザクション
+
+\`\`\`mermaid
+sequenceDiagram
+    participant OS as Order Service
+    participant IS as Inventory Service
+    participant PS as Payment Service
+    participant SS as Shipping Service
+
+    OS->>IS: 1. 在庫引当
+    IS-->>OS: 引当成功
+
+    OS->>PS: 2. 決済実行
+    PS-->>OS: 決済成功
+
+    OS->>SS: 3. 配送作成
+    SS-->>OS: 配送作成成功
+
+    Note over OS,SS: 全て成功 → 注文完了
+
+    rect rgb(255, 200, 200)
+        Note over OS,SS: 配送作成失敗時の補償
+        SS--xOS: 配送作成失敗
+        OS->>PS: 決済キャンセル（補償）
+        OS->>IS: 在庫引当解除（補償）
+    end
+\`\`\`
+
+\`\`\`typescript
+// Saga オーケストレーター
+class PlaceOrderSaga {
+  private state: SagaState = SagaState.Started;
+  private completedSteps: SagaStep[] = [];
+
+  constructor(
+    private readonly inventoryService: InventoryServiceClient,
+    private readonly paymentService: PaymentServiceClient,
+    private readonly shippingService: ShippingServiceClient,
+    private readonly orderRepository: OrderRepository
+  ) {}
+
+  async execute(command: PlaceOrderCommand): Promise<SagaResult> {
+    const order = await this.orderRepository.findById(command.orderId);
+
+    try {
+      // Step 1: 在庫引当
+      await this.reserveInventory(order);
+      this.completedSteps.push(SagaStep.InventoryReserved);
+
+      // Step 2: 決済実行
+      await this.processPayment(order);
+      this.completedSteps.push(SagaStep.PaymentProcessed);
+
+      // Step 3: 配送作成
+      await this.createShipment(order);
+      this.completedSteps.push(SagaStep.ShipmentCreated);
+
+      // 全て成功
+      this.state = SagaState.Completed;
+      order.markAsConfirmed();
+      await this.orderRepository.save(order);
+
+      return SagaResult.success(order.getId());
+
+    } catch (error) {
+      // 補償トランザクション実行
+      await this.compensate(order);
+      this.state = SagaState.Compensated;
+
+      return SagaResult.failure(error.message);
+    }
+  }
+
+  private async compensate(order: Order): Promise<void> {
+    // 逆順で補償処理を実行
+    const reversedSteps = [...this.completedSteps].reverse();
+
+    for (const step of reversedSteps) {
+      switch (step) {
+        case SagaStep.ShipmentCreated:
+          await this.shippingService.cancelShipment(order.getId());
+          break;
+        case SagaStep.PaymentProcessed:
+          await this.paymentService.refund(order.getId());
+          break;
+        case SagaStep.InventoryReserved:
+          await this.inventoryService.releaseReservation(order.getId());
+          break;
+      }
+    }
+  }
+
+  private async reserveInventory(order: Order): Promise<void> {
+    for (const line of order.getLines()) {
+      await this.inventoryService.reserve({
+        productId: line.getProductId().getValue(),
+        variantId: line.getVariantId().getValue(),
+        orderId: order.getId().getValue(),
+        quantity: line.getQuantity().getValue(),
+      });
+    }
+  }
+
+  private async processPayment(order: Order): Promise<void> {
+    await this.paymentService.process({
+      orderId: order.getId().getValue(),
+      amount: order.getPrice().getTotal().getAmount(),
+      paymentMethod: order.getPaymentMethod(),
+    });
+  }
+
+  private async createShipment(order: Order): Promise<void> {
+    await this.shippingService.create({
+      orderId: order.getId().getValue(),
+      address: order.getShippingAddress(),
+      items: order.getLines().map(l => ({
+        productId: l.getProductId().getValue(),
+        quantity: l.getQuantity().getValue(),
+      })),
+    });
+  }
+}
+
+enum SagaState {
+  Started = 'STARTED',
+  Completed = 'COMPLETED',
+  Compensated = 'COMPENSATED',
+  Failed = 'FAILED',
+}
+
+enum SagaStep {
+  InventoryReserved = 'INVENTORY_RESERVED',
+  PaymentProcessed = 'PAYMENT_PROCESSED',
+  ShipmentCreated = 'SHIPMENT_CREATED',
+}
+\`\`\`
+
+## イベント駆動型の統合
+
+\`\`\`typescript
+// イベントバス
+interface EventBus {
+  publish(event: DomainEvent): Promise<void>;
+  subscribe<T extends DomainEvent>(
+    eventType: string,
+    handler: EventHandler<T>
+  ): void;
+}
+
+// 実装例（メッセージキュー使用）
+class RabbitMQEventBus implements EventBus {
+  constructor(private readonly connection: Connection) {}
+
+  async publish(event: DomainEvent): Promise<void> {
+    const channel = await this.connection.createChannel();
+    const exchange = 'domain_events';
+
+    await channel.assertExchange(exchange, 'topic', { durable: true });
+
+    channel.publish(
+      exchange,
+      event.eventType,
+      Buffer.from(JSON.stringify(event)),
+      { persistent: true }
+    );
+  }
+
+  subscribe<T extends DomainEvent>(
+    eventType: string,
+    handler: EventHandler<T>
+  ): void {
+    // サブスクリプション設定
+  }
+}
+
+// イベントハンドラの実装
+class InventoryEventHandler implements EventHandler<OrderPlacedEvent> {
+  constructor(
+    private readonly inventoryService: InventoryService
+  ) {}
+
+  async handle(event: OrderPlacedEvent): Promise<void> {
+    try {
+      for (const item of event.items) {
+        await this.inventoryService.reserve(
+          ProductId.create(item.productId),
+          VariantId.create(item.variantId),
+          OrderId.create(event.orderId),
+          item.quantity
+        );
+      }
+
+      // 成功イベントを発行
+      await this.eventBus.publish(new InventoryReservedEvent(event.orderId));
+
+    } catch (error) {
+      // 失敗イベントを発行
+      await this.eventBus.publish(
+        new InventoryReservationFailedEvent(event.orderId, error.message)
+      );
+    }
+  }
+}
+\`\`\`
+
+## API Gatewayパターン
+
+\`\`\`mermaid
+graph TB
+    C[Client]
+    C --> AG[API Gateway]
+
+    AG --> |/products| CAT[Catalog Service]
+    AG --> |/orders| ORD[Order Service]
+    AG --> |/members| MBR[Member Service]
+    AG --> |/payments| PAY[Payment Service]
+
+    AG --> |認証・認可| AUTH[Auth Service]
+    AG --> |レート制限| RL[Rate Limiter]
+    AG --> |ログ・監視| LOG[Logging]
+\`\`\`
+
+\`\`\`typescript
+// Backend for Frontend (BFF)
+class ECStoreBFF {
+  constructor(
+    private readonly catalogClient: CatalogServiceClient,
+    private readonly orderClient: OrderServiceClient,
+    private readonly memberClient: MemberServiceClient,
+    private readonly inventoryClient: InventoryServiceClient
+  ) {}
+
+  // 商品詳細画面用のAPI
+  async getProductDetail(productId: string): Promise<ProductDetailResponse> {
+    // 複数サービスからデータを集約
+    const [product, inventory, reviews] = await Promise.all([
+      this.catalogClient.getProduct(productId),
+      this.inventoryClient.getStock(productId),
+      this.catalogClient.getReviews(productId),
+    ]);
+
+    return {
+      product: {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        images: product.images,
+      },
+      availability: {
+        inStock: inventory.available > 0,
+        quantity: inventory.available,
+        lowStock: inventory.available <= 5,
+      },
+      reviews: {
+        averageRating: this.calculateAverageRating(reviews),
+        totalCount: reviews.length,
+        recent: reviews.slice(0, 5),
+      },
+    };
+  }
+
+  // 注文確認画面用のAPI
+  async getOrderSummary(
+    cartId: string,
+    memberId: string | null
+  ): Promise<OrderSummaryResponse> {
+    const cart = await this.orderClient.getCart(cartId);
+
+    // 会員情報を取得（ログイン時のみ）
+    let memberInfo = null;
+    if (memberId) {
+      memberInfo = await this.memberClient.getMember(memberId);
+    }
+
+    // 在庫状況を確認
+    const stockChecks = await Promise.all(
+      cart.items.map(item =>
+        this.inventoryClient.checkStock(item.productId, item.quantity)
+      )
+    );
+
+    return {
+      cart: cart,
+      member: memberInfo,
+      stockStatus: stockChecks,
+      pricing: {
+        subtotal: cart.subtotal,
+        discount: memberInfo?.rank.getDiscountRate() ?? 0,
+        shippingFee: this.calculateShippingFee(cart),
+        total: this.calculateTotal(cart, memberInfo),
+      },
+    };
+  }
+}
+\`\`\`
+
+## まとめ
+
+- **統合パターン**: 同期（REST/gRPC）と非同期（イベント）を適材適所で使い分け
+- **Sagaパターン**: 分散トランザクションを補償トランザクションで実現
+- **イベント駆動**: メッセージキューによる疎結合な連携
+- **API Gateway**: クライアント向けの統一エンドポイント
+- **BFF**: フロントエンド特化のバックエンドで複数サービスを集約
+`),
+  order: 8,
+});
+
+export const caseStudy1Lessons = [
+  lessonCase1_1,
+  lessonCase1_2,
+  lessonCase1_3,
+  lessonCase1_4,
+  lessonCase1_5,
+  lessonCase1_6,
+  lessonCase1_7,
+  lessonCase1_8,
+];

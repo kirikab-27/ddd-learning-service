@@ -2402,6 +2402,482 @@ const lesson15_3Questions: Question[] = [
   }),
 ];
 
+// =============================================================================
+// Case Study 1: ECサイトの設計
+// =============================================================================
+
+// Lesson Case1-1: 商品・カタログドメイン
+const lessonCase1_1Questions: Question[] = [
+  Question.create({
+    id: 'case1-1-q1',
+    text: 'ECサイトにおいて、商品（Product）とカタログ（Catalog）を別の集約として設計する主な理由は何ですか？',
+    options: [
+      { id: 'a', text: 'コードの行数を減らすため', isCorrect: false },
+      { id: 'b', text: 'それぞれのライフサイクルと責務が異なるため', isCorrect: true },
+      { id: 'c', text: 'データベースのテーブル数を増やすため', isCorrect: false },
+      { id: 'd', text: '商品とカタログに関連がないため', isCorrect: false },
+    ],
+    explanation: '商品マスタとカタログ情報は異なるライフサイクルを持ち、責務も異なります。商品は商品情報の管理、カタログは販売・表示情報の管理という別々の関心事を持つため、別集約として設計します。',
+  }),
+  Question.create({
+    id: 'case1-1-q2',
+    text: 'SKU（Stock Keeping Unit）の値オブジェクトにおいて、create時に行うべき検証として最も適切なものはどれですか？',
+    options: [
+      { id: 'a', text: 'データベースに同じSKUが存在しないかの確認', isCorrect: false },
+      { id: 'b', text: 'SKUのフォーマット（形式）の検証', isCorrect: true },
+      { id: 'c', text: '商品の在庫数の確認', isCorrect: false },
+      { id: 'd', text: 'カタログへの登録状況の確認', isCorrect: false },
+    ],
+    explanation: '値オブジェクトのcreateメソッドでは、その値自体の妥当性を検証します。SKUの場合は定められたフォーマットに従っているかを検証します。データベースとの重複確認はリポジトリやドメインサービスの責務です。',
+  }),
+  Question.create({
+    id: 'case1-1-q3',
+    text: 'カタログ集約において、CatalogEntryが商品を参照する方法として推奨されるのはどれですか？',
+    options: [
+      { id: 'a', text: 'Productエンティティへの直接参照', isCorrect: false },
+      { id: 'b', text: 'ProductIdによるID参照', isCorrect: true },
+      { id: 'c', text: '商品名による文字列参照', isCorrect: false },
+      { id: 'd', text: 'SQLのJOINによる参照', isCorrect: false },
+    ],
+    explanation: '異なる集約間の参照はIDによる間接参照が推奨されます。これにより集約の独立性が保たれ、整合性の管理が容易になります。',
+  }),
+  Question.create({
+    id: 'case1-1-q4',
+    text: '商品検索における「仕様パターン（Specification Pattern）」の利点として正しいものはどれですか？',
+    options: [
+      { id: 'a', text: 'SQLクエリを自動生成できる', isCorrect: false },
+      { id: 'b', text: '複雑な検索条件をドメインオブジェクトとして表現できる', isCorrect: true },
+      { id: 'c', text: '検索速度が必ず向上する', isCorrect: false },
+      { id: 'd', text: 'データベースへのアクセスを不要にできる', isCorrect: false },
+    ],
+    explanation: '仕様パターンは検索条件をドメインオブジェクトとしてカプセル化し、条件の組み合わせ（AND/OR/NOT）を柔軟に表現できます。これによりドメインの語彙で検索ロジックを記述できます。',
+  }),
+  Question.create({
+    id: 'case1-1-q5',
+    text: 'Priceの値オブジェクトにおいて、applyDiscount(discountRate)メソッドが新しいPriceインスタンスを返す理由は何ですか？',
+    options: [
+      { id: 'a', text: 'パフォーマンスを向上させるため', isCorrect: false },
+      { id: 'b', text: 'メモリ使用量を減らすため', isCorrect: false },
+      { id: 'c', text: '値オブジェクトは不変であるべきだから', isCorrect: true },
+      { id: 'd', text: 'TypeScriptの制約のため', isCorrect: false },
+    ],
+    explanation: '値オブジェクトの重要な特性の一つが不変性（Immutability）です。状態を変更する操作は、元のオブジェクトを変更するのではなく、新しいインスタンスを返すことで不変性を保証します。',
+  }),
+];
+
+// Lesson Case1-2: ユーザー・会員ドメイン
+const lessonCase1_2Questions: Question[] = [
+  Question.create({
+    id: 'case1-2-q1',
+    text: '会員ランク（MemberRank）を値オブジェクトとして設計する利点として最も適切なものはどれですか？',
+    options: [
+      { id: 'a', text: 'データベースの列数を減らせる', isCorrect: false },
+      { id: 'b', text: 'ランクに関連するビジネスルール（割引率、ポイント率）をカプセル化できる', isCorrect: true },
+      { id: 'c', text: 'ランクの種類を無限に増やせる', isCorrect: false },
+      { id: 'd', text: 'ランクの変更履歴を自動で記録できる', isCorrect: false },
+    ],
+    explanation: '値オブジェクトとして設計することで、ランクに関連するビジネスルール（割引率の取得、ポイント還元率の取得など）を一箇所にカプセル化でき、凝集度の高い設計になります。',
+  }),
+  Question.create({
+    id: 'case1-2-q2',
+    text: 'ポイント（Point）の値オブジェクトで、subtract(amount)メソッドが残高不足時にエラーをスローする理由は何ですか？',
+    options: [
+      { id: 'a', text: 'TypeScriptの型システムの制約のため', isCorrect: false },
+      { id: 'b', text: 'ビジネスルール（ポイントはマイナスにならない）をドメインで守るため', isCorrect: true },
+      { id: 'c', text: 'データベースの制約を補完するため', isCorrect: false },
+      { id: 'd', text: 'UIにエラーメッセージを表示するため', isCorrect: false },
+    ],
+    explanation: '「ポイントは0未満にならない」というビジネスルールをドメイン層で守ることで、どのユースケースからポイントを使用しても一貫したルールが適用されます。これがドメインモデルの責務です。',
+  }),
+  Question.create({
+    id: 'case1-2-q3',
+    text: '認証コンテキストと会員コンテキストを分離する主な理由は何ですか？',
+    options: [
+      { id: 'a', text: 'セキュリティを向上させるため', isCorrect: false },
+      { id: 'b', text: '関心事の分離（認証と会員情報管理は異なる責務）のため', isCorrect: true },
+      { id: 'c', text: 'データベースを分けるため', isCorrect: false },
+      { id: 'd', text: '開発チームを分けるため', isCorrect: false },
+    ],
+    explanation: '認証（ログイン、パスワード管理、OAuth連携）と会員情報管理（プロフィール、住所、ポイント）は異なる関心事です。境界づけられたコンテキストとして分離することで、各コンテキストの変更が互いに影響しにくくなります。',
+  }),
+  Question.create({
+    id: 'case1-2-q4',
+    text: '配送先住所（ShippingAddress）にisDeliverable()メソッドを持たせる設計の利点は何ですか？',
+    options: [
+      { id: 'a', text: 'UIの表示ロジックを簡略化できる', isCorrect: false },
+      { id: 'b', text: '配送可否の判断ロジックがドメインに凝集する', isCorrect: true },
+      { id: 'c', text: 'データベースクエリを最適化できる', isCorrect: false },
+      { id: 'd', text: '外部APIの呼び出し回数を減らせる', isCorrect: false },
+    ],
+    explanation: '配送可否の判断（離島かどうかなど）はビジネスルールです。これをShippingAddressに持たせることで、どこで配送先を使用しても一貫した判断ができ、ロジックの重複を防げます。',
+  }),
+  Question.create({
+    id: 'case1-2-q5',
+    text: 'EmailAddressの値オブジェクトで、createメソッドが値を小文字に正規化する理由は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースの保存容量を減らすため', isCorrect: false },
+      { id: 'b', text: '同一性の比較を正確に行うため（メールアドレスは大文字小文字を区別しない）', isCorrect: true },
+      { id: 'c', text: 'UIの表示を統一するため', isCorrect: false },
+      { id: 'd', text: 'セキュリティを向上させるため', isCorrect: false },
+    ],
+    explanation: 'メールアドレスはRFC上、ローカルパートは大文字小文字を区別する可能性がありますが、実際にはほとんどのメールサーバーで区別しません。正規化することで等価性の比較が正確になります。',
+  }),
+];
+
+// Lesson Case1-3: カート・注文ドメイン
+const lessonCase1_3Questions: Question[] = [
+  Question.create({
+    id: 'case1-3-q1',
+    text: 'カートと注文を別の集約として設計する主な理由は何ですか？',
+    options: [
+      { id: 'a', text: 'データベーステーブルを分けるため', isCorrect: false },
+      { id: 'b', text: 'ライフサイクルと責務が異なるため（カートは一時的、注文は永続的な記録）', isCorrect: true },
+      { id: 'c', text: 'パフォーマンスを向上させるため', isCorrect: false },
+      { id: 'd', text: 'UIの画面を分けるため', isCorrect: false },
+    ],
+    explanation: 'カートは購入意図を表す一時的なもので、変更が頻繁に行われます。一方、注文は確定した購入の永続的な記録です。ライフサイクルと責務が大きく異なるため、別集約として設計します。',
+  }),
+  Question.create({
+    id: 'case1-3-q2',
+    text: 'OrderStatusをenumで定義し、cancel()メソッドでステータス遷移を検証する設計の利点は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースの整合性を保証できる', isCorrect: false },
+      { id: 'b', text: '不正なステータス遷移をドメイン層で防止できる', isCorrect: true },
+      { id: 'c', text: 'UIの表示を簡略化できる', isCorrect: false },
+      { id: 'd', text: 'ステータスの種類を無限に増やせる', isCorrect: false },
+    ],
+    explanation: '「出荷済みの注文はキャンセルできない」などのビジネスルールをドメイン層で実装することで、どのユースケースから呼び出しても一貫したルールが適用されます。',
+  }),
+  Question.create({
+    id: 'case1-3-q3',
+    text: 'Quantity（数量）の値オブジェクトで最大値（99）を定義する理由として最も適切なものはどれですか？',
+    options: [
+      { id: 'a', text: 'データベースの列サイズを節約するため', isCorrect: false },
+      { id: 'b', text: 'ビジネスルール（1回の注文で購入できる上限）を表現するため', isCorrect: true },
+      { id: 'c', text: '計算のオーバーフローを防ぐため', isCorrect: false },
+      { id: 'd', text: 'UIの入力フィールドのサイズに合わせるため', isCorrect: false },
+    ],
+    explanation: '数量の上限はビジネスルールです。値オブジェクトで制約を定義することで、カートへの追加、注文確定など、どの場面でも一貫した制約が適用されます。',
+  }),
+  Question.create({
+    id: 'case1-3-q4',
+    text: 'OrderPrice（注文金額）を値オブジェクトとして設計し、小計・割引・送料・税・合計を持たせる利点は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースの正規化ができる', isCorrect: false },
+      { id: 'b', text: '金額計算のロジックを一箇所にカプセル化できる', isCorrect: true },
+      { id: 'c', text: '通貨換算が自動でできる', isCorrect: false },
+      { id: 'd', text: '税率変更に自動対応できる', isCorrect: false },
+    ],
+    explanation: '注文金額の計算ロジック（割引適用、送料加算、税計算）を値オブジェクトにカプセル化することで、計算ロジックの凝集度が高まり、テストも容易になります。',
+  }),
+  Question.create({
+    id: 'case1-3-q5',
+    text: 'OrderNumber（注文番号）の生成ロジックを値オブジェクトのstaticメソッドとして実装する設計の利点は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースの自動採番を使わなくて済む', isCorrect: false },
+      { id: 'b', text: '注文番号の生成ルール（形式）がドメインに凝集する', isCorrect: true },
+      { id: 'c', text: '注文番号の重複を防止できる', isCorrect: false },
+      { id: 'd', text: '外部サービスとの連携が不要になる', isCorrect: false },
+    ],
+    explanation: '注文番号の形式（YYYYMMDD-XXXXXなど）はビジネスルールです。値オブジェクトで生成ロジックを持つことで、形式の一貫性が保証され、変更も一箇所で済みます。',
+  }),
+];
+
+// Lesson Case1-4: 決済ドメイン
+const lessonCase1_4Questions: Question[] = [
+  Question.create({
+    id: 'case1-4-q1',
+    text: '決済におけるオーソリ（Authorize）とキャプチャ（Capture）を分ける理由として最も適切なものはどれですか？',
+    options: [
+      { id: 'a', text: 'プログラミングを簡単にするため', isCorrect: false },
+      { id: 'b', text: '与信確保と実際の請求を分離し、出荷前キャンセル時の返金を不要にするため', isCorrect: true },
+      { id: 'c', text: 'セキュリティを向上させるため', isCorrect: false },
+      { id: 'd', text: 'クレジットカード会社の要求のため', isCorrect: false },
+    ],
+    explanation: 'オーソリで与信枠を確保し、出荷時にキャプチャで実際に請求する2段階処理により、出荷前のキャンセル時は与信を解放するだけで済み、返金処理が不要になります。',
+  }),
+  Question.create({
+    id: 'case1-4-q2',
+    text: 'MaskedCardNumber（マスク済みカード番号）を値オブジェクトとして設計する主な理由は何ですか？',
+    options: [
+      { id: 'a', text: 'カード番号の検証を行うため', isCorrect: false },
+      { id: 'b', text: 'セキュリティ上、完全なカード番号をシステム内で保持しないため', isCorrect: true },
+      { id: 'c', text: 'データベースの容量を節約するため', isCorrect: false },
+      { id: 'd', text: 'カード番号の形式を統一するため', isCorrect: false },
+    ],
+    explanation: 'PCIDSSなどのセキュリティ基準に従い、完全なカード番号は保持せず、マスク済み（**** **** **** 1234）の状態で保存します。これをドメインモデルで表現します。',
+  }),
+  Question.create({
+    id: 'case1-4-q3',
+    text: 'PaymentGatewayをインターフェース（ポート）として定義する設計の利点は何ですか？',
+    options: [
+      { id: 'a', text: '決済処理の速度が向上する', isCorrect: false },
+      { id: 'b', text: '決済サービス（Stripe、PayPalなど）の切り替えが容易になる', isCorrect: true },
+      { id: 'c', text: '決済エラーが減少する', isCorrect: false },
+      { id: 'd', text: '手数料が安くなる', isCorrect: false },
+    ],
+    explanation: 'ヘキサゴナルアーキテクチャのポート＆アダプターパターンにより、ドメインは抽象（インターフェース）に依存し、具体的な決済サービスの実装は交換可能になります。',
+  }),
+  Question.create({
+    id: 'case1-4-q4',
+    text: 'Paymentエンティティがtransactions（トランザクション履歴）を持つ設計の利点は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースのクエリを最適化できる', isCorrect: false },
+      { id: 'b', text: '決済の経緯（オーソリ、キャプチャ、返金）を追跡できる', isCorrect: true },
+      { id: 'c', text: '決済処理の速度が向上する', isCorrect: false },
+      { id: 'd', text: '外部APIの呼び出し回数を減らせる', isCorrect: false },
+    ],
+    explanation: 'トランザクション履歴を保持することで、決済の経緯を追跡でき、監査や問い合わせ対応、部分返金などの複雑な処理にも対応できます。',
+  }),
+  Question.create({
+    id: 'case1-4-q5',
+    text: 'CardBrand.detect()メソッドがカード番号の先頭桁からブランドを判定する実装の利点は何ですか？',
+    options: [
+      { id: 'a', text: '外部APIの呼び出しが不要になる', isCorrect: true },
+      { id: 'b', text: 'セキュリティが向上する', isCorrect: false },
+      { id: 'c', text: 'カード番号の検証ができる', isCorrect: false },
+      { id: 'd', text: '手数料の計算ができる', isCorrect: false },
+    ],
+    explanation: 'カードブランドは番号の先頭桁で判定できます（4:VISA、5:Mastercard等）。この知識をドメインに持つことで、外部API呼び出しなしに即座にブランドを特定できます。',
+  }),
+];
+
+// Lesson Case1-5: 在庫ドメイン
+const lessonCase1_5Questions: Question[] = [
+  Question.create({
+    id: 'case1-5-q1',
+    text: '在庫管理における「実在庫」「引当在庫」「販売可能在庫」の関係として正しいものはどれですか？',
+    options: [
+      { id: 'a', text: '販売可能在庫 = 実在庫 + 引当在庫', isCorrect: false },
+      { id: 'b', text: '販売可能在庫 = 実在庫 - 引当在庫', isCorrect: true },
+      { id: 'c', text: '引当在庫 = 実在庫 - 販売可能在庫 × 2', isCorrect: false },
+      { id: 'd', text: '実在庫 = 販売可能在庫 - 引当在庫', isCorrect: false },
+    ],
+    explanation: '実在庫は物理的に存在する在庫数、引当在庫は注文確定済みだが未出荷の在庫数です。販売可能在庫は実在庫から引当在庫を引いた、実際に販売できる数量です。',
+  }),
+  Question.create({
+    id: 'case1-5-q2',
+    text: 'InsufficientStockError（在庫不足エラー）をドメインエラークラスとして定義する利点は何ですか？',
+    options: [
+      { id: 'a', text: 'エラーメッセージを多言語対応できる', isCorrect: false },
+      { id: 'b', text: '在庫不足という業務上の例外をドメインの語彙で表現できる', isCorrect: true },
+      { id: 'c', text: 'エラーのログ出力が簡単になる', isCorrect: false },
+      { id: 'd', text: 'エラー発生時の処理速度が向上する', isCorrect: false },
+    ],
+    explanation: '専用のドメインエラークラスにより、在庫不足という業務上の例外を明確に表現でき、呼び出し側でのエラーハンドリングも具体的に行えます。',
+  }),
+  Question.create({
+    id: 'case1-5-q3',
+    text: '注文確定時に「引当」、出荷時に「出庫」という2段階処理を行う理由として最も適切なものはどれですか？',
+    options: [
+      { id: 'a', text: 'データベースの整合性を保つため', isCorrect: false },
+      { id: 'b', text: '注文確定から出荷までの間、他の注文で在庫が売れることを防ぐため', isCorrect: true },
+      { id: 'c', text: '在庫の移動履歴を記録するため', isCorrect: false },
+      { id: 'd', text: '在庫数の計算を簡単にするため', isCorrect: false },
+    ],
+    explanation: '引当により、注文確定から出荷までの間に在庫が他の注文で使われることを防ぎます。これにより「売れたのに在庫がない」という事態を防止できます。',
+  }),
+  Question.create({
+    id: 'case1-5-q4',
+    text: 'InventoryMovement（在庫移動履歴）を記録する主な目的は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースのパフォーマンスを向上させるため', isCorrect: false },
+      { id: 'b', text: '在庫の変動経緯を追跡・監査できるようにするため', isCorrect: true },
+      { id: 'c', text: '在庫数の計算を簡単にするため', isCorrect: false },
+      { id: 'd', text: 'UIに表示するため', isCorrect: false },
+    ],
+    explanation: '在庫移動履歴により、いつ、なぜ、どれだけ在庫が変動したかを追跡できます。これは監査対応、問題調査、棚卸しなどで重要です。',
+  }),
+  Question.create({
+    id: 'case1-5-q5',
+    text: '複数倉庫から在庫を引き当てる際に、配送先に最も近い倉庫を選ぶロジックをドメインサービスに実装する理由は何ですか？',
+    options: [
+      { id: 'a', text: '在庫エンティティが複雑になりすぎるのを防ぐため', isCorrect: false },
+      { id: 'b', text: '複数の集約（在庫、配送先）を跨ぐビジネスロジックだから', isCorrect: true },
+      { id: 'c', text: 'データベースクエリを最適化するため', isCorrect: false },
+      { id: 'd', text: '外部APIを呼び出す必要があるため', isCorrect: false },
+    ],
+    explanation: '最適な倉庫の選択は、複数の在庫集約と配送先住所を考慮する必要があります。単一のエンティティに属さないロジックはドメインサービスに実装します。',
+  }),
+];
+
+// Lesson Case1-6: 配送ドメイン
+const lessonCase1_6Questions: Question[] = [
+  Question.create({
+    id: 'case1-6-q1',
+    text: 'Shipment（配送）エンティティでステータス遷移を検証するcanTransitionTo()メソッドを持つ設計の利点は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースの制約を補完できる', isCorrect: false },
+      { id: 'b', text: '不正なステータス遷移をドメイン層で防止できる', isCorrect: true },
+      { id: 'c', text: 'ステータスの種類を増やしやすくなる', isCorrect: false },
+      { id: 'd', text: 'UIの表示ロジックを簡略化できる', isCorrect: false },
+    ],
+    explanation: '「梱包完了前に出荷できない」などのビジネスルールをドメイン層で実装することで、どのユースケースから呼び出しても一貫したルールが適用されます。',
+  }),
+  Question.create({
+    id: 'case1-6-q2',
+    text: 'TrackingNumber（追跡番号）の値オブジェクトがCarrier（配送業者）を持つ設計の利点は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースの正規化ができる', isCorrect: false },
+      { id: 'b', text: '追跡番号から追跡URLを生成できる', isCorrect: true },
+      { id: 'c', text: '配送料金を計算できる', isCorrect: false },
+      { id: 'd', text: '配送日数を予測できる', isCorrect: false },
+    ],
+    explanation: '配送業者ごとに追跡番号の形式と追跡URLのパターンが異なります。TrackingNumberがCarrierを持つことで、正しい形式の検証と追跡URL生成が可能になります。',
+  }),
+  Question.create({
+    id: 'case1-6-q3',
+    text: 'ShippingFeeCalculator（送料計算）をドメインサービスとして実装する理由として最も適切なものはどれですか？',
+    options: [
+      { id: 'a', text: '送料計算のパフォーマンスを向上させるため', isCorrect: false },
+      { id: 'b', text: '複数の要素（小計、住所、サイズ）を考慮するロジックで、特定のエンティティに属さないため', isCorrect: true },
+      { id: 'c', text: '外部APIを呼び出す必要があるため', isCorrect: false },
+      { id: 'd', text: 'テストを容易にするため', isCorrect: false },
+    ],
+    explanation: '送料計算は小計（送料無料条件）、配送先住所（地域別料金）、荷物サイズなど複数の要素を考慮します。特定のエンティティに属さないロジックはドメインサービスに実装します。',
+  }),
+  Question.create({
+    id: 'case1-6-q4',
+    text: 'ShipmentEvent（配送イベント）を記録する主な目的は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースの容量を節約するため', isCorrect: false },
+      { id: 'b', text: '配送状況の経緯を追跡し、顧客に提供できるようにするため', isCorrect: true },
+      { id: 'c', text: '配送料金を計算するため', isCorrect: false },
+      { id: 'd', text: '配送業者との連携を簡単にするため', isCorrect: false },
+    ],
+    explanation: '配送イベントの履歴により、「いつ、どの状態に変わったか」を追跡でき、顧客への配送状況表示や問い合わせ対応に活用できます。',
+  }),
+  Question.create({
+    id: 'case1-6-q5',
+    text: 'CarrierGateway（配送業者連携）をインターフェースとして定義する設計の利点は何ですか？',
+    options: [
+      { id: 'a', text: '配送処理の速度が向上する', isCorrect: false },
+      { id: 'b', text: '配送業者（ヤマト、佐川など）の切り替えや追加が容易になる', isCorrect: true },
+      { id: 'c', text: '配送エラーが減少する', isCorrect: false },
+      { id: 'd', text: '送料が安くなる', isCorrect: false },
+    ],
+    explanation: 'ポート＆アダプターパターンにより、ドメインは抽象（インターフェース）に依存し、具体的な配送業者の実装は交換可能になります。新しい配送業者の追加も容易です。',
+  }),
+];
+
+// Lesson Case1-7: 境界づけられたコンテキストの分割
+const lessonCase1_7Questions: Question[] = [
+  Question.create({
+    id: 'case1-7-q1',
+    text: 'ECサイトにおいて、同じ「商品」でもコンテキストによって異なるモデルを持つ理由は何ですか？',
+    options: [
+      { id: 'a', text: 'プログラミング言語の制約のため', isCorrect: false },
+      { id: 'b', text: '各コンテキストで必要な情報と振る舞いが異なるため', isCorrect: true },
+      { id: 'c', text: 'データベースを分けるため', isCorrect: false },
+      { id: 'd', text: '開発チームを分けるため', isCorrect: false },
+    ],
+    explanation: 'カタログコンテキストでは表示情報と販売可否、注文コンテキストでは注文時点のスナップショット、在庫コンテキストでは数量管理と、各コンテキストで必要な情報と振る舞いが異なります。',
+  }),
+  Question.create({
+    id: 'case1-7-q2',
+    text: '腐敗防止層（Anti-Corruption Layer）の役割として最も適切なものはどれですか？',
+    options: [
+      { id: 'a', text: '外部システムのセキュリティ脆弱性を防ぐ', isCorrect: false },
+      { id: 'b', text: '他コンテキストのモデルを自コンテキストのモデルに変換する', isCorrect: true },
+      { id: 'c', text: 'データベースの整合性を保証する', isCorrect: false },
+      { id: 'd', text: 'ネットワークエラーを処理する', isCorrect: false },
+    ],
+    explanation: '腐敗防止層は、他コンテキスト（外部システム）のモデル（DTO）を、自コンテキストのドメインモデルに変換する責務を持ちます。これにより外部の変更から自コンテキストを保護します。',
+  }),
+  Question.create({
+    id: 'case1-7-q3',
+    text: 'Published Language（公開言語）パターンの目的として正しいものはどれですか？',
+    options: [
+      { id: 'a', text: 'プログラミング言語を統一する', isCorrect: false },
+      { id: 'b', text: '上流コンテキストが下流コンテキストに提供するデータ形式を明確に定義する', isCorrect: true },
+      { id: 'c', text: 'ドキュメントを自動生成する', isCorrect: false },
+      { id: 'd', text: 'APIのバージョン管理を行う', isCorrect: false },
+    ],
+    explanation: 'Published Languageは、コンテキスト間のデータ交換形式（DTO、イベント）を明確に定義したものです。これにより下流コンテキストは安定したインターフェースに依存できます。',
+  }),
+  Question.create({
+    id: 'case1-7-q4',
+    text: 'ドメインイベントによるコンテキスト間連携の利点として最も適切なものはどれですか？',
+    options: [
+      { id: 'a', text: 'トランザクションの整合性が保証される', isCorrect: false },
+      { id: 'b', text: 'コンテキスト間の結合度を低く保てる（疎結合）', isCorrect: true },
+      { id: 'c', text: '処理速度が向上する', isCorrect: false },
+      { id: 'd', text: 'エラー処理が不要になる', isCorrect: false },
+    ],
+    explanation: 'イベント駆動により、各コンテキストは直接呼び出しではなくイベントを介して連携します。これによりコンテキスト間の結合度が低くなり、独立した変更が可能になります。',
+  }),
+  Question.create({
+    id: 'case1-7-q5',
+    text: 'OrderPlacedEventに必要な情報をすべて含める（orderId、memberId、items、totalAmount）設計の理由は何ですか？',
+    options: [
+      { id: 'a', text: 'イベントのサイズを大きくするため', isCorrect: false },
+      { id: 'b', text: '受信側が発行元に問い合わせなくても処理できるようにするため', isCorrect: true },
+      { id: 'c', text: 'データベースのクエリを減らすため', isCorrect: false },
+      { id: 'd', text: 'イベントの永続化を容易にするため', isCorrect: false },
+    ],
+    explanation: 'イベントに必要な情報を含めることで、受信側は発行元コンテキストに問い合わせることなく処理できます。これによりコンテキスト間の結合度がさらに低くなります。',
+  }),
+];
+
+// Lesson Case1-8: コンテキスト間の統合パターン
+const lessonCase1_8Questions: Question[] = [
+  Question.create({
+    id: 'case1-8-q1',
+    text: 'Sagaパターンにおける「補償トランザクション」の役割は何ですか？',
+    options: [
+      { id: 'a', text: 'トランザクションの速度を向上させる', isCorrect: false },
+      { id: 'b', text: '途中で失敗した場合に、完了済みのステップを取り消す', isCorrect: true },
+      { id: 'c', text: 'データベースのロックを解除する', isCorrect: false },
+      { id: 'd', text: 'エラーメッセージを生成する', isCorrect: false },
+    ],
+    explanation: '分散トランザクションでは、途中で失敗した場合に完了済みのステップを取り消す（補償する）必要があります。例えば、決済成功後に配送作成が失敗したら、決済を返金します。',
+  }),
+  Question.create({
+    id: 'case1-8-q2',
+    text: 'Sagaパターンで補償トランザクションを「逆順」で実行する理由は何ですか？',
+    options: [
+      { id: 'a', text: 'プログラミングを簡単にするため', isCorrect: false },
+      { id: 'b', text: '依存関係を考慮し、後から実行されたステップから先に取り消すため', isCorrect: true },
+      { id: 'c', text: 'パフォーマンスを向上させるため', isCorrect: false },
+      { id: 'd', text: 'エラーハンドリングを簡略化するため', isCorrect: false },
+    ],
+    explanation: '各ステップには依存関係があります。例えば、配送は決済が完了していることを前提としています。補償時は逆順で、配送キャンセル→決済返金→在庫解放の順で行います。',
+  }),
+  Question.create({
+    id: 'case1-8-q3',
+    text: 'イベントバス（EventBus）を使用したコンテキスト間連携の利点として最も適切なものはどれですか？',
+    options: [
+      { id: 'a', text: 'トランザクションの整合性が保証される', isCorrect: false },
+      { id: 'b', text: '発行者と購読者が互いを知らなくても連携できる（疎結合）', isCorrect: true },
+      { id: 'c', text: '処理速度が必ず向上する', isCorrect: false },
+      { id: 'd', text: 'エラーが発生しなくなる', isCorrect: false },
+    ],
+    explanation: 'イベントバスにより、発行者はイベントを発行するだけで、誰が購読しているかを知る必要がありません。これによりコンテキスト間の結合度が低くなります。',
+  }),
+  Question.create({
+    id: 'case1-8-q4',
+    text: 'API Gateway パターンの主な目的は何ですか？',
+    options: [
+      { id: 'a', text: '各サービスのパフォーマンスを向上させる', isCorrect: false },
+      { id: 'b', text: 'クライアントに統一されたエンドポイントを提供し、内部サービスの複雑さを隠蔽する', isCorrect: true },
+      { id: 'c', text: 'データベースの負荷を分散する', isCorrect: false },
+      { id: 'd', text: 'サービス間の通信を暗号化する', isCorrect: false },
+    ],
+    explanation: 'API Gatewayは、クライアントに対して統一されたエンドポイントを提供し、認証・認可、レート制限、ルーティングなどの横断的関心事を集約します。',
+  }),
+  Question.create({
+    id: 'case1-8-q5',
+    text: 'BFF（Backend for Frontend）パターンで、商品詳細画面用に複数サービスからデータを集約する設計の利点は何ですか？',
+    options: [
+      { id: 'a', text: 'データベースクエリの数を減らせる', isCorrect: false },
+      { id: 'b', text: 'フロントエンドが複数のAPI呼び出しを行う必要がなくなり、レスポンス時間が短縮される', isCorrect: true },
+      { id: 'c', text: 'バックエンドサービスの数を減らせる', isCorrect: false },
+      { id: 'd', text: 'キャッシュが不要になる', isCorrect: false },
+    ],
+    explanation: 'BFFで複数サービスのデータを集約することで、フロントエンドは1回のAPI呼び出しで必要なデータを取得でき、ネットワークラウンドトリップが減少します。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -2697,6 +3173,63 @@ export const sampleQuizzes: Quiz[] = [
     title: 'CQRS/ESの実装パターン - 理解度チェック',
     description: 'コマンド/クエリハンドラ、プロジェクション、結果整合性、DDDとの組み合わせについての理解度を確認するクイズです。',
     questions: lesson15_3Questions,
+  }),
+  // Case Study 1: ECサイトの設計
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-case1-1'),
+    lessonId: LessonId.create('lesson-case1-1'),
+    title: '商品・カタログドメイン - 理解度チェック',
+    description: '商品エンティティ、カタログ集約、カテゴリ、仕様パターンについての理解度を確認するクイズです。',
+    questions: lessonCase1_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-case1-2'),
+    lessonId: LessonId.create('lesson-case1-2'),
+    title: 'ユーザー・会員ドメイン - 理解度チェック',
+    description: '会員エンティティ、会員ランク、ポイント、配送先住所についての理解度を確認するクイズです。',
+    questions: lessonCase1_2Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-case1-3'),
+    lessonId: LessonId.create('lesson-case1-3'),
+    title: 'カート・注文ドメイン - 理解度チェック',
+    description: 'カート集約、注文集約、ステータス遷移、値オブジェクトについての理解度を確認するクイズです。',
+    questions: lessonCase1_3Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-case1-4'),
+    lessonId: LessonId.create('lesson-case1-4'),
+    title: '決済ドメイン - 理解度チェック',
+    description: 'オーソリ/キャプチャ、決済方法、決済ゲートウェイについての理解度を確認するクイズです。',
+    questions: lessonCase1_4Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-case1-5'),
+    lessonId: LessonId.create('lesson-case1-5'),
+    title: '在庫ドメイン - 理解度チェック',
+    description: '在庫の3つの概念、引当/出庫、在庫移動履歴についての理解度を確認するクイズです。',
+    questions: lessonCase1_5Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-case1-6'),
+    lessonId: LessonId.create('lesson-case1-6'),
+    title: '配送ドメイン - 理解度チェック',
+    description: '配送ステータス、追跡番号、送料計算、配送業者連携についての理解度を確認するクイズです。',
+    questions: lessonCase1_6Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-case1-7'),
+    lessonId: LessonId.create('lesson-case1-7'),
+    title: '境界づけられたコンテキストの分割 - 理解度チェック',
+    description: 'コンテキスト分割、腐敗防止層、Published Language、ドメインイベントについての理解度を確認するクイズです。',
+    questions: lessonCase1_7Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-case1-8'),
+    lessonId: LessonId.create('lesson-case1-8'),
+    title: 'コンテキスト間の統合パターン - 理解度チェック',
+    description: 'Sagaパターン、イベントバス、API Gateway、BFFについての理解度を確認するクイズです。',
+    questions: lessonCase1_8Questions,
   }),
 ];
 
