@@ -9410,3 +9410,1332 @@ src/
 });
 
 export const chapter14Lessons = [lesson14_1, lesson14_2];
+
+// =============================================================================
+// Chapter 15: CQRS/イベントソーシング
+// =============================================================================
+
+const lesson15_1 = Lesson.create({
+  id: LessonId.create('lesson-15-1'),
+  title: LessonTitle.create('CQRSとは'),
+  content: MarkdownContent.create(`
+# CQRSとは
+
+## 概要
+
+**CQRS**（Command Query Responsibility Segregation）は、**読み取り（Query）と書き込み（Command）の責務を分離する**アーキテクチャパターンです。
+
+\`\`\`mermaid
+graph TB
+    subgraph "従来のアーキテクチャ"
+        U1[ユーザー] --> S1[Service]
+        S1 --> R1[Repository]
+        R1 --> DB1[(Database)]
+    end
+
+    subgraph "CQRS"
+        U2[ユーザー]
+        U2 --> |Command| CS[Command Service]
+        U2 --> |Query| QS[Query Service]
+        CS --> CR[Command Repository]
+        QS --> QR[Query Repository]
+        CR --> WDB[(Write DB)]
+        QR --> RDB[(Read DB)]
+        WDB -.->|同期| RDB
+    end
+
+    style CS fill:#f99
+    style QS fill:#9cf
+\`\`\`
+
+## CQS原則との関係
+
+CQRSは、Bertrand Meyerが提唱した**CQS原則**（Command Query Separation）を発展させたものです。
+
+\`\`\`mermaid
+graph TB
+    subgraph "CQS原則"
+        CQS[CQS<br/>Command Query Separation]
+        CQS --> C1[Command<br/>状態を変更する]
+        CQS --> Q1[Query<br/>状態を返す]
+        C1 --> N1[戻り値を持たない]
+        Q1 --> N2[状態を変更しない]
+    end
+\`\`\`
+
+| 原則 | CQS | CQRS |
+|------|-----|------|
+| **レベル** | メソッドレベル | アーキテクチャレベル |
+| **分離対象** | メソッドの責務 | システム全体の構造 |
+| **提唱者** | Bertrand Meyer | Greg Young |
+
+\`\`\`typescript
+// CQS原則に従ったメソッド設計
+
+class User {
+  private name: string;
+  private email: string;
+
+  // Command: 状態を変更、戻り値なし
+  updateName(newName: string): void {
+    this.name = newName;
+  }
+
+  // Query: 状態を返す、副作用なし
+  getName(): string {
+    return this.name;
+  }
+
+  // ❌ 違反: 状態を変更しながら値を返す
+  updateAndReturnOldName(newName: string): string {
+    const oldName = this.name;
+    this.name = newName;
+    return oldName;
+  }
+}
+\`\`\`
+
+## なぜ読み取りと書き込みを分離するのか？
+
+\`\`\`mermaid
+graph TB
+    subgraph "分離の理由"
+        R1[スケーラビリティ] --> D1[読み取りと書き込みで<br/>異なるスケール要件]
+        R2[最適化] --> D2[それぞれに最適な<br/>データモデル]
+        R3[複雑さの管理] --> D3[異なる関心事を<br/>分離]
+    end
+\`\`\`
+
+### 1. スケーラビリティ
+
+多くのシステムでは、読み取りが書き込みより**圧倒的に多い**（10:1 〜 1000:1）。
+
+\`\`\`mermaid
+graph LR
+    subgraph "アクセスパターン"
+        W[書き込み 10%]
+        R[読み取り 90%]
+    end
+
+    subgraph "スケーリング"
+        W --> WS[Write Server x1]
+        R --> RS[Read Server x10]
+    end
+\`\`\`
+
+- 読み取り専用のレプリカを増やすことが可能
+- 書き込みと読み取りで異なるスケーリング戦略
+
+### 2. 最適化
+
+書き込みと読み取りで**最適なデータ構造が異なる**。
+
+\`\`\`mermaid
+graph TB
+    subgraph "書き込み最適化"
+        W[Command]
+        W --> WM[正規化されたモデル]
+        W --> WT[トランザクション重視]
+        W --> WV[整合性重視]
+    end
+
+    subgraph "読み取り最適化"
+        R[Query]
+        R --> RM[非正規化されたモデル]
+        R --> RT[クエリ性能重視]
+        R --> RV[キャッシュ活用]
+    end
+\`\`\`
+
+\`\`\`typescript
+// 書き込み用モデル（正規化）
+// 注文テーブル
+interface OrderWrite {
+  id: string;
+  userId: string;
+  status: string;
+  createdAt: Date;
+}
+
+// 注文明細テーブル
+interface OrderItemWrite {
+  id: string;
+  orderId: string;
+  productId: string;
+  quantity: number;
+  price: number;
+}
+
+// 読み取り用モデル（非正規化）
+// 画面表示用に最適化された単一のビュー
+interface OrderReadModel {
+  id: string;
+  userName: string;
+  userEmail: string;
+  status: string;
+  statusLabel: string;
+  items: Array<{
+    productName: string;
+    quantity: number;
+    price: number;
+    subtotal: number;
+  }>;
+  totalAmount: number;
+  formattedCreatedAt: string;
+}
+\`\`\`
+
+### 3. 複雑さの管理
+
+ビジネスロジックの複雑さを**分離して管理**できる。
+
+\`\`\`mermaid
+graph TB
+    subgraph "Command側"
+        C[ビジネスルール]
+        C --> V[バリデーション]
+        C --> I[不変条件の維持]
+        C --> E[イベント発行]
+    end
+
+    subgraph "Query側"
+        Q[表示ロジック]
+        Q --> F[フォーマット]
+        Q --> A[集計]
+        Q --> P[ページネーション]
+    end
+\`\`\`
+
+## CQRSの実装レベル
+
+CQRSには、シンプルなものから高度なものまで段階があります。
+
+\`\`\`mermaid
+graph TB
+    L1[Level 1: コード分離]
+    L2[Level 2: モデル分離]
+    L3[Level 3: データストア分離]
+
+    L1 --> L2 --> L3
+
+    L1 --> D1[同じDB、同じモデル<br/>コードレベルで分離]
+    L2 --> D2[同じDB、異なるモデル<br/>Write/Read Model]
+    L3 --> D3[異なるDB<br/>完全分離]
+\`\`\`
+
+### Level 1: コード分離
+
+\`\`\`typescript
+// 最もシンプルなCQRS
+// 同じリポジトリを使うが、サービスを分離
+
+class UserCommandService {
+  constructor(private userRepository: UserRepository) {}
+
+  async registerUser(command: RegisterUserCommand): Promise<void> {
+    const user = User.create(command.name, command.email);
+    await this.userRepository.save(user);
+  }
+
+  async updateUserName(command: UpdateUserNameCommand): Promise<void> {
+    const user = await this.userRepository.findById(command.userId);
+    user.updateName(command.newName);
+    await this.userRepository.save(user);
+  }
+}
+
+class UserQueryService {
+  constructor(private userRepository: UserRepository) {}
+
+  async getUserById(userId: string): Promise<UserDTO> {
+    const user = await this.userRepository.findById(userId);
+    return this.toDTO(user);
+  }
+
+  async searchUsers(criteria: SearchCriteria): Promise<UserDTO[]> {
+    const users = await this.userRepository.search(criteria);
+    return users.map(this.toDTO);
+  }
+
+  private toDTO(user: User): UserDTO {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    };
+  }
+}
+\`\`\`
+
+### Level 2: モデル分離
+
+\`\`\`typescript
+// 書き込み用と読み取り用で異なるモデルを使用
+
+// 書き込みモデル（ドメインモデル）
+class Order {
+  private id: OrderId;
+  private items: OrderItem[] = [];
+  private status: OrderStatus;
+
+  addItem(product: Product, quantity: number): void {
+    // ビジネスルールの適用
+    if (this.status !== OrderStatus.Draft) {
+      throw new Error('確定済みの注文には追加できません');
+    }
+    this.items.push(OrderItem.create(product, quantity));
+  }
+
+  confirm(): void {
+    if (this.items.length === 0) {
+      throw new Error('空の注文は確定できません');
+    }
+    this.status = OrderStatus.Confirmed;
+  }
+}
+
+// 読み取りモデル（ビューモデル）
+interface OrderListView {
+  id: string;
+  customerName: string;
+  itemCount: number;
+  totalAmount: number;
+  status: string;
+  orderedAt: string;
+}
+
+interface OrderDetailView {
+  id: string;
+  customer: {
+    name: string;
+    email: string;
+    address: string;
+  };
+  items: Array<{
+    productName: string;
+    unitPrice: number;
+    quantity: number;
+    subtotal: number;
+  }>;
+  subtotal: number;
+  tax: number;
+  totalAmount: number;
+  status: string;
+  timeline: Array<{
+    event: string;
+    timestamp: string;
+  }>;
+}
+\`\`\`
+
+## CQRSのメリットとデメリット
+
+\`\`\`mermaid
+graph TB
+    subgraph "メリット"
+        M1[スケーラビリティ向上]
+        M2[パフォーマンス最適化]
+        M3[複雑さの分離]
+        M4[独立した進化]
+    end
+
+    subgraph "デメリット"
+        D1[複雑さの増加]
+        D2[結果整合性への対応]
+        D3[運用コスト]
+        D4[学習コスト]
+    end
+\`\`\`
+
+| メリット | デメリット |
+|---------|-----------|
+| 読み取り・書き込みを独立してスケール | システム全体の複雑さが増加 |
+| それぞれに最適化されたモデル | 結果整合性への対応が必要 |
+| 関心事の分離による保守性向上 | インフラストラクチャのコスト増 |
+| チームの並行開発が容易 | 学習コストが高い |
+
+## CQRSが有効なケース
+
+\`\`\`mermaid
+graph TB
+    subgraph "CQRSが有効"
+        E1[読み取り負荷が高い]
+        E2[複雑なドメインロジック]
+        E3[異なるスケール要件]
+        E4[レポーティング要件が複雑]
+    end
+
+    subgraph "CQRSが不要"
+        N1[シンプルなCRUD]
+        N2[小規模アプリケーション]
+        N3[読み書きが均等]
+    end
+\`\`\`
+
+## まとめ
+
+- **CQRS**: 読み取り（Query）と書き込み（Command）の責務を分離
+- **CQS原則**: メソッドレベルでの分離（CQRSの基礎）
+- **分離の理由**: スケーラビリティ、最適化、複雑さの管理
+- **実装レベル**: コード分離 → モデル分離 → データストア分離
+- **適用判断**: システムの特性に応じて適切なレベルを選択
+`),
+  order: 1,
+});
+
+const lesson15_2 = Lesson.create({
+  id: LessonId.create('lesson-15-2'),
+  title: LessonTitle.create('イベントソーシングとは'),
+  content: MarkdownContent.create(`
+# イベントソーシングとは
+
+## 概要
+
+**イベントソーシング**（Event Sourcing）は、アプリケーションの状態を**現在の状態ではなく、状態変化のイベント履歴として保存する**アーキテクチャパターンです。
+
+\`\`\`mermaid
+graph TB
+    subgraph "従来のアプローチ"
+        T1[状態を直接更新]
+        T1 --> S1[現在の状態のみ保存]
+        S1 --> DB1[(Database)]
+        DB1 --> |SELECT| R1[Account: ¥5,000]
+    end
+
+    subgraph "イベントソーシング"
+        T2[イベントを追記]
+        T2 --> S2[すべてのイベントを保存]
+        S2 --> ES[(Event Store)]
+        ES --> |Replay| R2[イベント履歴から<br/>状態を再構築]
+    end
+\`\`\`
+
+## 従来のアプローチとの違い
+
+### 従来：状態の上書き
+
+\`\`\`mermaid
+sequenceDiagram
+    participant U as ユーザー
+    participant S as System
+    participant DB as Database
+
+    U->>S: 入金 ¥10,000
+    S->>DB: UPDATE balance = 10000
+    Note over DB: balance: 10000
+
+    U->>S: 出金 ¥3,000
+    S->>DB: UPDATE balance = 7000
+    Note over DB: balance: 7000
+
+    U->>S: 入金 ¥2,000
+    S->>DB: UPDATE balance = 9000
+    Note over DB: balance: 9000
+
+    Note over DB: 履歴は残らない
+\`\`\`
+
+### イベントソーシング：イベントの追記
+
+\`\`\`mermaid
+sequenceDiagram
+    participant U as ユーザー
+    participant S as System
+    participant ES as Event Store
+
+    U->>S: 入金 ¥10,000
+    S->>ES: AccountCreated(10000)
+    Note over ES: Event 1
+
+    U->>S: 出金 ¥3,000
+    S->>ES: MoneyWithdrawn(3000)
+    Note over ES: Event 2
+
+    U->>S: 入金 ¥2,000
+    S->>ES: MoneyDeposited(2000)
+    Note over ES: Event 3
+
+    Note over ES: 全履歴が残る<br/>Replay可能
+\`\`\`
+
+## イベントストア（Event Store）
+
+\`\`\`mermaid
+graph TB
+    subgraph "Event Store"
+        subgraph "Stream: account-123"
+            E1[Event 1<br/>AccountCreated<br/>amount: 10000<br/>timestamp: 2024-01-01]
+            E2[Event 2<br/>MoneyWithdrawn<br/>amount: 3000<br/>timestamp: 2024-01-02]
+            E3[Event 3<br/>MoneyDeposited<br/>amount: 2000<br/>timestamp: 2024-01-03]
+        end
+    end
+
+    E1 --> E2 --> E3
+\`\`\`
+
+\`\`\`typescript
+// イベントの型定義
+interface DomainEvent {
+  eventId: string;
+  aggregateId: string;
+  eventType: string;
+  timestamp: Date;
+  version: number;
+  payload: unknown;
+}
+
+// 具体的なイベント
+interface AccountCreated extends DomainEvent {
+  eventType: 'AccountCreated';
+  payload: {
+    accountId: string;
+    initialBalance: number;
+    ownerName: string;
+  };
+}
+
+interface MoneyDeposited extends DomainEvent {
+  eventType: 'MoneyDeposited';
+  payload: {
+    amount: number;
+    description: string;
+  };
+}
+
+interface MoneyWithdrawn extends DomainEvent {
+  eventType: 'MoneyWithdrawn';
+  payload: {
+    amount: number;
+    description: string;
+  };
+}
+
+type AccountEvent = AccountCreated | MoneyDeposited | MoneyWithdrawn;
+\`\`\`
+
+## 状態の再構築（リプレイ）
+
+イベントを順番に適用することで、**任意の時点の状態を再構築**できます。
+
+\`\`\`mermaid
+graph LR
+    subgraph "イベント履歴"
+        E1[AccountCreated<br/>¥10,000]
+        E2[MoneyWithdrawn<br/>¥3,000]
+        E3[MoneyDeposited<br/>¥2,000]
+    end
+
+    subgraph "リプレイ"
+        S0[初期状態<br/>¥0]
+        S1[¥10,000]
+        S2[¥7,000]
+        S3[¥9,000]
+    end
+
+    E1 --> S0
+    S0 --> S1
+    E2 --> S1
+    S1 --> S2
+    E3 --> S2
+    S2 --> S3
+
+    style S3 fill:#9f9
+\`\`\`
+
+\`\`\`typescript
+// 集約（Aggregate）のイベントソーシング実装
+class BankAccount {
+  private id: string;
+  private balance: number = 0;
+  private events: AccountEvent[] = [];
+  private version: number = 0;
+
+  // イベントから状態を再構築（リプレイ）
+  static fromEvents(events: AccountEvent[]): BankAccount {
+    const account = new BankAccount();
+    for (const event of events) {
+      account.apply(event);
+    }
+    return account;
+  }
+
+  // イベントを適用（状態を更新）
+  private apply(event: AccountEvent): void {
+    switch (event.eventType) {
+      case 'AccountCreated':
+        this.id = event.payload.accountId;
+        this.balance = event.payload.initialBalance;
+        break;
+      case 'MoneyDeposited':
+        this.balance += event.payload.amount;
+        break;
+      case 'MoneyWithdrawn':
+        this.balance -= event.payload.amount;
+        break;
+    }
+    this.version = event.version;
+  }
+
+  // コマンド: 入金
+  deposit(amount: number, description: string): void {
+    if (amount <= 0) {
+      throw new Error('入金額は正の数である必要があります');
+    }
+
+    const event: MoneyDeposited = {
+      eventId: generateId(),
+      aggregateId: this.id,
+      eventType: 'MoneyDeposited',
+      timestamp: new Date(),
+      version: this.version + 1,
+      payload: { amount, description },
+    };
+
+    this.apply(event);
+    this.events.push(event);
+  }
+
+  // コマンド: 出金
+  withdraw(amount: number, description: string): void {
+    if (amount <= 0) {
+      throw new Error('出金額は正の数である必要があります');
+    }
+    if (this.balance < amount) {
+      throw new Error('残高不足です');
+    }
+
+    const event: MoneyWithdrawn = {
+      eventId: generateId(),
+      aggregateId: this.id,
+      eventType: 'MoneyWithdrawn',
+      timestamp: new Date(),
+      version: this.version + 1,
+      payload: { amount, description },
+    };
+
+    this.apply(event);
+    this.events.push(event);
+  }
+
+  // 未保存のイベントを取得
+  getUncommittedEvents(): AccountEvent[] {
+    return [...this.events];
+  }
+
+  // イベントを保存済みとしてマーク
+  markEventsAsCommitted(): void {
+    this.events = [];
+  }
+}
+\`\`\`
+
+## スナップショット
+
+大量のイベントがある場合、毎回すべてリプレイするのは非効率です。**スナップショット**を使って最適化します。
+
+\`\`\`mermaid
+graph TB
+    subgraph "スナップショットなし"
+        E1[Event 1] --> E2[Event 2] --> E3[...] --> EN[Event 10000]
+        EN --> R1[10000イベントを<br/>リプレイ]
+    end
+
+    subgraph "スナップショットあり"
+        SS[Snapshot<br/>version: 9900<br/>balance: ¥50,000]
+        E9901[Event 9901] --> E9902[...] --> E10000[Event 10000]
+        SS --> E9901
+        E10000 --> R2[100イベントのみ<br/>リプレイ]
+    end
+
+    style SS fill:#ff9
+\`\`\`
+
+\`\`\`typescript
+// スナップショット
+interface Snapshot {
+  aggregateId: string;
+  version: number;
+  state: unknown;
+  timestamp: Date;
+}
+
+interface AccountSnapshot extends Snapshot {
+  state: {
+    id: string;
+    balance: number;
+    ownerName: string;
+  };
+}
+
+// スナップショットを使った再構築
+class BankAccountRepository {
+  constructor(
+    private eventStore: EventStore,
+    private snapshotStore: SnapshotStore
+  ) {}
+
+  async getById(accountId: string): Promise<BankAccount> {
+    // 1. スナップショットを取得
+    const snapshot = await this.snapshotStore.getLatest(accountId);
+
+    // 2. スナップショット以降のイベントを取得
+    const fromVersion = snapshot ? snapshot.version + 1 : 0;
+    const events = await this.eventStore.getEvents(accountId, fromVersion);
+
+    // 3. 再構築
+    let account: BankAccount;
+    if (snapshot) {
+      account = BankAccount.fromSnapshot(snapshot);
+    } else {
+      account = new BankAccount();
+    }
+
+    for (const event of events) {
+      account.apply(event);
+    }
+
+    return account;
+  }
+
+  async save(account: BankAccount): Promise<void> {
+    const events = account.getUncommittedEvents();
+    await this.eventStore.append(events);
+    account.markEventsAsCommitted();
+
+    // 一定間隔でスナップショットを作成
+    if (account.version % 100 === 0) {
+      await this.snapshotStore.save(account.toSnapshot());
+    }
+  }
+}
+\`\`\`
+
+## イベント駆動アーキテクチャ（EDA）との違い
+
+\`\`\`mermaid
+graph TB
+    subgraph "Event Sourcing"
+        ES1[イベント = 真実の源]
+        ES1 --> ES2[状態はイベントから導出]
+        ES2 --> ES3[すべてのイベントを保存]
+    end
+
+    subgraph "Event Driven Architecture"
+        EDA1[イベント = 通知]
+        EDA1 --> EDA2[状態は別に保存]
+        EDA2 --> EDA3[イベントは一時的]
+    end
+\`\`\`
+
+| 観点 | イベントソーシング | イベント駆動アーキテクチャ |
+|------|------------------|------------------------|
+| **イベントの役割** | 真実の源（Source of Truth） | コンポーネント間の通知 |
+| **状態の保存** | イベントから導出 | 別途保存（DB） |
+| **イベントの保持** | 永続的に保存 | 一時的（消費後削除も可） |
+| **目的** | 監査、再構築、時間旅行 | 疎結合、非同期処理 |
+
+## イベントソーシングのメリット
+
+\`\`\`mermaid
+graph TB
+    subgraph "メリット"
+        M1[完全な監査ログ]
+        M2[時間旅行]
+        M3[デバッグの容易さ]
+        M4[イベント駆動との相性]
+    end
+
+    M1 --> D1[いつ誰が何をしたか<br/>完全に追跡可能]
+    M2 --> D2[任意の時点の状態を<br/>再構築可能]
+    M3 --> D3[問題発生時のイベントを<br/>再現してデバッグ]
+    M4 --> D4[CQRS、マイクロサービスと<br/>組み合わせやすい]
+\`\`\`
+
+## イベントソーシングの課題
+
+\`\`\`mermaid
+graph TB
+    subgraph "課題"
+        C1[イベントスキーマの進化]
+        C2[パフォーマンス]
+        C3[クエリの複雑さ]
+        C4[学習コスト]
+    end
+
+    C1 --> S1[バージョニング、<br/>アップキャスティング]
+    C2 --> S2[スナップショット、<br/>プロジェクション]
+    C3 --> S3[Read Model、<br/>CQRS]
+    C4 --> S4[チームの教育、<br/>ドキュメント]
+\`\`\`
+
+## まとめ
+
+- **イベントソーシング**: 状態ではなくイベント（状態変化）を保存
+- **イベントストア**: イベントを永続化するデータストア
+- **リプレイ**: イベントを順番に適用して状態を再構築
+- **スナップショット**: 大量イベントの再構築を最適化
+- **EDAとの違い**: ESはイベントが真実の源、EDAは通知手段
+`),
+  order: 2,
+});
+
+const lesson15_3 = Lesson.create({
+  id: LessonId.create('lesson-15-3'),
+  title: LessonTitle.create('CQRS/ESの実装パターン'),
+  content: MarkdownContent.create(`
+# CQRS/ESの実装パターン
+
+## 全体アーキテクチャ
+
+CQRS（Command Query Responsibility Segregation）とES（Event Sourcing）を組み合わせた全体像です。
+
+\`\`\`mermaid
+graph TB
+    subgraph "クライアント"
+        U[ユーザー/API]
+    end
+
+    subgraph "Command側"
+        CH[Command Handler]
+        A[Aggregate]
+        ES[(Event Store)]
+    end
+
+    subgraph "イベント同期"
+        EH[Event Handler]
+    end
+
+    subgraph "Query側"
+        QH[Query Handler]
+        RM[(Read Model)]
+    end
+
+    U -->|Command| CH
+    CH --> A
+    A -->|Events| ES
+    ES -->|Publish| EH
+    EH -->|Update| RM
+    U -->|Query| QH
+    QH --> RM
+
+    style CH fill:#f99
+    style QH fill:#9cf
+    style EH fill:#ff9
+\`\`\`
+
+## コマンドハンドラ（Command Handler）
+
+**コマンド**はシステムに対する意図（Intent）を表現します。コマンドハンドラはその意図を実行します。
+
+\`\`\`mermaid
+graph LR
+    C[Command] --> CH[Command Handler]
+    CH --> A[Aggregate]
+    A --> E[Events]
+    E --> ES[(Event Store)]
+
+    style C fill:#f99
+\`\`\`
+
+\`\`\`typescript
+// コマンドの定義
+interface Command {
+  commandId: string;
+  timestamp: Date;
+}
+
+interface CreateOrderCommand extends Command {
+  type: 'CreateOrder';
+  customerId: string;
+  items: Array<{
+    productId: string;
+    quantity: number;
+  }>;
+}
+
+interface ConfirmOrderCommand extends Command {
+  type: 'ConfirmOrder';
+  orderId: string;
+}
+
+interface CancelOrderCommand extends Command {
+  type: 'CancelOrder';
+  orderId: string;
+  reason: string;
+}
+
+// コマンドハンドラ
+class OrderCommandHandler {
+  constructor(
+    private orderRepository: OrderRepository,
+    private productRepository: ProductRepository
+  ) {}
+
+  async handle(command: Command): Promise<void> {
+    switch (command.type) {
+      case 'CreateOrder':
+        return this.handleCreateOrder(command as CreateOrderCommand);
+      case 'ConfirmOrder':
+        return this.handleConfirmOrder(command as ConfirmOrderCommand);
+      case 'CancelOrder':
+        return this.handleCancelOrder(command as CancelOrderCommand);
+    }
+  }
+
+  private async handleCreateOrder(command: CreateOrderCommand): Promise<void> {
+    // 1. 製品情報を取得
+    const products = await this.productRepository.findByIds(
+      command.items.map(i => i.productId)
+    );
+
+    // 2. 集約を作成
+    const order = Order.create(command.customerId, command.items, products);
+
+    // 3. 保存（イベントがEvent Storeに保存される）
+    await this.orderRepository.save(order);
+  }
+
+  private async handleConfirmOrder(command: ConfirmOrderCommand): Promise<void> {
+    // 1. 集約を復元
+    const order = await this.orderRepository.getById(command.orderId);
+
+    // 2. ビジネスロジックを実行
+    order.confirm();
+
+    // 3. 保存
+    await this.orderRepository.save(order);
+  }
+
+  private async handleCancelOrder(command: CancelOrderCommand): Promise<void> {
+    const order = await this.orderRepository.getById(command.orderId);
+    order.cancel(command.reason);
+    await this.orderRepository.save(order);
+  }
+}
+\`\`\`
+
+## クエリハンドラ（Query Handler）
+
+クエリハンドラは**Read Model**からデータを取得します。ビジネスロジックは含みません。
+
+\`\`\`mermaid
+graph LR
+    Q[Query] --> QH[Query Handler]
+    QH --> RM[(Read Model)]
+    RM --> R[Result]
+
+    style Q fill:#9cf
+\`\`\`
+
+\`\`\`typescript
+// クエリの定義
+interface Query {
+  queryId: string;
+}
+
+interface GetOrderByIdQuery extends Query {
+  type: 'GetOrderById';
+  orderId: string;
+}
+
+interface ListOrdersByCustomerQuery extends Query {
+  type: 'ListOrdersByCustomer';
+  customerId: string;
+  page: number;
+  pageSize: number;
+}
+
+interface SearchOrdersQuery extends Query {
+  type: 'SearchOrders';
+  status?: string;
+  fromDate?: Date;
+  toDate?: Date;
+  page: number;
+  pageSize: number;
+}
+
+// クエリ結果（Read Model）
+interface OrderView {
+  id: string;
+  customerId: string;
+  customerName: string;
+  status: string;
+  statusLabel: string;
+  items: Array<{
+    productId: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+  }>;
+  totalAmount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// クエリハンドラ
+class OrderQueryHandler {
+  constructor(private readModelRepository: OrderReadModelRepository) {}
+
+  async handle(query: Query): Promise<unknown> {
+    switch (query.type) {
+      case 'GetOrderById':
+        return this.handleGetOrderById(query as GetOrderByIdQuery);
+      case 'ListOrdersByCustomer':
+        return this.handleListOrdersByCustomer(query as ListOrdersByCustomerQuery);
+      case 'SearchOrders':
+        return this.handleSearchOrders(query as SearchOrdersQuery);
+    }
+  }
+
+  private async handleGetOrderById(query: GetOrderByIdQuery): Promise<OrderView | null> {
+    return this.readModelRepository.findById(query.orderId);
+  }
+
+  private async handleListOrdersByCustomer(
+    query: ListOrdersByCustomerQuery
+  ): Promise<{ items: OrderView[]; total: number }> {
+    return this.readModelRepository.findByCustomer(
+      query.customerId,
+      query.page,
+      query.pageSize
+    );
+  }
+
+  private async handleSearchOrders(
+    query: SearchOrdersQuery
+  ): Promise<{ items: OrderView[]; total: number }> {
+    return this.readModelRepository.search({
+      status: query.status,
+      fromDate: query.fromDate,
+      toDate: query.toDate,
+      page: query.page,
+      pageSize: query.pageSize,
+    });
+  }
+}
+\`\`\`
+
+## イベントハンドラ（Event Handler）とプロジェクション
+
+イベントハンドラは発行されたイベントを**Read Model（プロジェクション）に反映**します。
+
+\`\`\`mermaid
+graph TB
+    subgraph "イベント発行"
+        ES[(Event Store)]
+    end
+
+    subgraph "イベントハンドラ"
+        EH1[Order Projection<br/>Handler]
+        EH2[Analytics<br/>Handler]
+        EH3[Notification<br/>Handler]
+    end
+
+    subgraph "Read Models"
+        RM1[(Order View)]
+        RM2[(Sales Report)]
+        RM3[Email/Push]
+    end
+
+    ES --> EH1
+    ES --> EH2
+    ES --> EH3
+    EH1 --> RM1
+    EH2 --> RM2
+    EH3 --> RM3
+\`\`\`
+
+\`\`\`typescript
+// イベントハンドラ（プロジェクション更新）
+class OrderProjectionHandler {
+  constructor(
+    private orderViewRepository: OrderViewRepository,
+    private customerRepository: CustomerRepository,
+    private productRepository: ProductRepository
+  ) {}
+
+  async handle(event: OrderEvent): Promise<void> {
+    switch (event.eventType) {
+      case 'OrderCreated':
+        return this.handleOrderCreated(event);
+      case 'OrderConfirmed':
+        return this.handleOrderConfirmed(event);
+      case 'OrderCancelled':
+        return this.handleOrderCancelled(event);
+    }
+  }
+
+  private async handleOrderCreated(event: OrderCreated): Promise<void> {
+    // Read Modelに最適化された形式でデータを構築
+    const customer = await this.customerRepository.findById(event.payload.customerId);
+    const products = await this.productRepository.findByIds(
+      event.payload.items.map(i => i.productId)
+    );
+
+    const orderView: OrderView = {
+      id: event.aggregateId,
+      customerId: customer.id,
+      customerName: customer.name,
+      status: 'draft',
+      statusLabel: '下書き',
+      items: event.payload.items.map(item => {
+        const product = products.find(p => p.id === item.productId)!;
+        return {
+          productId: item.productId,
+          productName: product.name,
+          quantity: item.quantity,
+          unitPrice: product.price,
+          subtotal: product.price * item.quantity,
+        };
+      }),
+      totalAmount: event.payload.items.reduce((sum, item) => {
+        const product = products.find(p => p.id === item.productId)!;
+        return sum + product.price * item.quantity;
+      }, 0),
+      createdAt: event.timestamp.toISOString(),
+      updatedAt: event.timestamp.toISOString(),
+    };
+
+    await this.orderViewRepository.save(orderView);
+  }
+
+  private async handleOrderConfirmed(event: OrderConfirmed): Promise<void> {
+    await this.orderViewRepository.updateStatus(
+      event.aggregateId,
+      'confirmed',
+      '確定済み',
+      event.timestamp
+    );
+  }
+
+  private async handleOrderCancelled(event: OrderCancelled): Promise<void> {
+    await this.orderViewRepository.updateStatus(
+      event.aggregateId,
+      'cancelled',
+      'キャンセル',
+      event.timestamp
+    );
+  }
+}
+\`\`\`
+
+## Eventual Consistency（結果整合性）
+
+CQRS/ESでは、Command側とQuery側の間に**結果整合性**が発生します。
+
+\`\`\`mermaid
+sequenceDiagram
+    participant U as ユーザー
+    participant CS as Command Service
+    participant ES as Event Store
+    participant EH as Event Handler
+    participant RM as Read Model
+    participant QS as Query Service
+
+    U->>CS: 注文確定コマンド
+    CS->>ES: OrderConfirmed イベント保存
+    CS-->>U: 成功レスポンス
+
+    Note over ES,RM: 非同期処理（結果整合性）
+
+    ES->>EH: イベント発行
+    EH->>RM: Read Model更新
+
+    U->>QS: 注文詳細クエリ
+    QS->>RM: 読み取り
+    Note over RM: まだ反映されていない<br/>可能性がある
+\`\`\`
+
+\`\`\`typescript
+// 結果整合性への対応パターン
+
+// 1. 楽観的UI更新
+// クライアント側でコマンド成功後、即座にUIを更新
+const confirmOrder = async (orderId: string) => {
+  await commandService.send({ type: 'ConfirmOrder', orderId });
+  // UIを即座に更新（実際のRead Model更新を待たない）
+  setOrderStatus('confirmed');
+};
+
+// 2. ポーリング
+// Read Modelが更新されるまでポーリング
+const waitForConfirmation = async (orderId: string, expectedVersion: number) => {
+  const maxRetries = 10;
+  for (let i = 0; i < maxRetries; i++) {
+    const order = await queryService.getOrderById(orderId);
+    if (order.version >= expectedVersion) {
+      return order;
+    }
+    await sleep(100 * (i + 1)); // 指数バックオフ
+  }
+  throw new Error('Timeout waiting for confirmation');
+};
+
+// 3. WebSocket/SSE でリアルタイム通知
+// サーバーからRead Model更新をプッシュ通知
+class OrderUpdatesSubscription {
+  subscribe(orderId: string, callback: (order: OrderView) => void) {
+    this.websocket.on('orderUpdated', (data) => {
+      if (data.orderId === orderId) {
+        callback(data.order);
+      }
+    });
+  }
+}
+\`\`\`
+
+## DDDとの組み合わせ
+
+CQRS/ESは**DDDの集約**と非常に相性が良いです。
+
+\`\`\`mermaid
+graph TB
+    subgraph "集約 + イベントソーシング"
+        A[Order Aggregate]
+        A --> E1[OrderCreated]
+        A --> E2[ItemAdded]
+        A --> E3[OrderConfirmed]
+    end
+
+    subgraph "集約の境界 = イベントストリームの境界"
+        ES1[(order-123)]
+        ES2[(order-456)]
+    end
+
+    E1 --> ES1
+    E2 --> ES1
+    E3 --> ES1
+\`\`\`
+
+\`\`\`typescript
+// DDDの集約 + イベントソーシング
+class Order extends AggregateRoot<OrderEvent> {
+  private id: OrderId;
+  private customerId: CustomerId;
+  private items: OrderItem[] = [];
+  private status: OrderStatus;
+
+  // ファクトリメソッド（新規作成）
+  static create(
+    customerId: string,
+    items: Array<{ productId: string; quantity: number }>,
+    products: Product[]
+  ): Order {
+    const order = new Order();
+    const orderId = OrderId.generate();
+
+    // イベントを発行
+    order.applyChange(new OrderCreated({
+      orderId: orderId.value,
+      customerId,
+      items: items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: products.find(p => p.id === item.productId)!.price,
+      })),
+    }));
+
+    return order;
+  }
+
+  // コマンド: 商品追加
+  addItem(productId: string, quantity: number, unitPrice: number): void {
+    if (this.status !== OrderStatus.Draft) {
+      throw new DomainError('確定済みの注文には商品を追加できません');
+    }
+
+    this.applyChange(new ItemAdded({
+      orderId: this.id.value,
+      productId,
+      quantity,
+      unitPrice,
+    }));
+  }
+
+  // コマンド: 注文確定
+  confirm(): void {
+    if (this.status !== OrderStatus.Draft) {
+      throw new DomainError('この注文は確定できません');
+    }
+    if (this.items.length === 0) {
+      throw new DomainError('商品がない注文は確定できません');
+    }
+
+    this.applyChange(new OrderConfirmed({
+      orderId: this.id.value,
+      totalAmount: this.calculateTotal(),
+    }));
+  }
+
+  // イベントハンドラ（内部状態の更新）
+  protected when(event: OrderEvent): void {
+    switch (event.constructor.name) {
+      case 'OrderCreated':
+        this.whenOrderCreated(event as OrderCreated);
+        break;
+      case 'ItemAdded':
+        this.whenItemAdded(event as ItemAdded);
+        break;
+      case 'OrderConfirmed':
+        this.whenOrderConfirmed(event as OrderConfirmed);
+        break;
+    }
+  }
+
+  private whenOrderCreated(event: OrderCreated): void {
+    this.id = OrderId.from(event.orderId);
+    this.customerId = CustomerId.from(event.customerId);
+    this.items = event.items.map(i => OrderItem.create(i));
+    this.status = OrderStatus.Draft;
+  }
+
+  private whenItemAdded(event: ItemAdded): void {
+    this.items.push(OrderItem.create(event));
+  }
+
+  private whenOrderConfirmed(event: OrderConfirmed): void {
+    this.status = OrderStatus.Confirmed;
+  }
+}
+\`\`\`
+
+## 実装時の注意点とトレードオフ
+
+\`\`\`mermaid
+graph TB
+    subgraph "CQRS/ESが有効なケース"
+        E1[複雑なドメインロジック]
+        E2[監査要件が厳しい]
+        E3[イベント駆動が必要]
+        E4[高いスケーラビリティ要件]
+    end
+
+    subgraph "CQRS/ESを避けるべきケース"
+        A1[シンプルなCRUD]
+        A2[小規模アプリ]
+        A3[強い即座整合性が必要]
+        A4[チームの経験不足]
+    end
+\`\`\`
+
+| トレードオフ | 得られるもの | 失うもの |
+|------------|------------|---------|
+| **複雑さ** | 柔軟性、スケーラビリティ | シンプルさ |
+| **結果整合性** | パフォーマンス、スケール | 即座整合性 |
+| **イベント永続化** | 完全な履歴、監査 | ストレージコスト |
+| **学習コスト** | 強力なパターン | 即時の生産性 |
+
+## まとめ
+
+- **コマンドハンドラ**: コマンド（意図）を受け取り、集約を操作
+- **クエリハンドラ**: Read Modelからデータを取得
+- **イベントハンドラ**: イベントをRead Modelに反映（プロジェクション）
+- **結果整合性**: Command側とQuery側の非同期同期
+- **DDDとの相性**: 集約の境界 = イベントストリームの境界
+- **適用判断**: 複雑さとのトレードオフを理解した上で選択
+`),
+  order: 3,
+});
+
+export const chapter15Lessons = [lesson15_1, lesson15_2, lesson15_3];

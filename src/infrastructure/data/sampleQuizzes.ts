@@ -2221,6 +2221,187 @@ const lesson14_2Questions: Question[] = [
   }),
 ];
 
+// =============================================================================
+// Chapter 15: CQRS/イベントソーシング
+// =============================================================================
+
+// Lesson 15-1: CQRSとは（5問）
+const lesson15_1Questions: Question[] = [
+  Question.create({
+    id: 'q15-1-1',
+    text: 'CQRSの正式名称は何ですか？',
+    options: [
+      { id: 'a', text: 'Command Query Responsibility Segregation', isCorrect: true },
+      { id: 'b', text: 'Command Query Response System', isCorrect: false },
+      { id: 'c', text: 'Create Query Read Separation', isCorrect: false },
+      { id: 'd', text: 'Command Query Resource Service', isCorrect: false },
+    ],
+    explanation: 'CQRSは「Command Query Responsibility Segregation」の略で、読み取り（Query）と書き込み（Command）の責務を分離するアーキテクチャパターンです。',
+  }),
+  Question.create({
+    id: 'q15-1-2',
+    text: 'CQS原則を提唱した人物は誰ですか？',
+    options: [
+      { id: 'a', text: 'Greg Young', isCorrect: false },
+      { id: 'b', text: 'Bertrand Meyer', isCorrect: true },
+      { id: 'c', text: 'Eric Evans', isCorrect: false },
+      { id: 'd', text: 'Robert C. Martin', isCorrect: false },
+    ],
+    explanation: 'CQS原則（Command Query Separation）はBertrand Meyerによって提唱されました。CQRSはこのCQS原則をアーキテクチャレベルに発展させたものです。',
+  }),
+  Question.create({
+    id: 'q15-1-3',
+    text: 'CQRSで読み取りと書き込みを分離する主な理由として正しいものは？',
+    options: [
+      { id: 'a', text: 'セキュリティを向上させるため', isCorrect: false },
+      { id: 'b', text: 'コード量を減らすため', isCorrect: false },
+      { id: 'c', text: 'スケーラビリティ、最適化、複雑さの管理のため', isCorrect: true },
+      { id: 'd', text: 'データベースのライセンスコストを削減するため', isCorrect: false },
+    ],
+    explanation: 'CQRSは、読み取りと書き込みで異なるスケール要件への対応、それぞれに最適なデータモデルの使用、ビジネスロジックの複雑さの分離を目的としています。',
+  }),
+  Question.create({
+    id: 'q15-1-4',
+    text: 'CQS原則において、Commandメソッドの特徴として正しいものは？',
+    options: [
+      { id: 'a', text: '値を返し、状態を変更しない', isCorrect: false },
+      { id: 'b', text: '状態を変更し、戻り値を持たない', isCorrect: true },
+      { id: 'c', text: '値を返し、状態も変更する', isCorrect: false },
+      { id: 'd', text: '何もしない', isCorrect: false },
+    ],
+    explanation: 'CQS原則において、Commandは状態を変更する操作で、戻り値を持ちません。一方、Queryは状態を返すが変更しません。',
+  }),
+  Question.create({
+    id: 'q15-1-5',
+    text: 'CQRSの実装レベルで「Level 3: データストア分離」の特徴は？',
+    options: [
+      { id: 'a', text: '同じDB、同じモデルでコードレベルで分離', isCorrect: false },
+      { id: 'b', text: '同じDB、異なるモデルで分離', isCorrect: false },
+      { id: 'c', text: '異なるDBで完全分離', isCorrect: true },
+      { id: 'd', text: 'データベースを使わない', isCorrect: false },
+    ],
+    explanation: 'Level 3では、書き込み用と読み取り用で異なるデータベースを使用し、完全に分離します。これにより最高のスケーラビリティと最適化が可能になります。',
+  }),
+];
+
+// Lesson 15-2: イベントソーシングとは（5問）
+const lesson15_2Questions: Question[] = [
+  Question.create({
+    id: 'q15-2-1',
+    text: 'イベントソーシングの基本的な考え方として正しいものは？',
+    options: [
+      { id: 'a', text: '現在の状態のみを保存する', isCorrect: false },
+      { id: 'b', text: '状態ではなくイベント（状態変化）を保存する', isCorrect: true },
+      { id: 'c', text: 'イベントを一時的に保存してすぐ削除する', isCorrect: false },
+      { id: 'd', text: '状態とイベントの両方を同時に保存する', isCorrect: false },
+    ],
+    explanation: 'イベントソーシングでは、アプリケーションの状態を現在の状態ではなく、状態変化のイベント履歴として保存します。状態はイベントから導出されます。',
+  }),
+  Question.create({
+    id: 'q15-2-2',
+    text: 'イベントソーシングにおける「リプレイ」とは何ですか？',
+    options: [
+      { id: 'a', text: 'イベントを削除すること', isCorrect: false },
+      { id: 'b', text: 'イベントを順番に適用して状態を再構築すること', isCorrect: true },
+      { id: 'c', text: 'イベントをコピーすること', isCorrect: false },
+      { id: 'd', text: 'イベントを別のシステムに送信すること', isCorrect: false },
+    ],
+    explanation: 'リプレイは、保存されたイベントを順番に適用することで、任意の時点の状態を再構築する操作です。これにより「時間旅行」が可能になります。',
+  }),
+  Question.create({
+    id: 'q15-2-3',
+    text: 'スナップショットの目的として正しいものは？',
+    options: [
+      { id: 'a', text: 'イベントを削除するため', isCorrect: false },
+      { id: 'b', text: '大量のイベントの再構築を最適化するため', isCorrect: true },
+      { id: 'c', text: 'セキュリティを向上させるため', isCorrect: false },
+      { id: 'd', text: 'データベース容量を削減するため', isCorrect: false },
+    ],
+    explanation: 'スナップショットは、ある時点の状態を保存しておくことで、大量のイベントを毎回すべてリプレイする必要をなくし、再構築を最適化します。',
+  }),
+  Question.create({
+    id: 'q15-2-4',
+    text: 'イベントソーシングとイベント駆動アーキテクチャ（EDA）の違いとして正しいものは？',
+    options: [
+      { id: 'a', text: '両者は同じものである', isCorrect: false },
+      { id: 'b', text: 'ESではイベントが真実の源、EDAではイベントは通知手段', isCorrect: true },
+      { id: 'c', text: 'EDAではイベントが真実の源、ESではイベントは通知手段', isCorrect: false },
+      { id: 'd', text: 'ESはデータベースを使わない', isCorrect: false },
+    ],
+    explanation: 'イベントソーシングではイベントが真実の源（Source of Truth）であり、状態はイベントから導出されます。EDAではイベントはコンポーネント間の通知手段で、状態は別途保存されます。',
+  }),
+  Question.create({
+    id: 'q15-2-5',
+    text: 'イベントソーシングのメリットとして正しいものは？',
+    options: [
+      { id: 'a', text: 'シンプルで学習コストが低い', isCorrect: false },
+      { id: 'b', text: '完全な監査ログと任意時点の状態再構築が可能', isCorrect: true },
+      { id: 'c', text: 'ストレージコストが低い', isCorrect: false },
+      { id: 'd', text: 'クエリが簡単', isCorrect: false },
+    ],
+    explanation: 'イベントソーシングの主なメリットは、完全な監査ログ（いつ誰が何をしたか追跡可能）と、任意の時点の状態を再構築できる「時間旅行」機能です。',
+  }),
+];
+
+// Lesson 15-3: CQRS/ESの実装パターン（5問）
+const lesson15_3Questions: Question[] = [
+  Question.create({
+    id: 'q15-3-1',
+    text: 'コマンドハンドラの主な役割は何ですか？',
+    options: [
+      { id: 'a', text: 'データを読み取って返す', isCorrect: false },
+      { id: 'b', text: 'コマンド（意図）を受け取り、集約を操作する', isCorrect: true },
+      { id: 'c', text: 'UIを描画する', isCorrect: false },
+      { id: 'd', text: 'データベースのスキーマを管理する', isCorrect: false },
+    ],
+    explanation: 'コマンドハンドラは、システムに対する意図（Intent）を表現するコマンドを受け取り、ドメインの集約を操作してビジネスロジックを実行します。',
+  }),
+  Question.create({
+    id: 'q15-3-2',
+    text: 'Read Model（プロジェクション）の特徴として正しいものは？',
+    options: [
+      { id: 'a', text: 'ビジネスルールを含む', isCorrect: false },
+      { id: 'b', text: '読み取りに最適化された非正規化されたデータ', isCorrect: true },
+      { id: 'c', text: '書き込み操作を行う', isCorrect: false },
+      { id: 'd', text: 'イベントを発行する', isCorrect: false },
+    ],
+    explanation: 'Read Model（プロジェクション）は、クエリに最適化された非正規化されたデータ構造です。画面表示に必要な情報が事前に結合されています。',
+  }),
+  Question.create({
+    id: 'q15-3-3',
+    text: 'Eventual Consistency（結果整合性）とは何ですか？',
+    options: [
+      { id: 'a', text: 'データが常に即座に整合している状態', isCorrect: false },
+      { id: 'b', text: '書き込み後、読み取り側にすぐ反映されない可能性がある状態', isCorrect: true },
+      { id: 'c', text: 'データが永久に整合しない状態', isCorrect: false },
+      { id: 'd', text: 'トランザクションを使わない状態', isCorrect: false },
+    ],
+    explanation: 'Eventual Consistency（結果整合性）は、Command側で変更が保存された後、Query側のRead Modelに反映されるまでに時間差が生じる可能性がある状態です。最終的には整合します。',
+  }),
+  Question.create({
+    id: 'q15-3-4',
+    text: 'CQRS/ESとDDDの集約の関係として正しいものは？',
+    options: [
+      { id: 'a', text: '全く関係がない', isCorrect: false },
+      { id: 'b', text: '集約の境界 = イベントストリームの境界として相性が良い', isCorrect: true },
+      { id: 'c', text: 'CQRS/ESを使うと集約は不要になる', isCorrect: false },
+      { id: 'd', text: '集約はCommand側でのみ使用される', isCorrect: false },
+    ],
+    explanation: 'CQRS/ESはDDDの集約と非常に相性が良く、集約の境界がイベントストリームの境界と一致します。集約がイベントを発行し、状態をイベントから再構築します。',
+  }),
+  Question.create({
+    id: 'q15-3-5',
+    text: 'CQRS/ESを避けるべきケースとして正しいものは？',
+    options: [
+      { id: 'a', text: '複雑なドメインロジックがある場合', isCorrect: false },
+      { id: 'b', text: '監査要件が厳しい場合', isCorrect: false },
+      { id: 'c', text: 'シンプルなCRUDアプリケーションの場合', isCorrect: true },
+      { id: 'd', text: '高いスケーラビリティが必要な場合', isCorrect: false },
+    ],
+    explanation: 'CQRS/ESはシンプルなCRUDアプリケーションにはオーバーエンジニアリングになります。複雑さの増加に見合うメリットがないため、避けるべきです。',
+  }),
+];
+
 export const sampleQuizzes: Quiz[] = [
   // Chapter 1: ドメインとは何か
   Quiz.create({
@@ -2494,6 +2675,28 @@ export const sampleQuizzes: Quiz[] = [
     title: 'ポートとアダプターの実装 - 理解度チェック',
     description: '駆動ポート/被駆動ポート、プライマリ/セカンダリアダプター、テスト容易性についての理解度を確認するクイズです。',
     questions: lesson14_2Questions,
+  }),
+  // Chapter 15: CQRS/イベントソーシング
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-15-1'),
+    lessonId: LessonId.create('lesson-15-1'),
+    title: 'CQRSとは - 理解度チェック',
+    description: 'CQRS、CQS原則、読み書き分離の理由、実装レベルについての理解度を確認するクイズです。',
+    questions: lesson15_1Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-15-2'),
+    lessonId: LessonId.create('lesson-15-2'),
+    title: 'イベントソーシングとは - 理解度チェック',
+    description: 'イベントソーシング、リプレイ、スナップショット、EDAとの違いについての理解度を確認するクイズです。',
+    questions: lesson15_2Questions,
+  }),
+  Quiz.create({
+    id: QuizId.create('quiz-lesson-15-3'),
+    lessonId: LessonId.create('lesson-15-3'),
+    title: 'CQRS/ESの実装パターン - 理解度チェック',
+    description: 'コマンド/クエリハンドラ、プロジェクション、結果整合性、DDDとの組み合わせについての理解度を確認するクイズです。',
+    questions: lesson15_3Questions,
   }),
 ];
 
